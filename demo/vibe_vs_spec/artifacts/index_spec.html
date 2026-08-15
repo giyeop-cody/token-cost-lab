@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>카페 온도</title>
+<style>
+  /* 디자인 토큰 — 스펙 팔레트 (CSS 변수 관리) */
+  :root{
+    --cream:#faf6f0;   /* 배경 */
+    --latte:#e8dccb;   /* 보더 */
+    --caramel:#c08552; /* 액센트 */
+    --espresso:#3e2f25;/* 본문 */
+    --mocha:#6f4e37;   /* 서브 */
+    --green:#7a8450;   /* 포인트 */
+    --r-card:20px;     /* 카드 radius */
+    --r-btn:12px;      /* 버튼 radius */
+    --sec-pad:84px;    /* 섹션 패딩 */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,"Segoe UI","Noto Sans KR",ui-sans-serif,sans-serif;
+    background:var(--cream);color:var(--espresso);line-height:1.7;overflow-x:hidden}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+  /* ① 스티키 내비: 로고SVG + 앵커메뉴 + 예약CTA */
+  nav{position:sticky;top:0;z-index:50;background:rgba(250,246,240,.93);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--latte)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px}
+  .brand svg{width:30px;height:30px}
+  .anchors{display:flex;gap:26px;font-size:14.5px}
+  .anchors a{color:var(--mocha);text-decoration:none;font-weight:500}
+  .anchors a:hover{color:var(--caramel)}
+  .cta{background:var(--espresso);color:#fff;border-radius:var(--r-btn);
+    padding:9px 18px;font-size:13.5px;text-decoration:none;font-weight:600}
+  .cta:hover{background:var(--mocha)}
+
+  /* ② 히어로: 카피 + 커피잔SVG + 오늘의원두 배지 */
+  header{background:linear-gradient(160deg,#f3e9db 0%,var(--cream) 55%)}
+  .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;
+    padding:var(--sec-pad) 0}
+  h1{font-size:clamp(34px,5vw,52px);line-height:1.25;letter-spacing:-.03em;font-weight:800}
+  h1 em{font-style:normal;color:var(--caramel)}
+  .lead{margin:18px 0 30px;font-size:16.5px;color:var(--mocha);max-width:420px}
+  .btn{display:inline-block;padding:14px 28px;border-radius:var(--r-btn);
+    font-weight:700;font-size:15px;text-decoration:none;transition:.18s}
+  .btn-dark{background:var(--espresso);color:#fff}
+  .btn-dark:hover{background:var(--mocha)}
+  .btn-line{border:1.5px solid var(--espresso);color:var(--espresso);margin-left:10px}
+  .btn-line:hover{background:#fff}
+  .hero-art{position:relative;display:flex;justify-content:center}
+  .hero-art svg{width:100%;max-width:380px}
+  .badge{position:absolute;bottom:8%;left:0;background:#fff;border:1px solid var(--latte);
+    border-radius:14px;padding:10px 16px;font-size:13px;font-weight:700;
+    box-shadow:0 10px 24px rgba(62,47,37,.1)}
+  .badge small{display:block;font-weight:400;color:var(--mocha);font-size:11.5px}
+
+  /* 섹션 공통 */
+  section{padding:var(--sec-pad) 0}
+  .sec-head{text-align:center;margin-bottom:48px}
+  .sec-tag{display:inline-block;color:var(--caramel);font-weight:700;font-size:13px;
+    letter-spacing:.14em;margin-bottom:10px}
+  h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;font-weight:800}
+
+  /* ③ 메뉴 6종 카드그리드 */
+  .menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .card{background:#fff;border:1px solid var(--latte);border-radius:var(--r-card);
+    padding:26px;transition:.2s}
+  .card:hover{transform:translateY(-6px);box-shadow:0 18px 38px rgba(62,47,37,.12)}
+  .card .ico{width:54px;height:54px;border-radius:14px;background:var(--cream);
+    display:grid;place-items:center;font-size:26px;margin-bottom:16px}
+  .card h3{font-size:17.5px;margin-bottom:6px}
+  .card p{font-size:13.5px;color:var(--mocha);min-height:42px}
+  .price-row{display:flex;justify-content:space-between;align-items:center;
+    margin-top:16px;padding-top:14px;border-top:1px dashed var(--latte)}
+  .price{font-weight:800;font-size:17px}
+  .tag{font-size:11px;background:var(--latte);color:var(--mocha);border-radius:99px;
+    padding:3px 10px;font-weight:700}
+  .tag.best{background:var(--caramel);color:#fff}
+  .tag.new{background:var(--green);color:#fff}
+
+  /* ④ 오시는길: 정보리스트 5항목 + SVG지도 + 핀 */
+  .loc{background:var(--espresso);color:var(--cream);border-radius:var(--r-card);overflow:hidden}
+  .loc-in{display:grid;grid-template-columns:1fr 1fr}
+  .loc-info{padding:52px 46px}
+  .loc-info h2{color:#fff}
+  .loc-info .sec-tag{color:var(--latte)}
+  .loc-list{margin-top:28px;display:flex;flex-direction:column;gap:18px;list-style:none}
+  .loc-list li{display:flex;gap:14px;align-items:flex-start}
+  .loc-list .li{width:38px;height:38px;flex:none;border-radius:11px;
+    background:rgba(255,255,255,.1);display:grid;place-items:center;font-size:17px}
+  .loc-list b{display:block;font-size:14.5px;color:#fff;margin-bottom:2px}
+  .loc-list span{color:var(--latte);font-size:13.5px}
+  .map{position:relative;min-height:380px;background:#efe6d8}
+  .map svg{position:absolute;inset:0;width:100%;height:100%}
+
+  /* ⑤ 영업시간 3칸 스트립 */
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .strip div{background:#fff;border:1px solid var(--latte);border-radius:var(--r-card);
+    padding:20px 22px;text-align:center}
+  .strip b{display:block;font-size:15px;margin-bottom:4px}
+  .strip span{font-size:13px;color:var(--mocha)}
+
+  /* ⑥ 푸터 */
+  footer{border-top:1px solid var(--latte);padding:34px 0;text-align:center;
+    color:var(--mocha);font-size:13px}
+
+  /* AC3: 820px 이하 — 1열 전환, 데스크톱 메뉴 숨김, 가로 스크롤 없음 */
+  @media (max-width:820px){
+    .anchors{display:none}
+    .hero{grid-template-columns:1fr;text-align:center}
+    .lead{margin-inline:auto}
+    .btn-line{margin-left:0;margin-top:10px}
+    .hero-art{margin-top:10px}
+    .menu-grid{grid-template-columns:1fr}
+    .loc-in{grid-template-columns:1fr}
+    .map{min-height:300px}
+    .strip{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- ① 스티키 내비 -->
+<nav>
+  <div class="wrap nav-in">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" aria-label="카페 온도 로고">
+        <path d="M6 12h16v8a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6v-8z" fill="#6f4e37"/>
+        <path d="M22 14h2.5a3.5 3.5 0 1 1 0 7H22" stroke="#6f4e37" stroke-width="2.4" fill="none"/>
+        <path d="M11 8c0-1.8 1.6-1.8 1.6-3.6M16 8c0-1.8 1.6-1.8 1.6-3.6" stroke="#c08552" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      카페 온도
+    </div>
+    <div class="anchors">
+      <a href="#menu">메뉴</a>
+      <a href="#location">오시는 길</a>
+      <a href="#hours">영업시간</a>
+    </div>
+    <a class="cta" href="#location">방문 예약</a>
+  </div>
+</nav>
+
+<!-- ② 히어로 -->
+<header>
+  <div class="wrap hero">
+    <div>
+      <h1>하루의 온도를<br>천천히 <em>내리는 곳</em></h1>
+      <p class="lead">직접 로스팅한 스페셜티 원두와 매일 아침 굽는 디저트. 창가에 앉아 행궁동 골목의 풍경을 함께 즐겨보세요.</p>
+      <div>
+        <a class="btn btn-dark" href="#menu">메뉴 보기</a>
+        <a class="btn btn-line" href="#location">오시는 길</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 300 300" aria-label="커피잔 일러스트">
+        <circle cx="150" cy="150" r="140" fill="#f3e9db"/>
+        <ellipse cx="150" cy="238" rx="92" ry="12" fill="#e8dccb"/>
+        <path d="M78 120h124l-10 92a26 26 0 0 1-26 24H114a26 26 0 0 1-26-24l-10-92z" fill="#fff" stroke="#3e2f25" stroke-width="5"/>
+        <path d="M202 132h16a24 24 0 1 1 0 48h-20" fill="none" stroke="#3e2f25" stroke-width="5"/>
+        <path d="M86 150c22 12 86 12 108 0l-3 26c-20 10-82 10-102 0l-3-26z" fill="#c08552" opacity=".85"/>
+        <path d="M118 96c0-10 9-10 9-20M143 96c0-10 9-10 9-20M168 96c0-10 9-10 9-20" stroke="#c08552" stroke-width="6" stroke-linecap="round" fill="none"/>
+      </svg>
+      <p class="badge">☕ 오늘의 원두<small>에티오피아 예가체프 G1</small></p>
+    </div>
+  </div>
+</header>
+
+<!-- ③ 메뉴 6종 카드그리드 -->
+<section id="menu">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag">MENU</span>
+      <h2>시그니처 메뉴</h2>
+    </div>
+    <div class="menu-grid">
+      <article class="card">
+        <div class="ico">☕</div>
+        <h3>온도 시그니처 라떼</h3>
+        <p>흑임자 크림을 올린 고소한 라떼. 가장 사랑받는 메뉴예요.</p>
+        <div class="price-row"><span class="price">6,500원</span><span class="tag best">BEST</span></div>
+      </article>
+      <article class="card">
+        <div class="ico">🫘</div>
+        <h3>핸드드립 커피</h3>
+        <p>에티오피아 · 콜롬비아 · 과테말라, 오늘의 원두 중 선택.</p>
+        <div class="price-row"><span class="price">7,000원</span><span class="tag">SPECIALTY</span></div>
+      </article>
+      <article class="card">
+        <div class="ico">🍵</div>
+        <h3>행궁 말차 라떼</h3>
+        <p>제주 유기농 말차를 진하게 풀어낸 부드러운 한 잔.</p>
+        <div class="price-row"><span class="price">6,800원</span><span class="tag new">NEW</span></div>
+      </article>
+      <article class="card">
+        <div class="ico">🥐</div>
+        <h3>소금빵 &amp; 크루아상</h3>
+        <p>매일 아침 매장에서 굽는 겉바속촉 베이커리.</p>
+        <div class="price-row"><span class="price">3,800원~</span><span class="tag">DAILY BAKE</span></div>
+      </article>
+      <article class="card">
+        <div class="ico">🍰</div>
+        <h3>바스크 치즈케이크</h3>
+        <p>진하고 촉촉한 수제 치즈케이크. 커피와 최고의 궁합.</p>
+        <div class="price-row"><span class="price">7,500원</span><span class="tag best">BEST</span></div>
+      </article>
+      <article class="card">
+        <div class="ico">🍊</div>
+        <h3>수제 과일에이드</h3>
+        <p>계절 과일로 담근 청으로 만드는 상큼한 에이드.</p>
+        <div class="price-row"><span class="price">6,000원</span><span class="tag">SEASON</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ④ 오시는길 -->
+<section id="location" style="padding-top:0">
+  <div class="wrap">
+    <div class="loc">
+      <div class="loc-in">
+        <div class="loc-info">
+          <span class="sec-tag">LOCATION</span>
+          <h2>오시는 길</h2>
+          <ul class="loc-list">
+            <li><span class="li">📍</span><div><b>주소</b><span>경기 수원시 팔달구 행궁로 12길 34 1층</span></div></li>
+            <li><span class="li">🚇</span><div><b>지하철</b><span>수인분당선 수원시청역 3번 출구 · 도보 12분</span></div></li>
+            <li><span class="li">🚌</span><div><b>버스</b><span>‘행궁동 주민센터’ 정류장 하차 · 도보 3분</span></div></li>
+            <li><span class="li">🅿️</span><div><b>주차</b><span>공영주차장 2시간 무료 지원 (매장 확인 도장)</span></div></li>
+            <li><span class="li">📞</span><div><b>문의</b><span>031-123-4567 · @cafe_ondo</span></div></li>
+          </ul>
+        </div>
+        <div class="map">
+          <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-label="위치 지도">
+            <rect width="400" height="400" fill="#efe6d8"/>
+            <path d="M-20 90 L420 60" stroke="#e8dccb" stroke-width="26"/>
+            <path d="M-20 210 L420 180" stroke="#e8dccb" stroke-width="34"/>
+            <path d="M120 -20 L150 420" stroke="#e8dccb" stroke-width="30"/>
+            <path d="M290 -20 L260 420" stroke="#e8dccb" stroke-width="22"/>
+            <rect x="40" y="110" width="56" height="44" rx="6" fill="#e0d2bb"/>
+            <rect x="180" y="100" width="60" height="52" rx="6" fill="#e0d2bb"/>
+            <rect x="320" y="120" width="50" height="40" rx="6" fill="#e0d2bb"/>
+            <rect x="50" y="240" width="48" height="48" rx="6" fill="#e0d2bb"/>
+            <rect x="310" y="230" width="58" height="52" rx="6" fill="#e0d2bb"/>
+            <circle cx="212" cy="204" r="34" fill="#c08552" opacity=".25"/>
+            <g transform="translate(212 186)">
+              <path d="M0-36c-15 0-26 11-26 25C-26 8 0 36 0 36S26 8 26-11c0-14-11-25-26-25z" fill="#c08552"/>
+              <circle cx="0" cy="-11" r="10" fill="#fff"/>
+              <text x="0" y="-6.5" text-anchor="middle" font-size="13">☕</text>
+            </g>
+            <text x="212" y="252" text-anchor="middle" font-size="14" font-weight="700" fill="#3e2f25">카페 온도</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑤ 영업시간 3칸 스트립 -->
+<section id="hours" style="padding-top:0">
+  <div class="wrap strip">
+    <div><b>평일</b><span>09:00 – 21:00</span></div>
+    <div><b>주말 · 공휴일</b><span>10:00 – 22:00</span></div>
+    <div><b>정기 휴무</b><span>매월 첫째 주 월요일</span></div>
+  </div>
+</section>
+
+<!-- ⑥ 푸터 -->
+<footer>
+  <div class="wrap">☕ 카페 온도 · 경기 수원시 팔달구 행궁로 12길 34 · © 2026 Cafe Ondo</div>
+</footer>
+
+</body>
+</html>
