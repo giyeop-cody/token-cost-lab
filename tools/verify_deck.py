@@ -29,9 +29,20 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)                      # token-cost-lab/
-# 덱(pptx)은 이 저장소에 포함되지 않는다 — 발표 패키지 쪽 산출물이다.
-# 저장소만 clone한 사람에게는 없으므로, 없으면 실패가 아니라 SKIP 처리한다.
+# 덱(pptx)의 위치는 브랜치에 따라 다르다.
+#   presentation 브랜치 → ROOT/presentation/  (저장소 안)
+#   main 브랜치         → 저장소에 없음        (발표 패키지 쪽)
+# 둘 다 없으면 실패가 아니라 SKIP 처리한다.
 PKG = os.path.dirname(ROOT)                       # 발표 패키지 루트 (저장소 밖)
+DECK_NAME = "토큰_절약_발표.pptx"
+
+
+def find_deck():
+    for cand in (os.path.join(ROOT, "presentation", DECK_NAME),
+                 os.path.join(PKG, DECK_NAME)):
+        if os.path.exists(cand):
+            return cand
+    return os.path.join(ROOT, "presentation", DECK_NAME)
 
 # 슬라이드 비용 환산에 쓰인 단가 (gemini-25: $1.25/$10 per 1M)
 IN_R, OUT_R = 1.25 / 1e6, 10.0 / 1e6
@@ -390,7 +401,7 @@ def verify_pptx(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", "-v", action="store_true")
-    ap.add_argument("--pptx", default=os.path.join(PKG, "토큰_절약_발표.pptx"))
+    ap.add_argument("--pptx", default=find_deck())
     args = ap.parse_args()
 
     print("=" * 78)
