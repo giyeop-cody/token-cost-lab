@@ -1,0 +1,19 @@
+{
+  "id": "req_1786764007807_950930",
+  "createdAt": "2026-08-15T03:20:07.807Z",
+  "mode": "spec",
+  "message": "카페 온도 랜딩 페이지를 아래 스펙대로 결정적으로 재구현하라. 스펙에 없는 요소는 추가하지 말 것.",
+  "spec": {
+    "pages": "index 단일 페이지. 섹션 순서 고정: ①스티키 내비(로고SVG+앵커메뉴+예약CTA) ②히어로(카피+커피잔SVG일러스트+오늘의원두 배지) ③메뉴 6종 카드그리드 ④오시는길(정보리스트+SVG일러스트지도+위치핀) ⑤영업시간 3칸 스트립 ⑥푸터",
+    "stack": "순수 HTML/CSS 단일 파일(index.html), JS 금지, 외부 CDN·이미지·폰트 금지(시스템 폰트+인라인 SVG만), 시맨틱 태그(nav/header/section/footer) 필수, CSS 변수로 팔레트 관리",
+    "design": "팔레트: cream #faf6f0(배경) latte #e8dccb(보더) caramel #c08552(액센트) espresso #3e2f25(본문) mocha #6f4e37(서브) green #7a8450(포인트). 카드 radius 20px, 버튼 radius 12px, 섹션 패딩 84px, 히어로 h1 clamp(34~52px), 호버 시 카드 translateY(-6px)+그림자",
+    "acceptance": "1) 메뉴 카드 정확히 6개, 각각 이름·설명·가격·태그(BEST/NEW/SPECIALTY 등) 포함 2) 오시는길에 주소·지하철·버스·주차·문의 5개 항목 3) 820px 이하에서 그리드 1열 전환·데스크톱 메뉴 숨김·가로 스크롤 없음 4) 모든 앵커(#menu #location #hours) 스크롤 이동 동작 5) 영업시간: 평일 09–21 / 주말 10–22 / 첫째주 월 휴무 명시"
+  },
+  "siteFiles": [
+    {
+      "path": "index.html",
+      "size": 13423
+    }
+  ],
+  "history": []
+}
