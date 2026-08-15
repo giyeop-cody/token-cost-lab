@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>메모장</title>
+<style>
+  :root{
+    --bg:#0f1720; --card:#18222e; --card2:#1e2a38; --line:#2a3a4c;
+    --fg:#e8eef5; --muted:#8fa3b8; --acc:#35d39a; --warn:#f5c451; --red:#ef6b73;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:"Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    display:flex; flex-direction:column; height:100vh;
+  }
+  header{
+    padding:18px 22px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  h1{font-size:19px; margin:0; letter-spacing:-.3px}
+  h1 span{color:var(--acc)}
+  .count{font-size:12.5px; color:var(--muted); margin-left:auto}
+  main{flex:1; display:flex; min-height:0}
+  #list{
+    width:280px; border-right:1px solid var(--line); overflow-y:auto;
+    background:var(--card); flex-shrink:0;
+  }
+  .item{
+    padding:13px 16px; border-bottom:1px solid var(--line); cursor:pointer;
+    border-left:3px solid transparent;
+  }
+  .item:hover{background:var(--card2)}
+  .item.on{background:var(--card2); border-left-color:var(--acc)}
+  .item h3{margin:0 0 5px; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .item p{margin:0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .item time{font-size:11px; color:var(--muted); opacity:.75}
+  .empty{padding:30px 16px; color:var(--muted); font-size:13px; text-align:center; line-height:1.6}
+  #editor{flex:1; display:flex; flex-direction:column; min-width:0}
+  #title{
+    background:transparent; border:0; border-bottom:1px solid var(--line);
+    color:var(--fg); font-size:17px; font-weight:600; padding:16px 22px; outline:none;
+    font-family:inherit;
+  }
+  #body{
+    flex:1; background:transparent; border:0; color:var(--fg); resize:none;
+    padding:18px 22px; font-size:14.5px; line-height:1.75; outline:none;
+    font-family:inherit;
+  }
+  #title::placeholder,#body::placeholder{color:var(--muted); opacity:.6}
+  footer{
+    padding:11px 22px; border-top:1px solid var(--line);
+    display:flex; gap:9px; align-items:center; font-size:12.5px; color:var(--muted);
+  }
+  button{
+    font:inherit; font-size:13px; padding:8px 15px; border-radius:7px;
+    border:1px solid var(--line); background:var(--card2); color:var(--fg); cursor:pointer;
+  }
+  button:hover{border-color:var(--acc)}
+  button.primary{background:var(--acc); color:#08131b; border-color:var(--acc); font-weight:700}
+  button.danger:hover{border-color:var(--red); color:var(--red)}
+  .saved{margin-left:auto; color:var(--acc); opacity:0; transition:opacity .25s}
+  .saved.show{opacity:1}
+  @media(max-width:640px){
+    #list{width:110px} .item p{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>메모<span>장</span></h1>
+  <span class="count" id="count">0개</span>
+</header>
+<main>
+  <div id="list"></div>
+  <div id="editor">
+    <input id="title" placeholder="제목">
+    <textarea id="body" placeholder="내용을 입력하세요…"></textarea>
+  </div>
+</main>
+<footer>
+  <button class="primary" id="new">+ 새 메모</button>
+  <button class="danger" id="del">삭제</button>
+  <span class="saved" id="saved">저장됨</span>
+</footer>
+
+<script>
+const K='memo.notes.v1';
+let notes=[], cur=null, t=null;
+
+const $=id=>document.getElementById(id);
+const load=()=>{try{notes=JSON.parse(localStorage.getItem(K))||[]}catch(e){notes=[]}};
+const save=()=>localStorage.setItem(K,JSON.stringify(notes));
+const fmt=ts=>{
+  const d=new Date(ts), n=new Date();
+  const sameDay=d.toDateString()===n.toDateString();
+  return sameDay
+    ? d.toTimeString().slice(0,5)
+    : (d.getMonth()+1)+'/'+d.getDate();
+};
+
+function render(){
+  const L=$('list');
+  $('count').textContent=notes.length+'개';
+  if(!notes.length){
+    L.innerHTML='<div class="empty">메모가 없습니다.<br>새 메모를 만들어 보세요.</div>';
+    return;
+  }
+  L.innerHTML='';
+  notes.forEach(n=>{
+    const d=document.createElement('div');
+    d.className='item'+(n.id===cur?' on':'');
+    const title=(n.title||'제목 없음');
+    const prev=(n.body||'내용 없음').split('\n')[0].slice(0,40);
+    d.innerHTML='<h3></h3><p></p><time></time>';
+    d.querySelector('h3').textContent=title;
+    d.querySelector('p').textContent=prev;
+    d.querySelector('time').textContent=fmt(n.at);
+    d.onclick=()=>{cur=n.id; sync(); render()};
+    L.appendChild(d);
+  });
+}
+
+function sync(){
+  const n=notes.find(x=>x.id===cur);
+  $('title').value=n?n.title:'';
+  $('body').value=n?n.body:'';
+}
+
+function touch(){
+  const n=notes.find(x=>x.id===cur);
+  if(!n) return;
+  n.title=$('title').value;
+  n.body=$('body').value;
+  n.at=Date.now();
+  notes.sort((a,b)=>b.at-a.at);
+  save(); render();
+  clearTimeout(t);
+  $('saved').classList.add('show');
+  t=setTimeout(()=>$('saved').classList.remove('show'),1100);
+}
+
+$('new').onclick=()=>{
+  const n={id:Date.now()+'', title:'', body:'', at:Date.now()};
+  notes.unshift(n); cur=n.id; save(); render(); sync(); $('title').focus();
+};
+$('del').onclick=()=>{
+  if(!cur) return;
+  notes=notes.filter(x=>x.id!==cur);
+  cur=notes.length?notes[0].id:null;
+  save(); render(); sync();
+};
+$('title').oninput=touch;
+$('body').oninput=touch;
+
+load();
+if(notes.length) cur=notes[0].id;
+render(); sync();
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+[
+  {
+    "label": "지시문 (로그인 API)",
+    "en": "Add a login API endpoint with JWT auth and rate limiting. Return 401 on invalid token.",
+    "ko": "JWT 인증과 요청 제한이 적용된 로그인 API 엔드포인트를 추가해 줘. 토큰이 유효하지 않으면 401을 반환해."
+  },
+  {
+    "label": "추론문 (스키마 확인)",
+    "en": "First, I need to check the existing schema. The users table already has an email column, so I should add a unique index instead of a new column.",
+    "ko": "먼저 기존 스키마를 확인해야 한다. users 테이블에는 이미 이메일 컬럼이 있으므로, 새 컬럼을 추가하는 대신 유니크 인덱스를 추가해야 한다."
+  },
+  {
+    "label": "설명문 (함수 동작)",
+    "en": "This function validates the input, then saves it to the database, and finally returns the created object.",
+    "ko": "이 함수는 입력값을 검증한 다음 데이터베이스에 저장하고 마지막으로 생성된 객체를 반환합니다."
+  },
+  {
+    "label": "짧은 요약문",
+    "en": "Refactor the agent loop to cut token usage.",
+    "ko": "토큰 사용량을 줄이려고 에이전트 루프를 다시 짰다."
+  },
+  {
+    "label": "설계 논의문",
+    "en": "We should split the payment service into a separate module so that the retry policy does not affect the order flow.",
+    "ko": "재시도 정책이 주문 흐름에 영향을 주지 않도록 결제 서비스를 별도 모듈로 분리해야 합니다."
+  },
+  {
+    "label": "에러 분석문",
+    "en": "The test fails because the mock returns a string while the handler expects a parsed JSON object.",
+    "ko": "핸들러는 파싱된 JSON 객체를 기대하는데 목이 문자열을 반환하기 때문에 테스트가 실패합니다."
+  }
+]
