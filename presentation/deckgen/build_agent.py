@@ -45,8 +45,8 @@ def cover():
         {'t': '앞의 두 덱은 “요금을 어떻게 읽는가”였다. 이번엔 그 원칙을 '
               '매 요청마다 자동으로 적용하는 배선을 짠다.',
          'sz': 14, 'c': MUTED, 'space_before': 9},
-        {'t': '이 덱의 모든 슬라이드는 agent_setup/router.py 에 대응 코드가 있습니다. '
-              '검증 56/56 PASS.',
+        {'t': '이 덱의 모든 슬라이드는 agent_setup/ 에 대응 코드가 있고, '
+              'IDE에 바로 붙습니다. 검증 159건 전부 PASS.',
          'sz': 13.5, 'c': ACC2, 'space_before': 7}])
     note(sl, '토큰 비용 최적화 네트워크 세션 · 후속편 · github.com/giyeop-cody/token-cost-lab', y=6.6)
 
@@ -506,10 +506,10 @@ def s_demo():
         '[4] 세션 리셋 트리거  [5] 비용 산식',
         '[6] 리워크 에스컬레이션  [7] 손익분기',
         '',
-        '        기준선 $0.6500 → 라우팅 $0.0437  (93.3% 절감)',
-        '        에스컬 3턴 $0.2132 = 제자리 8턴 $0.2180',
+        '        전부 LARGE $0.4845 → 라우팅 $0.0559  (88.5% 절감)',
+        '        사다리 3턴 $0.0519 = 제자리 2턴 $0.0545',
         '',
-        '  56건 중 56 PASS / 0 FAIL',
+        '  98건 중 98 PASS / 0 FAIL',
     ]
     rect(sl, 0.75, 2.45, 7.75, 3.98, fill=CARD2, radius=0.05)
     rect(sl, 0.75, 2.45, 0.05, 3.98, fill=ACC)
@@ -526,16 +526,97 @@ def s_demo():
 
     card(sl, 8.75, 2.45, 3.85, 1.95, '시연 순서', [
         '1. router.py — 5개 요청의 행선지',
-        '2. 같은 작업을 3번 실패시켜 에스컬레이션',
-        '3. 규칙 하나를 깨뜨려 FAIL 재현',
+        '2. 같은 작업을 3번 실패시켜 사다리 관찰',
+        '3. IDE에서 같은 판단이 나오는지 확인',
     ], accent=ACC2, tsz=15, bsz=12)
 
     card(sl, 8.75, 4.55, 3.85, 1.95, '숫자를 읽는 법', [
-        '93.3%는 "전부 상위 모델" 대비 추정치다.',
+        '88.5%는 "전부 상위 모델" 대비 추정치다.',
         '실제 절감폭은 요청 구성비에 따라 달라진다.',
         'PRICES 상수를 각자 단가로 바꿔 다시 재라.',
     ], accent=WARN, tsz=15, bsz=12)
-    note(sl, 'agent_setup/router.py (라우터) · agent_setup/test_router.py (검증 56건) — 저장소에 그대로 들어 있습니다.', y=6.62)
+    note(sl, 'agent_setup/router.py (라우터) · test_router.py (98건) · mcp_server.py + test_mcp.py (61건) — 저장소에 그대로 들어 있습니다.', y=6.62)
+
+
+# ── 12b. 실제 IDE에 붙이기 ───────────────────────────────────
+def s_mcp_wire():
+    sl = slide('실제 IDE에 붙이기 — MCP', 'FOLLOW-UP · 연동')
+    text(sl, 0.75, 1.9, 11.9, 0.4,
+         [{'t': '지금까지는 라이브러리였습니다. 에이전트가 스스로 부르게 하려면 배선이 필요합니다.',
+           'sz': 14.5, 'c': MUTED}])
+
+    card(sl, 0.75, 2.45, 5.95, 1.98, '왜 MCP인가', [
+        'Antigravity가 외부 로직을 받아들이는 표면은 MCP 하나다.',
+        '모델 선택을 가로채는 훅은 공개돼 있지 않다.',
+        '그래서 라우터를 "도구"로 노출해 에이전트가 묻게 만든다.',
+    ], accent=ACC2, tsz=16, bsz=12)
+
+    card(sl, 6.9, 2.45, 5.7, 1.98, 'API 키가 필요 없다', [
+        '이 서버는 모델을 호출하지 않는다. 판단만 돌려준다.',
+        '어디로 보낼지 · 몇 토큰까지 쓸지 · 지금 리셋할지.',
+        '실제 호출은 이미 구독 중인 에이전트가 한다.',
+    ], accent=ACC, tsz=16, bsz=12)
+
+    cfg = [
+        '// <프로젝트>/.agents/mcp_config.json',
+        '{ "mcpServers": {',
+        '    "token-router": {',
+        '      "command": "python3",',
+        '      "args": ["/abs/path/mcp_server.py"]',
+        '    }',
+        '} }',
+    ]
+    rect(sl, 0.75, 4.6, 5.95, 1.62, fill=CARD2, radius=0.05)
+    rect(sl, 0.75, 4.6, 0.05, 1.62, fill=ACC)
+    parts = []
+    for i, ln in enumerate(cfg):
+        c = MUTED if ln.startswith('//') else (ACC2 if '"' in ln and ':' in ln else FG)
+        parts.append({'t': ln, 'f': 'Consolas', 'sz': 11,
+                      'c': c, 'space_before': 0 if i == 0 else 1})
+    text(sl, 1.0, 4.74, 5.6, 1.4, parts)
+
+    rows = [
+        ('전역 (2.0)', '~/.gemini/config/', ('권장', ACC)),
+        ('워크스페이스', '<프로젝트>/.agents/', ('팀 공유', ACC)),
+        ('레거시 1.x', '~/.gemini/antigravity/', ('조용히 무시됨', RED)),
+    ]
+    table(sl, 6.9, 4.6, 5.7, ['위치', '경로', '비고'],
+          rows, colw=[1.65, 2.65, 1.4], sz=11.5, rowh=0.35)
+
+    text(sl, 6.9, 6.08, 5.7, 0.5, [
+        {'t': '원격 서버는 키가 serverUrl 이다.', 'sz': 12.5, 'b': True, 'c': WARN},
+        {'t': 'url · httpUrl 은 안 먹는다. 다른 IDE 예제를 그대로 붙이면 여기서 막힌다.',
+         'sz': 11.5, 'c': MUTED, 'space_before': 3}])
+
+    note(sl, 'python3 agent_setup/install_antigravity.py — 설정 파일을 찾아 병합해 등록합니다. 기존 서버는 보존, 재실행해도 안전. 저장 후 에디터 재시작.', y=6.62)
+
+
+# ── 12c. 붙인 뒤 달라지는 것 ─────────────────────────────────
+def s_mcp_effect():
+    sl = slide('붙이면 무엇이 달라지나', 'FOLLOW-UP · 연동')
+    text(sl, 0.75, 1.9, 11.9, 0.4,
+         [{'t': '에이전트가 매 작업마다 라우터에게 먼저 묻고, 그 답을 지킵니다.',
+           'sz': 14.5, 'c': MUTED}])
+
+    rows = [
+        ('작업 시작', 'route_task', '어느 티어로 · 출력 몇 토큰까지', ('배정', ACC)),
+        ('실패했을 때', 'rework_next', '사다리에서 다음 한 칸만', ('에스컬레이션', ACC2)),
+        ('매 턴 끝', 'session_check', 'continue / compact / reset', ('세션 위생', ACC)),
+        ('설명할 때', 'trim_explain', '요청 없으면 3줄로 자름', ('출력 상한', ACC)),
+        ('회고', 'cost_report', '무엇을 아꼈는지 집계', ('측정', ACC2)),
+    ]
+    table(sl, 0.75, 2.5, 11.85, ['언제', '도구', '무슨 답이 오나', '역할'],
+          rows, colw=[2.0, 2.5, 4.75, 2.6], sz=12.5, rowh=0.42)
+
+    card(sl, 0.75, 5.1, 5.95, 1.32, '규칙을 문서로도 준다', [
+        'AGENTS.md를 워크스페이스에 두면 도구를 언제 부를지까지 지킨다.',
+    ], accent=ACC2, tsz=15, bsz=12)
+
+    card(sl, 6.9, 5.1, 5.7, 1.32, '디버깅은 각오할 것', [
+        'MCP 연결 실패가 UI에 잘 안 뜬다. 로그는 stderr로 직접 확인.',
+    ], accent=WARN, tsz=15, bsz=12)
+
+    note(sl, 'python3 agent_setup/test_mcp.py — 서버를 실제 프로세스로 띄워 프로토콜 왕복까지 검사합니다 (61/61 PASS).', y=6.62)
 
 
 # ── 11. 도입 순서 ────────────────────────────────────────────
@@ -601,7 +682,9 @@ def s_qna():
     text(sl, 0.75, 2.85, 7.6, 2.4, [
         {'t': 'agent_setup/router.py — 라우터 · 3줄 밸브 · 세션 메모리 · 비용 추정',
          'sz': 14, 'c': MUTED},
-        {'t': 'agent_setup/test_router.py — 검증 56건 (56/56 PASS)',
+        {'t': 'agent_setup/mcp_server.py — 이 라우터를 MCP 도구 5개로 노출 (의존성 0)',
+         'sz': 14, 'c': MUTED, 'space_before': 6},
+        {'t': 'test_router.py 98건 · test_mcp.py 61건 — 전부 PASS',
          'sz': 14, 'c': MUTED, 'space_before': 6},
         {'t': 'presentation/deckgen/ — 이 덱들을 만든 빌드 스크립트 전부',
          'sz': 14, 'c': MUTED, 'space_before': 6},
@@ -619,7 +702,7 @@ def s_qna():
 
 BUILD = [cover, s_problem, s_taxonomy, s_architecture, s_router_code,
          s_web_handoff, s_impl_tier, s_batch, s_guards, s_rework, s_rework_cost, s_demo,
-         s_rollout, s_closing, s_qna]
+         s_mcp_wire, s_mcp_effect, s_rollout, s_closing, s_qna]
 
 if __name__ == '__main__':
     kit.new_deck()
