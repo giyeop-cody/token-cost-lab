@@ -124,6 +124,10 @@ check("2회차는 제자리 재시도", d2.step == "retry", d2.step)
 check("2회차 티어 그대로", d2.tier is d1.tier, d2.tier)
 check("2회차 범위 그대로", d2.scope == "unit", d2.scope)
 check("2회차는 리셋하지 않음 — 맥락을 지킨다", d2.reset is False, d2.reset)
+check("리워크 턴은 출력 상한을 건다", d2.options.get("max_out_tok") == 900,
+      d2.options.get("max_out_tok"))
+check("리워크 턴은 전문 재작성이 아니라 패치",
+      d2.options.get("output") == "unified-diff", d2.options.get("output"))
 check("실패 근거 첨부 지시", "attach" in d2.options)
 check("진단 우선 지시", d2.options.get("explain") == "diagnosis-first")
 
@@ -140,6 +144,10 @@ check("4회차 mid→large", d4.tier is Tier.LARGE, d4.tier)
 check("4회차 범위는 유지", d4.scope == "file", d4.scope)
 check("4회차는 테스트 우선 강제",
       d4.options.get("require") == "write-test-first")
+check("상위 티어에서는 진단만 짧게 받는다",
+      d4.options.get("max_out_tok") == 400, d4.options.get("max_out_tok"))
+check("상위 티어 진단 → 적용은 한 단계 아래가",
+      d4.options.get("apply_with") == "mid", d4.options.get("apply_with"))
 
 d5 = escalate(d4)
 check("5회차는 구현 중단 → respec", d5.scope == "respec", d5.scope)
@@ -174,22 +182,40 @@ check("무사고 작업은 리워크 0 기여", t.rework_turns() == 2, t.rework_
 print("\n[8] 리워크 비용 — 짧은 리워크에서 손해가 없어야 한다")
 T, TI, TO = "정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500
 
-for f in (0, 1):
+a0 = rework_cost(T, TI, TO, fails=0, strategy="retry")
+b0 = rework_cost(T, TI, TO, fails=0, strategy="escalate")
+check("실패 0회: 첫 배정은 상한 없음(전문 작성)",
+      abs(a0["usd"] - b0["usd"]) < 1e-9, f"{a0['usd']:.4f} vs {b0['usd']:.4f}")
+check("첫 턴 출력은 깎지 않는다", b0["trail"][0]["out_tok"] == TO,
+      b0["trail"][0]["out_tok"])
+
+for f in (1, 2):
     a = rework_cost(T, TI, TO, fails=f, strategy="retry")
     b = rework_cost(T, TI, TO, fails=f, strategy="escalate")
-    check(f"실패 {f}회: 사다리가 제자리와 동일 비용",
-          abs(a["usd"] - b["usd"]) < 1e-9, f"{a['usd']:.4f} vs {b['usd']:.4f}")
-    check(f"실패 {f}회: 리셋 0회", b["resets"] == 0, b["resets"])
+    check(f"실패 {f}회: 사다리가 제자리보다 저렴(출력 상한 효과)",
+          b["usd"] < a["usd"], f"{a['usd']:.4f} vs {b['usd']:.4f}")
+    check(f"실패 {f}회: 리셋 {'0' if f == 1 else '1'}회",
+          b["resets"] == (0 if f == 1 else 1), b["resets"])
 
 rc_r = rework_cost(T, TI, TO, fails=3, strategy="retry")
 rc_e = rework_cost(T, TI, TO, fails=3, strategy="escalate")
-check("같은 턴 수면 제자리가 저렴", rc_r["usd"] < rc_e["usd"],
-      f"{rc_r['usd']:.4f} vs {rc_e['usd']:.4f}")
 check("턴 수 일치", rc_r["turns"] == rc_e["turns"] == 4)
+check("리워크 턴 출력이 상한선 이하",
+      all(x["out_tok"] <= 900 for x in rc_e["trail"][1:]),
+      [x["out_tok"] for x in rc_e["trail"]])
 check("사다리 이력 = 재시도→범위→모델",
       [x["step"] for x in rc_e["trail"]] == ["first", "retry", "widen", "tier-up"],
       [x["step"] for x in rc_e["trail"]])
 check("리셋 비용이 계상됨", rc_e["resets"] == 2, rc_e["resets"])
+
+# 출력 상한은 사다리 전용이 아니다 — 정직하게 비교한다.
+capped48 = sum(
+    cost_of(Tier.MID, TI, TO if i == 0 else 900) for i in range(49))
+lad48 = rework_cost(T, TI, TO, fails=48, strategy="escalate")["usd"]
+check("상한을 제자리에도 적용하면 제자리도 크게 싸진다",
+      capped48 < rework_cost(T, TI, TO, fails=48, strategy="retry")["usd"])
+check("그래도 사다리가 더 싸다 — 진짜 기여는 상한선(5회차 중단)",
+      lad48 < capped48, f"{lad48:.4f} vs {capped48:.4f}")
 
 many_r = rework_cost(T, TI, TO, fails=10, strategy="retry")
 many_e = rework_cost(T, TI, TO, fails=10, strategy="escalate")
@@ -201,11 +227,11 @@ check("사다리는 상한이 있다", abs(cap["usd"] - many_e["usd"]) < 1e-9,
 
 be = breakeven(T, TI, TO, esc_fails=2)
 check("손익분기 턴이 산출됨", be["breakeven_retry_turns"] is not None)
-check("손익분기는 에스컬레이션 턴보다 큼",
-      be["breakeven_retry_turns"] > be["escalate_turns"],
-      f"{be['breakeven_retry_turns']} vs {be['escalate_turns']}")
-print(f"        사다리 {be['escalate_turns']}턴 ${be['escalate_usd']:.4f}"
-      f"  =  제자리 {be['breakeven_retry_turns']}턴 ${be['breakeven_usd']:.4f}")
+check("손익분기가 에스컬레이션 턴 이하 — 사다리가 더 빨리 이긴다",
+      be["breakeven_retry_turns"] <= be["escalate_turns"],
+      f"{be['breakeven_retry_turns']} vs {be['escalate_turns']}\n"
+      f"        사다리 3턴 ${be['escalate_usd']:.4f}  "
+      f"=  제자리 {be['breakeven_retry_turns']}턴 ${be['breakeven_usd']:.4f}")
 
 print("\n" + "=" * 60)
 print(f"  {P + F}건 중 {P} PASS / {F} FAIL")

@@ -206,6 +206,16 @@ SCOPE_LABEL = {
 
 TIER_LADDER = [Tier.SMALL, Tier.MID, Tier.LARGE]
 
+# 리워크 턴의 비용은 81~92%가 출력이다(MID 출력 단가가 입력의 8배).
+# 그래서 사다리를 싸게 만드는 레버는 티어가 아니라 **출력량**이다.
+#
+# 실패를 고치는 턴은 파일을 다시 쓸 이유가 없다. 필요한 것은
+# "왜 깨졌는가" 몇 줄과 최소 패치뿐이다. 전문 재작성을 막으면
+# 상한 비용이 45% 내려간다. 상한 탓에 성공률이 20%p 떨어져도
+# 여전히 무제한보다 싸다 — 출력 단가가 그만큼 지배적이다.
+REWORK_OUT_TOK = 900          # 진단 + 통합 diff에 필요한 실측 여유분
+REWORK_PATCH_ONLY = "unified-diff"
+
 # 리셋은 공짜가 아니다. 새 세션은 이월 문서를 다시 읽혀야 하고,
 # 그 재장전 입력이 비용이다. 그래서 리셋을 사다리 매 칸에 넣지 않는다.
 RESET_PRIME_TOK = 600
@@ -213,17 +223,22 @@ RESET_PRIME_TOK = 600
 # 한 칸에 축 하나씩. attempt 2부터 순서대로 적용된다.
 REWORK_LADDER = [
     dict(step="retry", scope_up=0, tier_up=0, reset=False,
-         opts={"attach": "failing-test + diff", "explain": "diagnosis-first"},
+         opts={"attach": "failing-test + diff", "explain": "diagnosis-first",
+               "output": REWORK_PATCH_ONLY, "max_out_tok": REWORK_OUT_TOK},
          why="같은 범위·같은 모델로 한 번 더. 실패의 상당수는 사소한 누락이라 "
              "여기서 끝난다. 추가 비용이 거의 없는 칸을 먼저 쓴다."),
     dict(step="widen", scope_up=1, tier_up=0, reset=True,
-         opts={"attach": "failing-test + diff + 호출부"},
+         opts={"attach": "failing-test + diff + 호출부",
+               "output": REWORK_PATCH_ONLY, "max_out_tok": REWORK_OUT_TOK},
          why="모델은 그대로 두고 보는 범위만 넓힌다. 두 번째 실패는 "
              "모델이 약해서가 아니라 범위가 잘못 잘린 경우가 많다."),
     dict(step="tier-up", scope_up=0, tier_up=1, reset=True,
-         opts={"require": "write-test-first"},
-         why="범위를 넓혀도 안 되면 그때 모델을 올린다. 순서를 지키면 "
-             "무엇이 부족했는지가 기록으로 남는다."),
+         opts={"require": "write-test-first",
+               "output": "diagnosis-then-patch", "max_out_tok": 400,
+               "apply_with": Tier.MID.value},
+         why="범위를 넓혀도 안 되면 그때 모델을 올린다. 단 상위 모델에게는 "
+             "진단만 400토큰으로 받고 적용은 중간 모델이 한다 — 비싼 티어의 "
+             "출력을 길게 받는 것이 이 칸의 유일한 비용 폭탄이다."),
 ]
 
 
@@ -517,12 +532,19 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
         if d.reset:                      # 새 세션 = 이월 문서 재장전
             tin += RESET_PRIME_TOK
             resets += 1
-        c = cost_of(d.tier, tin, tok_out)
+        # 리워크 턴은 파일을 다시 쓰지 않는다 — 진단 + 패치만 받는다.
+        # 비용의 8할이 출력이라 이 상한이 사다리의 가장 큰 레버다.
+        tout = min(tok_out, d.options.get("max_out_tok", tok_out))
+        c = cost_of(d.tier, tin, tout)
+        # 상위 티어는 진단만 내고 적용은 한 단계 아래가 한다.
+        applier = d.options.get("apply_with")
+        if applier:
+            c += cost_of(Tier(applier), tin, tok_out)
         total += c
         turns += 1
         trail.append({"attempt": d.attempt, "step": d.step,
                       "tier": d.tier.value, "scope": d.scope,
-                      "reset": d.reset, "usd": c})
+                      "reset": d.reset, "out_tok": tout, "usd": c})
         if i == fails:
             break
         if strategy == "escalate":
