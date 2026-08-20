@@ -46,7 +46,7 @@ def cover():
               '매 요청마다 자동으로 적용하는 배선을 짠다.',
          'sz': 14, 'c': MUTED, 'space_before': 9},
         {'t': '이 덱의 모든 슬라이드는 agent_setup/ 에 대응 코드가 있고, '
-              'IDE에 바로 붙습니다. 검증 181건 전부 PASS.',
+              'IDE에 바로 붙습니다. 검증 181건 전부 PASS — 라우터 98 · 프로토콜 61 · 공식 SDK 22.',
          'sz': 13.5, 'c': ACC2, 'space_before': 7}])
     note(sl, '토큰 비용 최적화 네트워크 세션 · 후속편 · github.com/giyeop-cody/token-cost-lab', y=6.6)
 
