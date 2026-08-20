@@ -93,7 +93,10 @@ RULES: list[tuple[Kind, re.Pattern]] = [
         r"\d{2,}\s*(개|건|행|페이지)", re.I)),
     (Kind.REASONING, re.compile(
         r"설계|아키텍처|구조.*정해|트레이드오프|어떤 방식이|비교.*결정|"
-        r"전략|방향|왜 이렇게|장단점", re.I)),
+        r"전략|방향|장단점|"
+        r"왜\s*이(렇게|_?구조|\s*\S{0,12}\s*이렇게)|"
+        r"근본\s*원인|원인(을|\s)*(분석|파악)|"
+        r"어떤\s*방식으로|무엇이\s*나은", re.I)),
     (Kind.EXPLAIN, re.compile(
         r"설명|무슨 뜻|어떻게 동작|why|이해가|알려줘.*의미", re.I)),
     (Kind.IMPLEMENT, re.compile(
@@ -149,7 +152,7 @@ def route(task: str,
         return Decision(
             kind, Tier.MID,
             {"reasoning_effort": "low", "verbosity": "low",
-             "explain": "3-lines"},
+             "explain": "3-lines", "max_out_tok": FIRST_OUT_TOK},
             "결정이 끝난 구현은 중간 모델로 충분. 설명 옵션을 눌러 "
             "출력 토큰을 코드에만 쓴다.", by)
 
@@ -160,7 +163,8 @@ def route(task: str,
                 kind, Tier.MID, {"verbosity": "medium", "explain": "full"},
                 "명시적으로 상세 설명을 요청한 경우에만 길게 허용.", by)
         return Decision(
-            kind, Tier.SMALL, {"verbosity": "low", "explain": "3-lines"},
+            kind, Tier.SMALL, {"verbosity": "low", "explain": "3-lines",
+                               "max_out_tok": EXPLAIN_OUT_TOK},
             "구현 직후의 관성적 설명 → 3줄로 상한. 코드를 읽으면 아는 내용은 "
             "재생산하지 않는다.", by)
 
@@ -205,6 +209,12 @@ SCOPE_LABEL = {
 }
 
 TIER_LADDER = [Tier.SMALL, Tier.MID, Tier.LARGE]
+
+# 첫 배정에도 출력 예산을 준다. 상한이 이 설계의 가장 큰 레버인데
+# 첫 턴만 무제한이면 정작 제일 긴 출력이 그대로 나간다.
+# 2500은 "구현 한 덩어리 + 3줄 설명"의 실측 상한이다.
+FIRST_OUT_TOK = 2500
+EXPLAIN_OUT_TOK = 500         # 3줄 설명에 2500을 열어둘 이유가 없다
 
 # 리워크 턴의 비용은 81~92%가 출력이다(MID 출력 단가가 입력의 8배).
 # 그래서 사다리를 싸게 만드는 레버는 티어가 아니라 **출력량**이다.

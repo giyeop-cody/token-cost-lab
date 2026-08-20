@@ -46,7 +46,7 @@ def cover():
               '매 요청마다 자동으로 적용하는 배선을 짠다.',
          'sz': 14, 'c': MUTED, 'space_before': 9},
         {'t': '이 덱의 모든 슬라이드는 agent_setup/ 에 대응 코드가 있고, '
-              'IDE에 바로 붙습니다. 검증 159건 전부 PASS.',
+              'IDE에 바로 붙습니다. 검증 181건 전부 PASS.',
          'sz': 13.5, 'c': ACC2, 'space_before': 7}])
     note(sl, '토큰 비용 최적화 네트워크 세션 · 후속편 · github.com/giyeop-cody/token-cost-lab', y=6.6)
 
@@ -608,15 +608,32 @@ def s_mcp_effect():
     table(sl, 0.75, 2.5, 11.85, ['언제', '도구', '무슨 답이 오나', '역할'],
           rows, colw=[2.0, 2.5, 4.75, 2.6], sz=12.5, rowh=0.42)
 
-    card(sl, 0.75, 5.1, 5.95, 1.32, '규칙을 문서로도 준다', [
-        'AGENTS.md를 워크스페이스에 두면 도구를 언제 부를지까지 지킨다.',
-    ], accent=ACC2, tsz=15, bsz=12)
+    ver = [
+        ('1층', '자체 프로토콜 왕복', '61/61', ACC),
+        ('2층', '공식 MCP SDK 클라이언트', '22/22', ACC),
+        ('3층', '공식 Inspector (IDE 경로)', '도구 5개 인식', ACC),
+    ]
+    rect(sl, 0.75, 5.05, 7.35, 1.4, fill=CARD, radius=0.05)
+    rect(sl, 0.75, 5.05, 0.055, 1.4, fill=ACC)
+    text(sl, 1.05, 5.2, 6.9, 0.35,
+         [{'t': '"규격에 맞다"고 말하려면 남의 구현이 붙어야 한다',
+           'sz': 14, 'b': True, 'c': FG}])
+    parts = []
+    for i, (lv, what, res, c) in enumerate(ver):
+        parts.append({'t': f'{lv}  {what}', 'sz': 12, 'c': MUTED,
+                      'space_before': 0 if i == 0 else 4})
+    text(sl, 1.05, 5.62, 4.7, 0.8, parts)
+    parts = []
+    for i, (lv, what, res, c) in enumerate(ver):
+        parts.append({'t': res, 'sz': 12, 'b': True, 'c': c,
+                      'space_before': 0 if i == 0 else 4})
+    text(sl, 6.0, 5.62, 2.0, 0.8, parts)
 
-    card(sl, 6.9, 5.1, 5.7, 1.32, '디버깅은 각오할 것', [
-        'MCP 연결 실패가 UI에 잘 안 뜬다. 로그는 stderr로 직접 확인.',
-    ], accent=WARN, tsz=15, bsz=12)
+    card(sl, 8.35, 5.05, 4.25, 1.4, '디버깅은 각오할 것', [
+        '연결 실패가 UI에 안 뜬다. 로그는 stderr.',
+    ], accent=WARN, tsz=14, bsz=11.5)
 
-    note(sl, 'python3 agent_setup/test_mcp.py — 서버를 실제 프로세스로 띄워 프로토콜 왕복까지 검사합니다 (61/61 PASS).', y=6.62)
+    note(sl, 'bash agent_setup/verify_all.sh — 세 층위를 한 번에 돌립니다. AGENTS.md를 워크스페이스에 두면 도구 호출 시점까지 강제됩니다.', y=6.62)
 
 
 # ── 11. 도입 순서 ────────────────────────────────────────────
