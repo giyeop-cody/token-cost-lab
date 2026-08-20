@@ -613,7 +613,7 @@ text(sl,1.05,2.55,5.6,1.1,[
  {'t':'$ python run_all.py','sz':12.5,'c':ACC,'f':'Consolas','space_before':4},
  {'t':'$ python run_all.py --model opus','sz':12.5,'c':MUTED,'f':'Consolas','space_before':4},
  {'t':'$ python experiments/exp07_analyze_my_prompt.py my.txt','sz':11,'c':MUTED,'f':'Consolas','space_before':4}])
-card(sl,7.1,2.42,5.55,1.44,'단가를 바꿔도 결론이 그대로인가',
+card(sl,7.1,2.42,5.55,1.30,'단가를 바꿔도 결론이 그대로인가',
  ['--model 로 opus / gpt5 / gemini / deepseek 전환.',
   '배수는 달라져도 “출력 → 입력” 방향은 동일.'],ACC2,16,12)
 exps=[('exp01','한·영 토크나이저 실측','원칙 ①'),('exp02','출력→입력 환전 비용','원칙 ④'),
@@ -623,7 +623,7 @@ exps=[('exp01','한·영 토크나이저 실측','원칙 ①'),('exp02','출력�
  ('exp09','DRY의 토큰 경제학','원칙 ②')]
 for i,(k,d,m) in enumerate(exps):
     col=i%2; row=i//2
-    x=0.75+col*6.15; yy=3.88+row*0.45
+    x=0.75+col*6.15; yy=3.95+row*0.45
     rect(sl,x,yy,5.85,0.40, fill=CARD if i%2 else CARD2, radius=0.04)
     text(sl,x+0.2,yy+0.08,0.85,0.28,[{'t':k,'sz':12,'b':True,'c':ACC,'f':'Consolas'}])
     text(sl,x+1.15,yy+0.08,3.2,0.28,[{'t':d,'sz':12.5,'c':FG}])
@@ -631,7 +631,7 @@ for i,(k,d,m) in enumerate(exps):
 for j,(t) in enumerate([
  '+  tools/live_lang_bench.py   —  한·영 × 설명형·추론형 실호출 벤치   (슬라이드 6·7 · N=100/80)',
  '+  tools/stats_test.py        —  부트스트랩 95% CI · Welch · Cliff\'s δ · $/1,000자 정규화   (슬라이드 7)',
- '+  tools/thinking_sweep.py    —  사고 예산만 바꿔 5단 스윕   (슬라이드 25 · 240배, gemini-25 단가 환산)']):
+ '+  tools/thinking_sweep.py    —  사고 예산만 바꿔 5단 스윕   (보너스 덱 · 240배, gemini-25 단가 환산)']):
     rect(sl,0.75,6.24+j*0.32,11.9,0.30, fill=CARD2, radius=0.04)
     text(sl,0.95,6.26+j*0.32,11.5,0.26,[{'t':t,'sz':11,'c':ACC2,'f':'Consolas'}])
 text(sl,0.75,7.22,11.9,0.28,[
@@ -743,7 +743,7 @@ refs2=[
   'anthropic.com/engineering/multi-agent-research-system',WARN),
  ('Spec-Kit vs OpenSpec 토큰 벤치마크 (2026) / ETH Zurich 컨텍스트 파일 연구',
   'Spec-Kit이 OpenSpec 대비 토큰 +97~109%. LLM 생성 컨텍스트 파일은 성공률 소폭 하락 + 비용 20%+ 증가',
-  'SDD 반증 근거 — 슬라이드 15',RED),
+  'SDD 반증 근거 — 보너스 덱',RED),
  ('2026 LLM 가격 비교 자료 및 각 벤더 공식 가격 페이지',
   '출력/입력 단가 배수 2~8× 확인. 단가는 수시 변동하므로 인용 시 확인 날짜 병기 필요',
   'anthropic.com/pricing · openai.com/api/pricing · ai.google.dev/pricing',MUTED),

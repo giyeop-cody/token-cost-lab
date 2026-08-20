@@ -197,7 +197,8 @@ def s_router_code():
         '            {"mode": "web-chat"})',
         '    if kind is Kind.IMPLEMENT:',
         '        return Decision(kind, Tier.MID,',
-        '            {"explain": "3-lines"})',
+        '            {"explain": "3-lines",',
+        '             "max_out_tok": 2500})',
     ]
     rect(sl, 0.75, 2.45, 7.15, 3.95, fill=CARD2, radius=0.05)
     rect(sl, 0.75, 2.45, 0.05, 3.95, fill=ACC)
@@ -216,12 +217,12 @@ def s_router_code():
         '규칙 미스는 소형 모델이 받는다 — 2단 방어.',
     ], accent=ACC, tsz=14.5, bsz=11.5)
 
-    card(sl, 8.15, 4.5, 4.45, 1.9, '판정 정확도', [
-        '한국어 업무 요청 10종 테스트: 10/10 일치.',
-        '초기엔 "TODO 전부 grep"을 BULK로 오분류 →',
-        'TOOL 규칙을 BULK보다 앞에 두어 해결.',
+    card(sl, 8.15, 4.5, 4.45, 1.9, '순서가 정확도를 만든다', [
+        '한국어 업무 요청 10종: 10/10 일치.',
+        '"TODO 전부 grep"은 BULK가 아니라 TOOL이다.',
+        '겹치는 규칙은 좁은 쪽을 위로 올릴 것.',
     ], accent=WARN, tsz=14.5, bsz=11.5)
-    note(sl, '오분류 사례를 남겨두는 이유 — 규칙 기반 라우터는 순서 버그가 대부분이다. 테스트가 그것을 잡는다.')
+    note(sl, '규칙 기반 라우터의 버그는 대부분 순서 문제다. 규칙을 추가할 때마다 분류 테스트 98건을 다시 돌린다.')
 
 
 # ── 6. 웹 세션 위임 + 약관 리스크 ────────────────────────────
@@ -605,35 +606,36 @@ def s_mcp_effect():
         ('설명할 때', 'trim_explain', '요청 없으면 3줄로 자름', ('출력 상한', ACC)),
         ('회고', 'cost_report', '무엇을 아꼈는지 집계', ('측정', ACC2)),
     ]
-    table(sl, 0.75, 2.5, 11.85, ['언제', '도구', '무슨 답이 오나', '역할'],
-          rows, colw=[2.0, 2.5, 4.75, 2.6], sz=12.5, rowh=0.42)
+    table(sl, 0.75, 2.42, 11.85, ['언제', '도구', '무슨 답이 오나', '역할'],
+          rows, colw=[2.0, 2.5, 4.75, 2.6], sz=12, rowh=0.36)
 
     ver = [
         ('1층', '자체 프로토콜 왕복', '61/61', ACC),
         ('2층', '공식 MCP SDK 클라이언트', '22/22', ACC),
         ('3층', '공식 Inspector (IDE 경로)', '도구 5개 인식', ACC),
+        ('4층', '설정 파일에서 출발한 연결', '연결·호출 확인', ACC),
     ]
-    rect(sl, 0.75, 5.05, 7.35, 1.4, fill=CARD, radius=0.05)
-    rect(sl, 0.75, 5.05, 0.055, 1.4, fill=ACC)
-    text(sl, 1.05, 5.2, 6.9, 0.35,
+    rect(sl, 0.75, 4.88, 7.35, 1.72, fill=CARD, radius=0.05)
+    rect(sl, 0.75, 4.88, 0.055, 1.72, fill=ACC)
+    text(sl, 1.05, 5.0, 6.9, 0.32,
          [{'t': '"규격에 맞다"고 말하려면 남의 구현이 붙어야 한다',
            'sz': 14, 'b': True, 'c': FG}])
     parts = []
     for i, (lv, what, res, c) in enumerate(ver):
         parts.append({'t': f'{lv}  {what}', 'sz': 12, 'c': MUTED,
                       'space_before': 0 if i == 0 else 4})
-    text(sl, 1.05, 5.62, 4.7, 0.8, parts)
+    text(sl, 1.05, 5.38, 4.7, 1.15, parts)
     parts = []
     for i, (lv, what, res, c) in enumerate(ver):
         parts.append({'t': res, 'sz': 12, 'b': True, 'c': c,
                       'space_before': 0 if i == 0 else 4})
-    text(sl, 6.0, 5.62, 2.0, 0.8, parts)
+    text(sl, 6.0, 5.38, 2.0, 1.15, parts)
 
-    card(sl, 8.35, 5.05, 4.25, 1.4, '디버깅은 각오할 것', [
+    card(sl, 8.35, 4.88, 4.25, 1.72, '디버깅은 각오할 것', [
         '연결 실패가 UI에 안 뜬다. 로그는 stderr.',
     ], accent=WARN, tsz=14, bsz=11.5)
 
-    note(sl, 'bash agent_setup/verify_all.sh — 세 층위를 한 번에 돌립니다. AGENTS.md를 워크스페이스에 두면 도구 호출 시점까지 강제됩니다.', y=6.62)
+    note(sl, 'bash agent_setup/verify_all.sh — 네 층위를 한 번에 돌립니다. AGENTS.md를 워크스페이스에 두면 도구 호출 시점까지 강제됩니다.', y=6.72)
 
 
 # ── 11. 도입 순서 ────────────────────────────────────────────
@@ -651,7 +653,7 @@ def s_rollout():
         ('4주차', '배치 도입', '마감 없는 대량 작업만', ('−50%', ACC), 'expired'),
         ('보류', '웹 세션 자동 조작', '법무 확인 전까지 수동', ('종량 0원', WARN), '약관'),
     ]
-    table(sl, 0.75, 2.5, 11.85,
+    table(sl, 0.75, 2.42, 11.85,
           ['시점', '무엇을', '어떻게', '기대 효과', '주의'],
           rows, colw=[1.15, 2.6, 3.5, 2.7, 1.9], sz=12.5, rowh=0.42)
 
