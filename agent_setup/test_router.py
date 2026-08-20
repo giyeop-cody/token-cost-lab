@@ -3,6 +3,7 @@
 from router import (Kind, Tier, SessionMemory, classify, route,
                     explain_guard, estimate, cost_of,
                     escalate, ReworkTracker, rework_cost, breakeven,
+                    looks_rejected,
                     SCOPE_LADDER)
 
 P = F = 0
@@ -57,17 +58,46 @@ check("12줄 → 4줄(3 + 생략고지)", len(out.splitlines()) == 4,
 check("생략 고지 포함", "생략" in out)
 check("짧은 입력은 그대로", explain_guard("한 줄.") == "한 줄.")
 
-print("\n[4] 세션 리셋 트리거")
-m = SessionMemory(threshold=2)
+print("\n[4] 세션 위생 — 반복은 컴팩션, 어긋남만 리셋")
+m = SessionMemory(repeat_threshold=3)
 r1 = m.observe("이 함수는 사용자 입력을 검증합니다.", 120)
 r2 = m.observe("전혀 다른 새로운 설명입니다.", 130)
 r3 = m.observe("이 함수는  사용자 입력을 검증합니다!!", 120)  # 표기만 다름
 check("1회차 continue", r1["action"] == "continue")
 check("타 내용은 continue", r2["action"] == "continue")
-check("동일 설명 재등장 → reset", r3["action"] == "reset", r3)
+check("2회 반복만으로는 리셋하지 않음", r3["action"] == "continue", r3)
 check("정규화가 공백·문장부호 무시", r3["repeat"] == 2)
-check("이월 지침 제공", "carry_over" in r3)
-check("누적 토큰 집계", m.tokens_in_context == 370, m.tokens_in_context)
+
+r4 = m.observe("이 함수는 사용자 입력을 검증합니다.", 120)
+check("3회 반복 → 컴팩션(리셋 아님)", r4["action"] == "compact", r4)
+check("컴팩션은 세션을 버리지 않음", "carry_over" not in r4)
+check("컴팩션은 남길 것을 지정", "keep" in r4 and "drop" in r4)
+check("진행 중에는 리셋이 나오지 않음", m.resets == 0, m.resets)
+check("누적 토큰 집계", m.tokens_in_context == 490, m.tokens_in_context)
+
+mb = SessionMemory(bloat_tokens=1000)
+check("컨텍스트 비대 → 컴팩션",
+      mb.observe("짧은 답", 1200)["action"] == "compact")
+
+# 완료 시점 판정 — 리셋은 여기서만
+mr = SessionMemory()
+check("완료 전에는 판정하지 않음",
+      mr.review(done=False)["action"] == "continue")
+check("검증 실패는 리셋이 아니라 리워크",
+      mr.review(done=True, ac_passed=False)["action"] == "rework")
+check("리워크 판정은 세션을 버리지 않음", mr.resets == 0, mr.resets)
+
+rv = mr.review(done=True, ac_passed=True, user_verdict="이게 아니라 반대 방향인데요")
+check("완료했으나 방향이 어긋남 → reset", rv["action"] == "reset", rv)
+check("어긋남 신호 표기", rv["signal"] == "misaligned")
+check("리셋 시 이월 지침 제공", "carry_over" in rv)
+check("리셋 카운트 증가", mr.resets == 1, mr.resets)
+
+check("통과하면 continue",
+      mr.review(done=True, ac_passed=True)["action"] == "continue")
+
+check("거부 표현 감지", looks_rejected("그게 아니고요"))
+check("정상 표현은 통과 아님", not looks_rejected("좋습니다. 다음 단계로 가죠"))
 
 print("\n[5] 비용 산식")
 check("SMALL 1M/1M = $0.75", abs(cost_of(Tier.SMALL, 10**6, 10**6) - 0.75) < 1e-9)
@@ -83,37 +113,48 @@ print(f"        기준선 ${e['baseline_usd']:.4f} → 라우팅 ${e['routed_usd
       f"  ({e['saved_pct']:.1f}% 절감)")
 
 
-print("\n[6] 리워크 에스컬레이션")
+print("\n[6] 리워크 사다리 — 한 칸에 축 하나씩")
 d1 = route("정해진 스펙대로 결제 핸들러 구현해줘")
 check("첫 배정은 attempt=1 · scope=unit", d1.attempt == 1 and d1.scope == "unit",
       f"{d1.attempt}/{d1.scope}")
+check("첫 배정은 리셋 없음", d1.reset is False)
 
 d2 = escalate(d1)
-check("2회차 티어 상승 mid→large", d2.tier is Tier.LARGE, d2.tier)
-check("2회차 범위 확대 unit→file", d2.scope == "file", d2.scope)
+check("2회차는 제자리 재시도", d2.step == "retry", d2.step)
+check("2회차 티어 그대로", d2.tier is d1.tier, d2.tier)
+check("2회차 범위 그대로", d2.scope == "unit", d2.scope)
+check("2회차는 리셋하지 않음 — 맥락을 지킨다", d2.reset is False, d2.reset)
 check("실패 근거 첨부 지시", "attach" in d2.options)
-check("2회차부터 3줄 상한 해제",
-      d2.options.get("explain") == "diagnosis-first", d2.options.get("explain"))
+check("진단 우선 지시", d2.options.get("explain") == "diagnosis-first")
 
 d3 = escalate(d2)
-check("3회차 범위 module", d3.scope == "module", d3.scope)
-check("3회차는 테스트 우선 강제",
-      d3.options.get("require") == "write-test-first")
+check("3회차는 범위 확대", d3.step == "widen", d3.step)
+check("3회차 범위 unit→file", d3.scope == "file", d3.scope)
+check("3회차 티어는 아직 올리지 않음", d3.tier is d1.tier, d3.tier)
+check("3회차부터 리셋", d3.reset is True)
+check("리셋 시 이월 지침", d3.carry_over and "specs" in d3.carry_over)
 
 d4 = escalate(d3)
-check("4회차는 구현 중단 → respec", d4.scope == "respec", d4.scope)
-check("4회차는 설계 종류로 전환", d4.kind is Kind.REASONING, d4.kind)
-check("4회차는 LARGE로 더 올리지 않음", d4.tier is not Tier.LARGE, d4.tier)
-check("스펙 산출물을 요구", d4.options.get("output") == "spec.md")
+check("4회차에 비로소 티어 상승", d4.step == "tier-up", d4.step)
+check("4회차 mid→large", d4.tier is Tier.LARGE, d4.tier)
+check("4회차 범위는 유지", d4.scope == "file", d4.scope)
+check("4회차는 테스트 우선 강제",
+      d4.options.get("require") == "write-test-first")
 
-# 범위는 사다리를 벗어나지 않는다
-d5 = escalate(d4, attempt=9)
-check("사다리 밖으로 나가지 않음", d5.scope in SCOPE_LADDER, d5.scope)
+d5 = escalate(d4)
+check("5회차는 구현 중단 → respec", d5.scope == "respec", d5.scope)
+check("5회차는 설계 종류로 전환", d5.kind is Kind.REASONING, d5.kind)
+check("5회차는 LARGE로 더 올리지 않음", d5.tier is not Tier.LARGE, d5.tier)
+check("스펙 산출물을 요구", d5.options.get("output") == "spec.md")
 
-# SMALL에서 시작해도 한 단계씩만 오른다
+d6 = escalate(d5, attempt=9)
+check("사다리 밖으로 나가지 않음", d6.scope in SCOPE_LADDER, d6.scope)
+
 ds = route("방금 짠 코드 설명해줘")
 check("SMALL 시작", ds.tier is Tier.SMALL, ds.tier)
-check("SMALL→MID 한 단계만", escalate(ds).tier is Tier.MID, escalate(ds).tier)
+check("SMALL도 2회차는 제자리", escalate(ds).tier is Tier.SMALL, escalate(ds).tier)
+check("SMALL→MID는 4회차에",
+      escalate(escalate(escalate(ds))).tier is Tier.MID)
 
 print("\n[7] 리워크 추적")
 t = ReworkTracker()
@@ -123,28 +164,47 @@ c = t.again("x", b)
 check("시도 횟수 누적", t.attempts["x"] == 3, t.attempts["x"])
 check("재시도 턴 = 2", t.rework_turns() == 2, t.rework_turns())
 check("이력 3건 기록", len(t.history) == 3, len(t.history))
+check("이력에 단계 기록", [h["step"] for h in t.history] == ["first", "retry", "widen"],
+      [h["step"] for h in t.history])
+check("리셋 1회 집계", t.resets() == 1, t.resets())
 check("리포트에 최다 리워크 표기", "x" in t.report(), t.report())
 t.first("y", "src 밑에서 TODO 전부 grep 해줘")
 check("무사고 작업은 리워크 0 기여", t.rework_turns() == 2, t.rework_turns())
 
-print("\n[8] 리워크 비용")
-rc_r = rework_cost("정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500,
-                   fails=3, strategy="retry")
-rc_e = rework_cost("정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500,
-                   fails=3, strategy="escalate")
-check("같은 턴 수면 제자리 재시도가 저렴", rc_r["usd"] < rc_e["usd"],
+print("\n[8] 리워크 비용 — 짧은 리워크에서 손해가 없어야 한다")
+T, TI, TO = "정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500
+
+for f in (0, 1):
+    a = rework_cost(T, TI, TO, fails=f, strategy="retry")
+    b = rework_cost(T, TI, TO, fails=f, strategy="escalate")
+    check(f"실패 {f}회: 사다리가 제자리와 동일 비용",
+          abs(a["usd"] - b["usd"]) < 1e-9, f"{a['usd']:.4f} vs {b['usd']:.4f}")
+    check(f"실패 {f}회: 리셋 0회", b["resets"] == 0, b["resets"])
+
+rc_r = rework_cost(T, TI, TO, fails=3, strategy="retry")
+rc_e = rework_cost(T, TI, TO, fails=3, strategy="escalate")
+check("같은 턴 수면 제자리가 저렴", rc_r["usd"] < rc_e["usd"],
       f"{rc_r['usd']:.4f} vs {rc_e['usd']:.4f}")
 check("턴 수 일치", rc_r["turns"] == rc_e["turns"] == 4)
-check("에스컬레이션 이력에 범위 확대 기록",
-      [x["scope"] for x in rc_e["trail"]][:3] == ["unit", "file", "module"],
-      [x["scope"] for x in rc_e["trail"]])
+check("사다리 이력 = 재시도→범위→모델",
+      [x["step"] for x in rc_e["trail"]] == ["first", "retry", "widen", "tier-up"],
+      [x["step"] for x in rc_e["trail"]])
+check("리셋 비용이 계상됨", rc_e["resets"] == 2, rc_e["resets"])
 
-be = breakeven("정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500, esc_fails=2)
+many_r = rework_cost(T, TI, TO, fails=10, strategy="retry")
+many_e = rework_cost(T, TI, TO, fails=10, strategy="escalate")
+check("길어지면 사다리가 역전", many_e["usd"] < many_r["usd"],
+      f"{many_e['usd']:.4f} vs {many_r['usd']:.4f}")
+cap = rework_cost(T, TI, TO, fails=48, strategy="escalate")
+check("사다리는 상한이 있다", abs(cap["usd"] - many_e["usd"]) < 1e-9,
+      f"{cap['usd']:.4f} vs {many_e['usd']:.4f}")
+
+be = breakeven(T, TI, TO, esc_fails=2)
 check("손익분기 턴이 산출됨", be["breakeven_retry_turns"] is not None)
 check("손익분기는 에스컬레이션 턴보다 큼",
       be["breakeven_retry_turns"] > be["escalate_turns"],
       f"{be['breakeven_retry_turns']} vs {be['escalate_turns']}")
-print(f"        에스컬레이션 {be['escalate_turns']}턴 ${be['escalate_usd']:.4f}"
+print(f"        사다리 {be['escalate_turns']}턴 ${be['escalate_usd']:.4f}"
       f"  =  제자리 {be['breakeven_retry_turns']}턴 ${be['breakeven_usd']:.4f}")
 
 print("\n" + "=" * 60)
