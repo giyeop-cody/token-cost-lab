@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """router.py 검증 — 라이브 시연용. 의존성 없음: python3 test_router.py"""
 from router import (Kind, Tier, SessionMemory, classify, route,
-                    explain_guard, estimate, cost_of)
+                    explain_guard, estimate, cost_of,
+                    escalate, ReworkTracker, rework_cost, breakeven,
+                    SCOPE_LADDER)
 
 P = F = 0
 
@@ -79,6 +81,71 @@ check("절감률 0~100% 범위", 0 < e["saved_pct"] < 100, e["saved_pct"])
 check("라우팅이 기준선보다 저렴", e["routed_usd"] < e["baseline_usd"])
 print(f"        기준선 ${e['baseline_usd']:.4f} → 라우팅 ${e['routed_usd']:.4f}"
       f"  ({e['saved_pct']:.1f}% 절감)")
+
+
+print("\n[6] 리워크 에스컬레이션")
+d1 = route("정해진 스펙대로 결제 핸들러 구현해줘")
+check("첫 배정은 attempt=1 · scope=unit", d1.attempt == 1 and d1.scope == "unit",
+      f"{d1.attempt}/{d1.scope}")
+
+d2 = escalate(d1)
+check("2회차 티어 상승 mid→large", d2.tier is Tier.LARGE, d2.tier)
+check("2회차 범위 확대 unit→file", d2.scope == "file", d2.scope)
+check("실패 근거 첨부 지시", "attach" in d2.options)
+check("2회차부터 3줄 상한 해제",
+      d2.options.get("explain") == "diagnosis-first", d2.options.get("explain"))
+
+d3 = escalate(d2)
+check("3회차 범위 module", d3.scope == "module", d3.scope)
+check("3회차는 테스트 우선 강제",
+      d3.options.get("require") == "write-test-first")
+
+d4 = escalate(d3)
+check("4회차는 구현 중단 → respec", d4.scope == "respec", d4.scope)
+check("4회차는 설계 종류로 전환", d4.kind is Kind.REASONING, d4.kind)
+check("4회차는 LARGE로 더 올리지 않음", d4.tier is not Tier.LARGE, d4.tier)
+check("스펙 산출물을 요구", d4.options.get("output") == "spec.md")
+
+# 범위는 사다리를 벗어나지 않는다
+d5 = escalate(d4, attempt=9)
+check("사다리 밖으로 나가지 않음", d5.scope in SCOPE_LADDER, d5.scope)
+
+# SMALL에서 시작해도 한 단계씩만 오른다
+ds = route("방금 짠 코드 설명해줘")
+check("SMALL 시작", ds.tier is Tier.SMALL, ds.tier)
+check("SMALL→MID 한 단계만", escalate(ds).tier is Tier.MID, escalate(ds).tier)
+
+print("\n[7] 리워크 추적")
+t = ReworkTracker()
+a = t.first("x", "정해진 스펙대로 결제 핸들러 구현해줘")
+b = t.again("x", a)
+c = t.again("x", b)
+check("시도 횟수 누적", t.attempts["x"] == 3, t.attempts["x"])
+check("재시도 턴 = 2", t.rework_turns() == 2, t.rework_turns())
+check("이력 3건 기록", len(t.history) == 3, len(t.history))
+check("리포트에 최다 리워크 표기", "x" in t.report(), t.report())
+t.first("y", "src 밑에서 TODO 전부 grep 해줘")
+check("무사고 작업은 리워크 0 기여", t.rework_turns() == 2, t.rework_turns())
+
+print("\n[8] 리워크 비용")
+rc_r = rework_cost("정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500,
+                   fails=3, strategy="retry")
+rc_e = rework_cost("정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500,
+                   fails=3, strategy="escalate")
+check("같은 턴 수면 제자리 재시도가 저렴", rc_r["usd"] < rc_e["usd"],
+      f"{rc_r['usd']:.4f} vs {rc_e['usd']:.4f}")
+check("턴 수 일치", rc_r["turns"] == rc_e["turns"] == 4)
+check("에스컬레이션 이력에 범위 확대 기록",
+      [x["scope"] for x in rc_e["trail"]][:3] == ["unit", "file", "module"],
+      [x["scope"] for x in rc_e["trail"]])
+
+be = breakeven("정해진 스펙대로 결제 핸들러 구현해줘", 1800, 2500, esc_fails=2)
+check("손익분기 턴이 산출됨", be["breakeven_retry_turns"] is not None)
+check("손익분기는 에스컬레이션 턴보다 큼",
+      be["breakeven_retry_turns"] > be["escalate_turns"],
+      f"{be['breakeven_retry_turns']} vs {be['escalate_turns']}")
+print(f"        에스컬레이션 {be['escalate_turns']}턴 ${be['escalate_usd']:.4f}"
+      f"  =  제자리 {be['breakeven_retry_turns']}턴 ${be['breakeven_usd']:.4f}")
 
 print("\n" + "=" * 60)
 print(f"  {P + F}건 중 {P} PASS / {F} FAIL")
