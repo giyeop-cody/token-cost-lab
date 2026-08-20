@@ -1,0 +1,117 @@
+"""사다리 B 검증 — 의도 감지기와 사다리 상태 기계.
+
+감지기는 5개 사례로 튜닝했으므로, 여기서는 튜닝에 쓰지 않은
+사례로 확인한다. 특히 **거짓 양성**(다른 의도를 반복으로 오인)이
+치명적이다 — 사용자가 새 작업을 시켰는데 사다리가 올라가면
+쓸데없이 비싼 티어로 처리된다.
+"""
+from __future__ import annotations
+
+import sys
+
+from router import Tier, looks_rejected
+from ladder_b import IntentTracker, same_intent, _content_words
+
+P = F = 0
+def ck(cond, label):
+    global P, F
+    if cond:
+        P += 1
+    else:
+        F += 1
+        print(f"  \033[31mFAIL\033[0m {label}")
+
+def detect(prev, cur):
+    same, _ = same_intent(prev, cur)
+    return same or looks_rejected(cur)
+
+BASE = "사용자 프로필 이미지 업로드 기능 구현해줘"
+
+# ── 1. 같은 의도로 판정돼야 하는 재요청 (튜닝에 안 쓴 문장) ──────────
+REPEAT = [
+    "프로필 이미지 업로드 다시 구현해줘",
+    "그 이미지 업로드 기능 다시",
+    "아까 프로필 업로드 말인데 다시 해줘",
+    "사용자 프로필 이미지 업로드 다시 만들어줘",
+    "업로드 기능 프로필 이미지 쪽 다시 좀",
+    "이거 말고",
+    "그게 아니라 다시",
+    "방금 그 업로드 구현 다시",
+]
+print("1. 같은 의도 재요청")
+for c in REPEAT:
+    ck(detect(BASE, c), f"반복 미탐지: {c}")
+
+# ── 2. 다른 의도로 판정돼야 하는 것 (거짓 양성 방지) ─────────────────
+DIFFERENT = [
+    "결제 모듈 리팩터링 해줘",
+    "README 업데이트 해줘",
+    "테스트 커버리지 올려줘",
+    "업로드 용량 제한을 10MB로 바꿔줘",     # 후속 파라미터 수정
+    "이미지 썸네일 생성도 추가해줘",         # 기능 추가(확장)
+    "배포 스크립트 작성해줘",
+    "로그 포맷 JSON으로 바꿔줘",
+]
+print("2. 다른 의도 (거짓 양성 방지)")
+for c in DIFFERENT:
+    ck(not detect(BASE, c), f"거짓 양성: {c}")
+
+# ── 3. 사다리 진행 순서 ──────────────────────────────────────────────
+print("3. 사다리 순서 — 사용자 설계 그대로인가")
+it = IntentTracker()
+it.observe(BASE)
+steps = []
+for c in REPEAT[:5]:
+    r = it.observe(c)
+    steps.append(r["step"])
+ck(steps == ["widen", "tier-up", "widen-2", "reset", "respec"],
+   f"사다리 순서: {steps}")
+
+it2 = IntentTracker()
+it2.observe(BASE)
+r1 = it2.observe("프로필 이미지 업로드 다시 구현해줘")
+ck(r1["scope"] == "file", f"1칸: 범위 확장돼야 함 → {r1['scope']}")
+ck(r1["tier"] == Tier.MID, f"1칸: 티어 유지돼야 함 → {r1['tier']}")
+r2 = it2.observe("그 이미지 업로드 기능 다시")
+ck(r2["tier"] == Tier.LARGE, f"2칸: 티어 올라야 함 → {r2['tier']}")
+ck(r2.get("reset") is False, "2칸: 아직 리셋 아님")
+r3 = it2.observe("아까 프로필 업로드 말인데 다시 해줘")
+ck(r3["scope"] == "module", f"3칸: 범위 또 확장 → {r3['scope']}")
+r4 = it2.observe("사용자 프로필 이미지 업로드 다시 만들어줘")
+ck(r4.get("reset") is True, "4칸: 리셋이어야 함")
+r5 = it2.observe("업로드 기능 프로필 이미지 쪽 다시 좀")
+ck(r5["action"] == "respec", f"5칸: respec이어야 함 → {r5['action']}")
+
+# ── 4. 새 의도가 오면 사다리가 초기화되는가 ──────────────────────────
+print("4. 사다리 초기화")
+it3 = IntentTracker()
+it3.observe(BASE)
+it3.observe("프로필 이미지 업로드 다시 구현해줘")   # 1칸 올라감
+ck(it3.rung == 1, f"올라간 상태 확인 → rung={it3.rung}")
+r = it3.observe("결제 모듈 리팩터링 해줘")           # 새 의도
+ck(it3.rung == 0, f"새 의도 후 초기화돼야 함 → rung={it3.rung}")
+ck(r["tier"] == Tier.MID, f"새 의도는 MID에서 시작 → {r['tier']}")
+ck(it3._scope_i == 0, "새 의도는 범위도 초기화")
+
+# ── 5. 리셋 이후에도 사다리를 다 쓰면 respec ─────────────────────────
+print("5. 소진 처리")
+it4 = IntentTracker()
+it4.observe(BASE)
+for c in REPEAT[:5]:
+    it4.observe(c)
+r = it4.observe("프로필 업로드 다시 해줘")
+ck(r["action"] == "respec", f"소진 후에도 respec 유지 → {r['action']}")
+
+# ── 6. 내용어 추출 ───────────────────────────────────────────────────
+print("6. 내용어 추출")
+w = _content_words("사용자 프로필 이미지 업로드 기능 구현해줘")
+ck("프로필" in w, "명사 보존")
+ck("다시" not in _content_words("다시 해줘 좀"), "군더더기 제거")
+ck("업로드" in _content_words("업로드를 다시"), "조사 제거")
+
+print()
+print("=" * 60)
+c = "\033[32m" if F == 0 else "\033[31m"
+print(f"  {P + F}건 중 {c}{P} PASS\033[0m / {F} FAIL")
+print("=" * 60)
+sys.exit(1 if F else 0)
