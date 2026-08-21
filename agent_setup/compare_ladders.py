@@ -96,10 +96,16 @@ cmds = [
     "재시도 로직 결제 쪽 다시",
     "그 결제 실패 재시도 다시 좀",
     "결제 재시도 구현 다시",
+    "아까 그 결제 재시도 다시 해줘",
+    "결제 실패 재시도 로직 다시",
+    "그 결제 재시도 구현 다시 좀",
 ]
 b_rows, b_cum = [], 0.0
 for i, cmd in enumerate(cmds, 1):
     r = it.observe(cmd)
+    if r["step"] == "new-intent":
+        b_rows.append((f"{i} 감지실패", "—", 0, 0.0, b_cum))
+        break
     if r["action"] == "respec":
         b_rows.append((f"{i} respec", "—", 0, 0.0, b_cum))
         break
@@ -180,4 +186,4 @@ print("    사용자에게 나갈 완성물이라 출력 상한을 못 걸기 �
 print("  · 그래서 B를 1차 방어선으로 쓰면 안 된다. A로 먼저 흡수하고,")
 print("    A가 구조적으로 못 보는 'AC 통과·의도 불일치'만 B가 맡는다.")
 print("  · B의 마지막 칸(respec)은 비용 절감이 아니라 손실 차단이다.")
-print("    같은 의도가 5번 반복되면 구현이 아니라 합의가 없는 것이다.")
+print("    같은 의도가 7번 반복되면 구현이 아니라 합의가 없는 것이다.")

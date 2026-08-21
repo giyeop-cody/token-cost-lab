@@ -59,7 +59,11 @@ from router import (
 # "그 얘기 다시"라는 뜻이므로 문턱을 낮춘다.
 _ANAPHORA = re.compile(
     r"(아까|방금|앞에서|이전에?|저번에?|그때|말인데|말이야|말고"
-    r"|그\s*(거|건|것|작업|부분|코드)|위에\s*(거|것)|하던\s*(거|것))")
+    r"|[그이요]\s*(거|건|것|작업|부분|코드)|위에\s*(거|것)|하던\s*(거|것))")
+
+# 재시도를 뜻하는 표시. 이것만으로는 부족하지만(새 작업에도 "다시"가 붙는다)
+# 짧은 생략형 명령을 맥락으로 해석할 때 필요조건으로 쓴다.
+_RETRY_MARK = re.compile(r"(다시|또|한\s*번\s*더|재시도|되돌|롤백|엎)")
 
 _STOP = {
     "좀", "다시", "이거", "그거", "저거", "해줘", "해", "주세요", "please",
@@ -127,6 +131,16 @@ def same_intent(a: str, b: str, threshold: float = 0.5) -> tuple[bool, float]:
 # A와 달리 첫 칸이 retry가 아니라 widen이다 — 사용자가 이미 한 번
 # 결과를 보고 반려했으므로, 같은 범위로 또 하는 것은 같은 답을 부른다.
 
+# 사용자 설계 원문:
+#   범위 확장 → 모델 상승 → 범위 확장 → 반복 → 새 세션 → 반복 → 스펙 재정의
+#
+# "반복"이 두 번 나온다. 즉 (범위↑ / 티어↑) 사이클을 리셋 **전에** 한 번 더 돌고,
+# 리셋 **후에** 또 돈 다음에야 respec으로 간다. 한 칸씩으로 압축하면
+# 리셋이 너무 일찍 온다 — 리셋은 맥락을 버리는 행위라 늦을수록 좋다.
+#
+# 범위는 unit→file→module에서 천장을 친다(respec은 마지막 칸 전용).
+# 천장에 닿으면 scope_up은 자동으로 무시되므로 티어만 올라간다.
+
 INTENT_LADDER = [
     dict(step="widen", scope_up=1, tier_up=0, reset=False,
          why="사용자가 결과를 보고 다시 시켰다. 같은 범위로 또 하면 "
@@ -134,14 +148,23 @@ INTENT_LADDER = [
     dict(step="tier-up", scope_up=0, tier_up=1, reset=False,
          why="범위를 넓혀도 같은 요청이 또 왔다. 이제 모델을 올린다."),
     dict(step="widen-2", scope_up=1, tier_up=0, reset=False,
-         why="올린 모델로 범위를 한 번 더 넓힌다. 티어와 범위를 "
-             "번갈아 올려 한쪽만 과하게 태우지 않는다."),
+         why="올린 모델로 범위를 한 번 더 넓힌다. 티어와 범위를 번갈아 "
+             "올려 한쪽만 과하게 태우지 않는다."),
+    dict(step="repeat-1", scope_up=1, tier_up=1, reset=False,
+         why="사용자 설계의 첫 번째 '반복'. 리셋은 누적 맥락을 버리는 "
+             "행위라 되돌릴 수 없다 — 그 전에 현재 세션에서 쓸 수 있는 "
+             "카드를 모두 쓴다."),
     dict(step="reset", scope_up=0, tier_up=0, reset=True,
-         why="여기까지 왔다면 누적된 맥락 자체가 오염됐을 가능성이 높다. "
-             "세션을 갈고 확정된 것만 이월한다."),
+         why="현 세션에서 할 수 있는 걸 다 했는데도 같은 요청이 온다. "
+             "누적된 맥락 자체가 오염됐다고 보고 세션을 갈되, "
+             "확정된 것만 이월한다."),
+    dict(step="repeat-2", scope_up=1, tier_up=0, reset=False,
+         why="사용자 설계의 두 번째 '반복'. 깨끗한 세션에서 다시 넓혀본다. "
+             "맥락 오염이 원인이었다면 여기서 풀린다."),
     dict(step="respec", scope_up=0, tier_up=0, reset=True, respec=True,
-         why="같은 의도가 다섯 번 반복됐다. 구현 문제가 아니라 "
-             "스펙이 합의되지 않은 것이다. 구현을 멈추고 스펙으로 되돌린다."),
+         why="세션을 갈고 다시 넓혀도 같은 의도가 또 왔다. 구현 문제가 "
+             "아니라 스펙이 합의되지 않은 것이다. 구현을 멈추고 "
+             "사람에게 스펙을 다시 잡게 한다."),
 ]
 
 
@@ -175,7 +198,20 @@ class IntentTracker:
         same, sim = same_intent(prior, command, self.threshold)
         # 명시적 반려어("이거 말고")는 유사도가 낮아도 재시도로 친다.
         explicit = looks_rejected(command)
-        if not (same or explicit):
+
+        # 생략형 재시도. 사람은 두 번째부터 짧게 말한다 —
+        # "결제 쪽 다시", "재시도 다시 좀". 내용어가 1개만 겹쳐서
+        # same_intent의 2개 요구를 못 넘지만, 진행 중인 작업이 있고
+        # 재시도 표시가 붙은 짧은 명령은 맥락상 같은 의도로 본다.
+        # (텍스트 유사도가 아니라 대화 상태로 판정하는 층이다.)
+        cw = _content_words(command)
+        elliptical = (
+            len(cw) <= 2
+            and bool(_RETRY_MARK.search(command))
+            and (bool(cw & _content_words(prior)) or bool(_ANAPHORA.search(command)))
+        )
+
+        if not (same or explicit or elliptical):
             self.streak = 0
             self.rung = 0
             self._scope_i = 0
@@ -192,16 +228,31 @@ class IntentTracker:
 
         rung = INTENT_LADDER[self.rung]
         self.rung += 1
-        self._scope_i = min(self._scope_i + rung["scope_up"],
-                            len(SCOPE_LADDER) - 1)
+
+        # 범위 천장은 "module"이다. SCOPE_LADDER의 마지막 칸 respec은
+        # 사다리의 마지막 칸에서만 쓴다 — 중간에 respec 범위로 올라가면
+        # 아직 구현을 포기할 단계가 아닌데 구현을 멈추게 된다.
+        scope_cap = len(SCOPE_LADDER) - 2          # module
+        self._scope_i = min(self._scope_i + rung["scope_up"], scope_cap)
         for _ in range(rung["tier_up"]):
             self._tier = _tier_up(self._tier)
+
+        if rung["reset"] and not rung.get("respec"):
+            # 새 세션은 넓혀둔 범위를 물려받지 않는다. 맥락을 버리는 게
+            # 리셋의 목적인데 범위만 module로 남으면 입력만 2.4배로
+            # 커진 채 같은 실수를 반복한다. 티어는 유지한다 —
+            # 난이도 판단은 세션과 무관하게 유효하다.
+            self._scope_i = 0
+
+        if rung.get("respec"):
+            self._scope_i = len(SCOPE_LADDER) - 1  # respec
 
         return dict(
             action="respec" if rung.get("respec") else "escalate",
             step=rung["step"], tier=self._tier,
             scope=SCOPE_LADDER[self._scope_i], reset=rung["reset"],
-            similarity=sim, explicit=explicit, reason=rung["why"],
+            similarity=sim, explicit=explicit, elliptical=elliptical,
+            reason=rung["why"],
         )
 
 

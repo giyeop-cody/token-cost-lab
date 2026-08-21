@@ -34,6 +34,8 @@ REPEAT = [
     "아까 프로필 업로드 말인데 다시 해줘",
     "사용자 프로필 이미지 업로드 다시 만들어줘",
     "업로드 기능 프로필 이미지 쪽 다시 좀",
+    "그 프로필 이미지 업로드 다시",
+    "프로필 업로드 구현 다시 해줘",
     "이거 말고",
     "그게 아니라 다시",
     "방금 그 업로드 구현 다시",
@@ -61,11 +63,14 @@ print("3. 사다리 순서 — 사용자 설계 그대로인가")
 it = IntentTracker()
 it.observe(BASE)
 steps = []
-for c in REPEAT[:5]:
+for c in REPEAT[:7]:
     r = it.observe(c)
     steps.append(r["step"])
-ck(steps == ["widen", "tier-up", "widen-2", "reset", "respec"],
+ck(steps == ["widen", "tier-up", "widen-2", "repeat-1",
+             "reset", "repeat-2", "respec"],
    f"사다리 순서: {steps}")
+ck(steps.count("respec") == 1 and steps[-1] == "respec",
+   "respec은 마지막에 한 번만")
 
 it2 = IntentTracker()
 it2.observe(BASE)
@@ -78,9 +83,17 @@ ck(r2.get("reset") is False, "2칸: 아직 리셋 아님")
 r3 = it2.observe("아까 프로필 업로드 말인데 다시 해줘")
 ck(r3["scope"] == "module", f"3칸: 범위 또 확장 → {r3['scope']}")
 r4 = it2.observe("사용자 프로필 이미지 업로드 다시 만들어줘")
-ck(r4.get("reset") is True, "4칸: 리셋이어야 함")
+ck(r4["step"] == "repeat-1", f"4칸: 리셋 전 반복 → {r4['step']}")
+ck(r4.get("reset") is False, "4칸: 아직 리셋 아님 — 맥락은 늦게 버린다")
+ck(r4["scope"] != "respec", "중간 칸이 respec 범위로 가면 안 됨")
 r5 = it2.observe("업로드 기능 프로필 이미지 쪽 다시 좀")
-ck(r5["action"] == "respec", f"5칸: respec이어야 함 → {r5['action']}")
+ck(r5.get("reset") is True, "5칸: 리셋이어야 함")
+ck(r5["scope"] == "unit", f"5칸: 리셋은 범위를 되돌려야 함 → {r5['scope']}")
+r6 = it2.observe("그 프로필 이미지 업로드 다시")
+ck(r6["step"] == "repeat-2", f"6칸: 리셋 후 반복 → {r6['step']}")
+ck(r6["tier"] == Tier.LARGE, "6칸: 티어는 리셋해도 유지")
+r7 = it2.observe("프로필 업로드 구현 다시 해줘")
+ck(r7["action"] == "respec", f"7칸: respec이어야 함 → {r7['action']}")
 
 # ── 4. 새 의도가 오면 사다리가 초기화되는가 ──────────────────────────
 print("4. 사다리 초기화")
@@ -97,10 +110,33 @@ ck(it3._scope_i == 0, "새 의도는 범위도 초기화")
 print("5. 소진 처리")
 it4 = IntentTracker()
 it4.observe(BASE)
-for c in REPEAT[:5]:
+for c in REPEAT[:7]:
     it4.observe(c)
 r = it4.observe("프로필 업로드 다시 해줘")
 ck(r["action"] == "respec", f"소진 후에도 respec 유지 → {r['action']}")
+
+# ── 5b. 생략형 재시도 (사람은 두 번째부터 짧게 말한다) ──────────────
+print("5b. 생략형 재시도")
+# BASE는 "사용자 프로필 이미지 업로드 기능 구현해줘"다.
+# 생략형은 BASE의 내용어를 하나라도 물고 있거나 조응 표현이 있어야 한다.
+for c in ["업로드 다시", "이거 다시", "프로필 다시 좀", "다시 해줘",
+          "아까 그거 다시", "그 기능 다시"]:
+    t = IntentTracker()
+    t.observe(BASE)
+    ck(t.observe(c)["step"] != "new-intent", f"생략형 미탐지: {c}")
+
+# 생략형이라도 재시도 표시가 없으면 새 의도다
+for c in ["썸네일도", "그럼 배포는", "테스트 커버리지"]:
+    t = IntentTracker()
+    t.observe(BASE)
+    ck(t.observe(c)["step"] == "new-intent", f"재시도 표시 없는데 오탐: {c}")
+
+# "다시"가 붙어도 명확히 다른 작업이면 새 의도
+for c in ["타임아웃 값을 다시 계산해서 30초로 바꿔줘",
+          "문서를 다시 정리해서 위키에 올려줘"]:
+    t = IntentTracker()
+    t.observe(BASE)
+    ck(t.observe(c)["step"] == "new-intent", f"긴 다른 작업 오탐: {c}")
 
 # ── 6. 내용어 추출 ───────────────────────────────────────────────────
 print("6. 내용어 추출")
