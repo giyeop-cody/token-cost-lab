@@ -175,6 +175,7 @@ class IntentTracker:
     threshold: float = 0.5
     max_rungs: int = field(default=len(INTENT_LADDER))
     history: list[str] = field(default_factory=list)
+    anchor: str = ""           # 현재 의도 묶음을 시작한 '내용 있는' 명령
     streak: int = 0            # 같은 의도가 연속으로 몇 번 왔나
     rung: int = 0              # 현재 올라간 칸 수
     _scope_i: int = 0
@@ -186,10 +187,15 @@ class IntentTracker:
         반환: {action, step, tier, scope, reason, similarity}
               action ∈ {"proceed", "escalate", "respec"}
         """
-        prior = self.history[-1] if self.history else ""
+        # 직전 명령이 아니라 **앵커**(이 의도 묶음을 시작한 명령)와 비교한다.
+        # 사람은 재요청을 점점 짧게 줄인다: "결제 재시도 다시" → "이거 다시".
+        # 직전 것과만 비교하면 내용어가 없는 생략형 다음 턴에서 비교 대상이
+        # 비어버려 사다리가 통째로 초기화된다. 앵커는 생략형으로 갱신하지 않는다.
+        prior = self.anchor or (self.history[-1] if self.history else "")
         self.history.append(command)
 
         if not prior:
+            self.anchor = command
             self._tier = Tier.MID
             return dict(action="proceed", step="first", tier=self._tier,
                         scope=SCOPE_LADDER[self._scope_i],
@@ -216,11 +222,17 @@ class IntentTracker:
             self.rung = 0
             self._scope_i = 0
             self._tier = Tier.MID
+            self.anchor = command      # 새 의도가 다음 묶음의 앵커가 된다
             return dict(action="proceed", step="new-intent", tier=self._tier,
                         scope=SCOPE_LADDER[self._scope_i], similarity=sim,
                         reason="새로운 의도 — 사다리를 초기화한다.")
 
         self.streak += 1
+        # 앵커는 '내용 있는' 재요청일 때만 갱신한다. 생략형("이거 다시")으로
+        # 갱신하면 다음 턴에 비교할 내용어가 사라진다.
+        if not elliptical and len(cw) >= 2:
+            self.anchor = command
+
         if self.rung >= self.max_rungs:
             return dict(action="respec", step="exhausted", tier=self._tier,
                         scope="respec", similarity=sim,

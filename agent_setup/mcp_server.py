@@ -36,8 +36,13 @@ SERVER_VERSION = "1.0.0"
 PROTOCOL_FALLBACK = "2025-06-18"
 
 # 세션 상태 — Antigravity가 프로세스를 살려두는 동안 유지된다.
+from orchestrator import Orchestrator  # noqa: E402
+
 TRACKER = ReworkTracker(max_attempts=5)
 MEMORY = SessionMemory()
+# 결합 실행기는 자체 ReworkTracker를 들고 있다. rework_next와 상태를
+# 공유해야 하므로 같은 인스턴스를 주입한다.
+ORCH = Orchestrator(rework=TRACKER, memory=MEMORY)
 LAST: dict[str, Decision] = {}
 SAVED: list[dict] = []
 
@@ -125,6 +130,24 @@ TOOLS = [
                 "max_lines": {"type": "integer", "default": 3},
             },
             "required": ["text"],
+        },
+    },
+    {
+        "name": "user_turn",
+        "description": (
+            "사용자 명령이 올 때마다 **가장 먼저** 호출한다. 직전 의도의 "
+            "반복인지 판정해 B 사다리를 올리거나, 새 의도면 첫 배정을 낸다. "
+            "AC는 통과했는데 사용자가 계속 같은 걸 다시 시키는 상황을 "
+            "여기서 잡는다. 반환된 tier/scope로 이번 턴을 실행할 것."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "command": {"type": "string",
+                            "description": "사용자가 방금 보낸 명령 원문"},
+            },
+            "required": ["task_id", "command"],
         },
     },
     {
@@ -250,6 +273,37 @@ def t_trim_explain(args: dict) -> dict:
             "lines_before": before, "lines_after": min(before, n)}
 
 
+def t_user_turn(args: dict) -> dict:
+    tid = args["task_id"]
+    r = ORCH.user_turn(tid, args["command"])
+    st = r["task"]
+    LAST[tid] = st.last          # rework_next가 이어받을 수 있게 공유
+    out = {
+        "task_id": tid, "layer": r["layer"], "action": r["action"],
+        "tier": r["tier"].value if r.get("tier") else None,
+        "scope": r.get("scope"), "reset": r.get("reset", False),
+        "est_cost_usd": round(r["cost"], 6),
+        "cum_cost_usd": round(st.cost, 6),
+        "user_turns": st.turns, "reason": r["reason"],
+    }
+    if r["action"] == "respec":
+        out["instruction"] = (
+            "구현을 멈춘다. 같은 의도가 사다리를 다 소진했다 — 모델을 더 "
+            "올려도 안 풀린다. 합의된 스펙이 없는 상태이므로 "
+            "질문 3개로 스펙을 확정받고 사람에게 넘길 것.")
+    elif r["layer"] == "B":
+        bits = [f"사용자가 같은 의도를 반복했다 — {r['reason']}"]
+        bits.append("같은 범위로 다시 만들지 말 것. 앞 결과물의 어느 부분이 "
+                    "의도와 어긋났는지 먼저 짚고 시작할 것.")
+        if r.get("reset"):
+            bits.append("새 세션에서 시작 — 누적 맥락이 오염됐다. "
+                        "범위는 unit으로 되돌리되 모델 티어는 유지한다.")
+        out["instruction"] = " / ".join(bits)
+    else:
+        out["instruction"] = "새 작업이다. 배정된 티어로 첫 구현을 진행할 것."
+    return out
+
+
 def t_cost_report(_args: dict) -> dict:
     saved = sum(s["saved"] for s in SAVED)
     return {
@@ -269,6 +323,7 @@ HANDLERS = {
     "rework_next": t_rework_next,
     "session_check": t_session_check,
     "trim_explain": t_trim_explain,
+    "user_turn": t_user_turn,
     "cost_report": t_cost_report,
 }
 

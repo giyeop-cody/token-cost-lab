@@ -12,6 +12,9 @@
 #
 #   bash agent_setup/verify_all.sh
 set -u
+
+# 서버가 노출하는 도구 수. 도구를 추가하면 여기만 고친다.
+EXPECT_TOOLS=6
 cd "$(dirname "$0")/.." || exit 1
 fail=0
 
@@ -38,10 +41,10 @@ if command -v npx >/dev/null 2>&1; then
     tools=$(npx -y @modelcontextprotocol/inspector --cli \
             python3 agent_setup/mcp_server.py --method tools/list 2>/dev/null \
             | grep -c '"name":')
-    if [ "$tools" -eq 5 ]; then
-        echo "  PASS  Inspector가 도구 5개를 인식했다"
+    if [ "$tools" -eq "$EXPECT_TOOLS" ]; then
+        echo "  PASS  Inspector가 도구 $EXPECT_TOOLS개를 인식했다"
     else
-        echo "  FAIL  Inspector가 인식한 도구 $tools개 (기대 5)"; fail=1
+        echo "  FAIL  Inspector가 인식한 도구 $tools개 (기대 $EXPECT_TOOLS)"; fail=1
     fi
 
     tier=$(npx -y @modelcontextprotocol/inspector --cli \

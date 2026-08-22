@@ -68,8 +68,12 @@ async def main() -> int:
             print(f"  노출된 도구: {', '.join(names)}")
             print()
 
-            check("도구 5개가 SDK 스키마 검증을 통과했다",
-                  len(listed.tools) == 5, str(len(listed.tools)))
+            names = {t.name for t in listed.tools}
+            expected = {"route_task", "rework_next", "session_check",
+                        "trim_explain", "user_turn", "cost_report"}
+            check(f"도구 {len(expected)}개가 SDK 스키마 검증을 통과했다",
+                  names == expected,
+                  f"누락 {expected - names} · 예상밖 {names - expected}")
             for t in listed.tools:
                 check(f"{t.name} — 설명·스키마 유효",
                       bool(t.description) and (t.input_schema or {}).get("type") == "object")
@@ -138,7 +142,7 @@ async def main() -> int:
                   "error" in data(r))
 
             listed2 = await session.list_tools()
-            check("오류 후에도 세션이 살아 있다", len(listed2.tools) == 5)
+            check("오류 후에도 세션이 살아 있다", len(listed2.tools) == len(expected))
 
     print()
     print("=" * 62)
