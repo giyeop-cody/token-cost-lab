@@ -546,12 +546,20 @@ def estimate(workload: Iterable[tuple[str, int, int]],
 
 def rework_cost(task: str, tok_in: int, tok_out: int,
                 fails: int, *, strategy: str = "escalate",
+                turn_growth_tok: int = 0,
                 **route_kw) -> dict:
     """실패가 fails회 났을 때 총비용. 두 전략을 비교한다.
 
     strategy="retry"    : 같은 범위·같은 모델로 계속 재시도 (흔한 기본값)
     strategy="escalate" : 사다리대로 재시도 → 범위 → 모델 순으로 한 축씩 (권장)
     strategy="topfirst" : 처음부터 최상위 모델 (비싸지만 실패가 적다는 가정)
+
+    turn_growth_tok: 턴마다 컨텍스트에 눌러앉는 입력 증가분.
+        리워크가 길어지면 직전 턴의 출력과 사용자 발화가 다음 턴 입력에
+        그대로 다시 실린다. 실측 페르소나 A의 입력은 79,130토큰까지
+        불어났고 **이것이 리워크 비용의 지배항**이었다. 0이면 종전처럼
+        입력 고정으로 계산한다(하위 호환). 리셋이 걸린 칸에서는 누적이
+        0으로 끊긴다 — 리셋의 값어치가 바로 여기서 나온다.
 
     리셋이 걸린 칸에는 재장전 입력(RESET_PRIME_TOK)을 더한다. 새 세션은
     이월 문서를 다시 읽혀야 하므로 공짜가 아니다 — 이 비용을 빼고 계산하면
@@ -565,6 +573,7 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
                      d.classified_by)
 
     resets = 0
+    carried = 0          # 지금까지 컨텍스트에 눌러앉은 누적 입력
     for i in range(fails + 1):
         # 재시도는 범위가 넓어질수록 입력이 커진다(파일→모듈).
         mult = {"unit": 1.0, "file": 1.6, "module": 2.4, "respec": 1.2}[d.scope]
@@ -572,6 +581,8 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
         if d.reset:                      # 새 세션 = 이월 문서 재장전
             tin += RESET_PRIME_TOK
             resets += 1
+            carried = 0                  # 누적 컨텍스트가 여기서 끊긴다
+        tin += carried
         # 리워크 턴은 파일을 다시 쓰지 않는다 — 진단 + 패치만 받는다.
         # 비용의 8할이 출력이라 이 상한이 사다리의 가장 큰 레버다.
         tout = min(tok_out, d.options.get("max_out_tok", tok_out))
@@ -584,7 +595,10 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
         turns += 1
         trail.append({"attempt": d.attempt, "step": d.step,
                       "tier": d.tier.value, "scope": d.scope,
-                      "reset": d.reset, "out_tok": tout, "usd": c})
+                      "reset": d.reset, "out_tok": tout,
+                      "tok_in": tin, "carried": carried, "usd": c})
+        # 이번 턴의 출력 + 사용자 발화가 다음 턴 입력으로 눌러앉는다.
+        carried += turn_growth_tok + tout if turn_growth_tok else 0
         if i == fails:
             break
         if strategy == "escalate":

@@ -169,11 +169,48 @@ INTENT_LADDER = [
 ]
 
 
+# ── 축소 사다리 ─────────────────────────────────────────────
+# 실로그 검증 결과 7칸 중 값을 한 이유가 확인된 칸은 둘뿐이었다.
+#   - tier-up : 실로그 턴5에서 LARGE로 올렸으나 원인은 리스너 재등록 누락.
+#               모델 능력과 무관했다. 티어 상승이 정답인 건 5종 중
+#               reasoning 하나뿐이다.
+#   - widen-2 / repeat-1 / repeat-2 : 실패 3회 구간에서 사다리를
+#               제자리 반복보다 비싸게 만드는 주범(0.99배 역전).
+# 남긴 것은 widen(범위 확대)과 respec(구현 중단), 그리고 그 사이에
+# 리셋 한 칸이다. 리셋은 입력 누적을 끊어 절감의 17%를 담당한다.
+#
+# tier-up은 삭제가 아니라 **조건부**로 남긴다. 완전히 빼면 정말로 모델
+# 능력이 부족한 작업(reasoning 계열)에서 respec까지 내려가 사람을 부르게
+# 되는데, 사람 시간을 넣고 계산하면 $0.5832 > $0.1377로 역전한다.
+# 그래서 의도불일치 분류가 reasoning으로 판정한 경우에만 이 칸을 끼운다.
+CONDITIONAL_TIER_UP = dict(
+    step="tier-up", scope_up=0, tier_up=1, reset=False,
+    why="분류기가 'reasoning'으로 판정했다 — 범위나 맥락이 아니라 "
+        "난이도가 원인인 유일한 종류다. 이때만 모델을 올린다.")
+
+LEAN_LADDER = [
+    dict(step="widen", scope_up=1, tier_up=0, reset=False,
+         why="사용자가 결과를 보고 다시 시켰다. 같은 범위로 또 하면 "
+             "같은 결과가 나온다. 모델은 그대로 두고 보는 범위를 넓힌다."),
+    dict(step="reset", scope_up=0, tier_up=0, reset=True,
+         why="넓혀도 같은 요청이 온다. 누적된 맥락이 오염됐다고 보고 "
+             "세션을 갈되 확정된 것만 이월한다. 입력 누적이 여기서 끊긴다."),
+    dict(step="respec", scope_up=0, tier_up=0, reset=True, respec=True,
+         why="세션을 갈아도 같은 의도가 또 왔다. 구현 문제가 아니라 "
+             "스펙이 합의되지 않은 것이다. 구현을 멈추고 스펙을 다시 잡는다."),
+]
+
+
 @dataclass
 class IntentTracker:
-    """사용자 명령을 기록하고, 같은 의도의 반복을 세어 사다리를 올린다."""
+    """사용자 명령을 기록하고, 같은 의도의 반복을 세어 사다리를 올린다.
+
+    ladder: 사용할 사다리. 기본은 7칸 INTENT_LADDER(하위 호환).
+        LEAN_LADDER를 넘기면 실로그 검증으로 남긴 3칸만 쓴다.
+    """
 
     threshold: float = 0.5
+    ladder: list = field(default_factory=lambda: INTENT_LADDER)
     max_rungs: int = field(default=len(INTENT_LADDER))
     history: list[str] = field(default_factory=list)
     anchor: str = ""           # 현재 의도 묶음을 시작한 '내용 있는' 명령
@@ -182,8 +219,14 @@ class IntentTracker:
     _scope_i: int = 0
     _tier: Tier = Tier.MID
 
+    def __post_init__(self) -> None:
+        # ladder를 바꿔 넘겼는데 max_rungs가 기본값이면 길이를 맞춘다.
+        if self.max_rungs == len(INTENT_LADDER) and self.ladder is not INTENT_LADDER:
+            self.max_rungs = len(self.ladder)
+
     def observe(self, command: str, *, prev_output: str = "",
-                artifact_terms: set[str] | None = None) -> dict:
+                artifact_terms: set[str] | None = None,
+                mismatch_kind: str = "") -> dict:
         """명령을 기록하고 에스컬레이션 여부를 판정한다.
 
         artifact_terms: 직전 산출물이 다루는 개념어. 증상 신고
@@ -254,7 +297,12 @@ class IntentTracker:
                         scope="respec", similarity=sim,
                         reason="사다리를 다 썼다. 사람이 스펙을 다시 잡아야 한다.")
 
-        rung = INTENT_LADDER[self.rung]
+        rung = self.ladder[min(self.rung, len(self.ladder) - 1)]
+        # 조건부 tier-up: 난이도가 원인인 종류(reasoning)일 때만 모델을 올린다.
+        # 축소 사다리에서 tier-up을 상시 칸에서 뺀 대신 여기서 되살린다.
+        if (mismatch_kind == "reasoning" and self.ladder is LEAN_LADDER
+                and self._tier is not Tier.LARGE and not rung.get("respec")):
+            rung = CONDITIONAL_TIER_UP
         self.rung += 1
 
         # 범위 천장은 "module"이다. SCOPE_LADDER의 마지막 칸 respec은
@@ -296,18 +344,25 @@ SCOPE_MULT = {"unit": 1.0, "file": 1.6, "module": 2.4, "respec": 1.2}
 
 
 def rung_cost(tier: Tier, tok_in: int, *, reset: bool, scope: str = "unit",
-              user_facing: bool = True) -> float:
+              user_facing: bool = True, carried_tok: int = 0) -> float:
     """B 사다리 한 칸의 비용.
 
     user_facing=True면 출력 상한을 못 조인다 — 사용자에게 나갈
     완성물이라 "진단 + diff"로 대체할 수 없기 때문이다.
+
+    carried_tok: 이 칸에 도달하기까지 컨텍스트에 눌러앉은 누적 입력.
+        리셋 칸에서는 무시된다(누적이 끊기므로). 0이면 종전 계산과 같다.
     """
     tin = int(tok_in * SCOPE_MULT[scope])
     if reset:
-        tin += RESET_PRIME_TOK
+        tin += RESET_PRIME_TOK      # 새 세션 — 누적 컨텍스트는 버려진다
+    else:
+        tin += carried_tok
     out = FIRST_OUT_TOK if user_facing else REWORK_OUT_TOK
     return cost_of(tier, tin, out)
 
 
-__all__ = ["same_intent", "IntentTracker", "INTENT_LADDER", "rung_cost",
+__all__ = ["same_intent", "IntentTracker", "INTENT_LADDER", "LEAN_LADDER",
+           "CONDITIONAL_TIER_UP",
+           "rung_cost",
            "_content_words"]
