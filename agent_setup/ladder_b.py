@@ -42,6 +42,7 @@ from router import (
     _tier_up,
     cost_of,
     looks_rejected,
+    looks_symptom,
 )
 
 # ── 의도 반복 감지 ────────────────────────────────────────────────────
@@ -181,8 +182,14 @@ class IntentTracker:
     _scope_i: int = 0
     _tier: Tier = Tier.MID
 
-    def observe(self, command: str, *, prev_output: str = "") -> dict:
+    def observe(self, command: str, *, prev_output: str = "",
+                artifact_terms: set[str] | None = None) -> dict:
         """명령을 기록하고 에스컬레이션 여부를 판정한다.
+
+        artifact_terms: 직전 산출물이 다루는 개념어. 증상 신고
+            ("저장이 안 돼")를 반려로 볼지 신규 지시로 볼지 가르는
+            기준이다. 문장만으로는 안 갈린다 — 실측에서 텍스트 단독
+            판정은 거짓양성 5/6이었고, 이 인자를 함께 쓰면 0/10이 된다.
 
         반환: {action, step, tier, scope, reason, similarity}
               action ∈ {"proceed", "escalate", "respec"}
@@ -205,6 +212,15 @@ class IntentTracker:
         # 명시적 반려어("이거 말고")는 유사도가 낮아도 재시도로 친다.
         explicit = looks_rejected(command)
 
+        # 증상 신고층. 실로그에서 반려의 절반은 반려어 없이
+        # "저장이 안 돼" 같은 증상으로만 온다. 어휘가 매번 달라
+        # 유사도 문턱(shared>=2)도 못 넘는다. 다만 텍스트만 보면
+        # "안 되는 케이스도 테스트에 넣어줘"까지 걸리므로,
+        # **직전 산출물이 다루는 개념과 겹칠 때만** 반려로 친다.
+        terms = artifact_terms or _content_words(prior)
+        symptom = bool(looks_symptom(command)
+                       and (terms & _content_words(command)))
+
         # 생략형 재시도. 사람은 두 번째부터 짧게 말한다 —
         # "결제 쪽 다시", "재시도 다시 좀". 내용어가 1개만 겹쳐서
         # same_intent의 2개 요구를 못 넘지만, 진행 중인 작업이 있고
@@ -217,7 +233,7 @@ class IntentTracker:
             and (bool(cw & _content_words(prior)) or bool(_ANAPHORA.search(command)))
         )
 
-        if not (same or explicit or elliptical):
+        if not (same or explicit or elliptical or symptom):
             self.streak = 0
             self.rung = 0
             self._scope_i = 0
@@ -264,7 +280,7 @@ class IntentTracker:
             step=rung["step"], tier=self._tier,
             scope=SCOPE_LADDER[self._scope_i], reset=rung["reset"],
             similarity=sim, explicit=explicit, elliptical=elliptical,
-            reason=rung["why"],
+            symptom=symptom, reason=rung["why"],
         )
 
 
