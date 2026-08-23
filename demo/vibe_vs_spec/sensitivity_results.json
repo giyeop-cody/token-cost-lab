@@ -1,0 +1,42 @@
+{
+  "breakeven_ratio": 1.0024,
+  "asymptote_pct": -9.62,
+  "models": {
+    "GPT-5": {
+      "ratio": 8.0,
+      "vibe_usd": 0.07135,
+      "spec_usd": 0.0654,
+      "delta_pct": -8.3
+    },
+    "Claude Sonnet 4.5": {
+      "ratio": 5.0,
+      "vibe_usd": 0.1076,
+      "spec_usd": 0.09945,
+      "delta_pct": -7.6
+    },
+    "Claude Opus 4": {
+      "ratio": 5.0,
+      "vibe_usd": 0.17934,
+      "spec_usd": 0.16574,
+      "delta_pct": -7.6
+    },
+    "Claude Haiku 4.5": {
+      "ratio": 5.0,
+      "vibe_usd": 0.03587,
+      "spec_usd": 0.03315,
+      "delta_pct": -7.6
+    },
+    "Gemini 2.5 Pro": {
+      "ratio": 8.0,
+      "vibe_usd": 0.07135,
+      "spec_usd": 0.0654,
+      "delta_pct": -8.3
+    },
+    "DeepSeek-chat": {
+      "ratio": 4.1,
+      "vibe_usd": 0.00792,
+      "spec_usd": 0.00735,
+      "delta_pct": -7.1
+    }
+  }
+}
