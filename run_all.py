@@ -4,11 +4,11 @@
 
   python run_all.py                 # 전부 실행 (과금 없음)
   python run_all.py --model opus    # 다른 모델 단가로
-  python run_all.py --live          # exp08 을 실제 Gemini API 로 호출 (과금됨)
+  python run_all.py --live          # exp08·exp10·exp11-B 를 실제 API 로 호출 (과금됨)
   python run_all.py > report.txt    # 결과를 파일로
 
-exp08 은 실제 API 키가 필요합니다. 기본값은 --dry-run 으로 구조만 출력하므로
-전체 실행은 여전히 무료입니다.
+exp08/10/11 의 라이브 모드는 각각 API 키가 필요합니다. 기본값은
+dry-run(구조만) 또는 시뮬레이션으로 실행되므로 전체 실행은 여전히 무료입니다.
 """
 
 import argparse
@@ -29,7 +29,12 @@ ORDER = [
     ("exp07_analyze_my_prompt.py", "내 프롬프트 진단기 (데모)", True),
     ("exp08_gemini_live.py", "Gemini 실시간 토큰 측정", False),
     ("exp09_dry.py", "DRY를 토큰 경제로 번역하면", True),
+    ("exp10_thinking_cross_vendor.py", "사고 토큰·과금 벤더 횡단", False),
+    ("exp11_tool_output_bloat.py", "툴 출력의 컨텍스트 팽창", True),
 ]
+
+LIVE_KEYS = ("GEMINI_API_KEY", "GOOGLE_API_KEY",
+             "ANTHROPIC_API_KEY", "OPENAI_API_KEY")
 
 
 def main():
@@ -58,6 +63,17 @@ def main():
                     continue
             else:
                 cmd += ["--dry-run"]
+        if fname.startswith("exp10"):
+            if args.live:
+                if not any(os.environ.get(k) for k in LIVE_KEYS):
+                    print("\n  [건너뜀] exp10 --live 에는 벤더 키(최소 1개)가 필요합니다.\n")
+                    continue
+                cmd += ["--vendor", "all"]
+            else:
+                cmd += ["--dry-run"]
+        if fname.startswith("exp11") and args.live:
+            if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+                cmd += ["--live"]
         r = subprocess.run(cmd)
         if r.returncode != 0:
             failed.append(label)
@@ -71,10 +87,12 @@ def main():
     print("  숫자를 그대로 믿지 말고, 자기 팀 usage 로그로 파라미터를 바꿔 다시 돌리세요.")
     print("  예:  python experiments/exp02_output_to_input.py --model opus --devs 25")
     print()
-    print("  실제 과금 값을 보고 싶다면 (Gemini API 키 필요):")
+    print("  실제 과금 값을 보고 싶다면 (API 키 필요):")
     print("    export GEMINI_API_KEY=\"...\"")
     print("    python experiments/exp08_gemini_live.py --count-only   # 과금 없음")
     print("    python experiments/exp08_gemini_live.py --thinking     # 사고 토큰 관측")
+    print("    python experiments/exp10_thinking_cross_vendor.py      # 3벤더 사고 토큰 대조")
+    print("    python experiments/exp11_tool_output_bloat.py --live   # 툴 출력 재과금 실측")
     print("=" * 88)
 
 
