@@ -198,6 +198,32 @@ https://arxiv.org/abs/2411.05276
 - DeepSeek — https://api-docs.deepseek.com/quick_start/pricing
 
 > 단가 테이블 위치: `lab/pricing.py` (이 저장소의 유일한 가격 진실 공급원)
+>
+> **2026-09-11 갱신**: `lab/pricing.py`에 Gemini 3.5/3.6/3.7/3.8 Flash 와
+> Claude Haiku 4.5 를 추가했다 (출처: 위 가격 페이지, 확인일 2026-09-11).
+> ⚠️ Gemini 3.6/3.7/3.8 Flash 의 $0.75/$3.75 는 **2026-12-31까지 introductory 가격**이며
+> 2027-01-01부터 $1.50/$7.50 으로 인상된다. 3.5 Flash($1.50/$9.00)는 상시 가격.
+> Google context caching 은 입력 단가의 10% (90% 할인), 쓰기 프리미엄 없음.
+
+---
+
+### 2.5 확장 사고 (Extended thinking / Reasoning) — 출력 단가로 과금
+
+- **Anthropic — Extended thinking**
+  https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
+  `thinking.budget_tokens` 로 사고 예산 제어. 사고 토큰은 `usage.output_tokens`
+  **안에 포함**(별도 필드 없음), 출력 단가로 과금.
+- **OpenAI — Reasoning models**
+  https://platform.openai.com/docs/guides/reasoning
+  `reasoning_effort`(minimal/low/medium/high)로 제어.
+  `usage.completion_tokens_details.reasoning_tokens` 에 별도 노출, 출력 단가.
+- **Google — Gemini thinking**
+  https://ai.google.dev/gemini-api/docs/thinking
+  `thinkingConfig.thinkingBudget`(0=끔, 양수=상한, -1=자동)로 제어.
+  `usageMetadata.thoughtsTokenCount` 에 별도 노출, 출력 단가.
+
+> 세 벤더 모두 "보이지 않는 사고 토큰이 출력 단가로 청구된다"는 구조는 동일하지만
+> **파라미터 이름·단위·노출 방식이 다르다** (exp10 이 이 차이를 재는 실험).
 
 ---
 

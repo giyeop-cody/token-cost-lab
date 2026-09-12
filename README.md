@@ -2,6 +2,8 @@
 
 **LLM 토큰 비용 절감 기법을, 남의 블로그 숫자 대신 내 손으로 재보는 실험 모음.**
 
+> 이 문서는 한국어입니다 · [English](README_EN.md)
+
 발표 자료 *"확실하게 토큰 사용량을 줄이는 방법"* 의 부속 저장소입니다.
 발표에 나온 모든 수치는 이 저장소의 스크립트로 재현할 수 있습니다.
 
@@ -39,6 +41,8 @@ API 키가 필요 없습니다. 토크나이저 실측 + 공개 단가 기반 �
 | 06 | `exp06_other_levers.py` | Batch·압축·시맨틱캐싱·라우팅·적층 | [RouteLLM](https://arxiv.org/abs/2406.18665) · [LLMLingua](https://arxiv.org/abs/2310.05736) · [GPT Semantic Cache](https://arxiv.org/abs/2411.05276) |
 | 07 | `exp07_analyze_my_prompt.py` | **내 프롬프트 파일을 직접 진단** | [Lost in the Middle](https://arxiv.org/abs/2307.03172) |
 | 08 | `exp08_gemini_live.py` | **실제 Gemini API 호출 → 진짜 청구 토큰** | [Gemini 토큰 문서](https://ai.google.dev/gemini-api/docs/tokens) |
+| 10 | `exp10_thinking_cross_vendor.py` | 사고 토큰·과금 **3벤더 대조** (Gemini/Anthropic/OpenAI) | [Anthropic extended thinking](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking) · [OpenAI reasoning](https://platform.openai.com/docs/guides/reasoning) |
+| 11 | `exp11_tool_output_bloat.py` | **툴 출력의 컨텍스트 팽창** (시뮬레이션 + function calling 실측) | [Gemini function calling](https://ai.google.dev/gemini-api/docs/function-calling) |
 
 각 항목의 정확한 인용 정보는 **[SOURCES.md](SOURCES.md)** 에 정리되어 있습니다.
 
@@ -57,6 +61,8 @@ python experiments/exp05_verbosity_effort.py --calls 5000
 python experiments/exp06_other_levers.py --calls 100000
 python experiments/exp08_gemini_live.py --dry-run       # 구조만 (키 불필요)
 python experiments/exp08_gemini_live.py --list-models    # 가용 모델 확인 (무과금)
+python experiments/exp10_thinking_cross_vendor.py --dry-run  # 3벤더 구조 (키 불필요)
+python experiments/exp11_tool_output_bloat.py --turns 40 --tool-tokens 20000
 ```
 
 ### 07번은 특히 실용적입니다
@@ -87,8 +93,9 @@ cat CLAUDE.md | python experiments/exp07_analyze_my_prompt.py -
 >
 > ⚠️ `gemini-2.5-*` 는 신규 키에서 404 입니다. `--list-models` 로 가용 모델을 먼저 확인하세요.
 
-01~07번은 전부 시뮬레이션입니다. **08번만 실제 Gemini API를 호출**해서
-`usageMetadata` 에 찍힌 진짜 토큰 수를 읽습니다.
+01~07·09번은 전부 시뮬레이션입니다. **08번(Gemini)과 11-B·10번(Gemini/Anthropic/OpenAI)이
+API를 실제로 호출**해서 `usageMetadata`·`usage` 에 찍힌 진짜 토큰 수를 읽습니다.
+(키가 없으면 dry-run/시뮬레이션으로 안전하게 동작합니다.)
 
 ```bash
 export GEMINI_API_KEY="..."        # https://aistudio.google.com/apikey (무료 등급 있음)
@@ -192,11 +199,14 @@ MODELS = {
 
 정직하게 밝힙니다.
 
-- **exp01~07은 실제 API를 호출하지 않습니다.** 토큰 수는 tiktoken 실측이지만, 비용은
+- **exp01~07·09와 exp11-A는 실제 API를 호출하지 않습니다.** 토큰 수는 tiktoken 실측이지만, 비용은
   공개 단가 기반 시뮬레이션입니다. 워크플로별 토큰 수(예: "대충 지시하면 출력 12,000 tok")는
   전형적인 값을 가정한 것이지 측정값이 아닙니다.
-  실제 청구되는 값을 보려면 **exp08**(Gemini API 실호출)을 쓰세요. 단, exp08의
-  단발 호출은 표본 1개이므로 여러 번 돌려 평균으로 말해야 합니다.
+  실제 청구되는 값을 보려면 **exp08**(Gemini) · **exp10**(3벤더) · **exp11-B**(function calling)를
+  쓰세요. 단, 실호출 실험의 단발 호출은 표본 1개이므로 여러 번 돌려 평균으로 말해야 합니다.
+- **exp10·11-B 는 2026-09 추가 실험입니다.** 아직 이 저장소의 LIVE_RESULTS 로
+  확정된 실측치가 없고, 키+과금이 있는 환경에서 돌려야 숫자가 생깁니다.
+  exp10 은 조건당 n=1 이므로 결론으로 쓰지 말고 재현·확장용으로 쓰세요.
 - **품질을 측정하지 않습니다.** 비용만 봅니다. effort를 낮추거나 압축을 세게 걸면
   정확도가 떨어질 수 있고, 그 손실은 여기서 잡히지 않습니다.
 - **Anthropic 토크나이저를 직접 쓰지 않습니다.** 공개 라이브러리가 없어 tiktoken으로
@@ -226,7 +236,8 @@ token-cost-lab/
 ├── LIVE_RESULTS.md              # 실호출 실측 기록 (2026-08-15)
 ├── requirements.txt
 ├── LICENSE                      # MIT
-├── run_all.py                   # exp01~09 전체 실행 (무과금)
+├── run_all.py                   # exp01~11 전체 실행 (무과금)
+├── .github/workflows/ci.yml     # CI: 전체 실험 + 수치 회귀 검사 (무과금)
 ├── lab/
 │   ├── pricing.py               # 단가 테이블 (여기만 고치면 됨)
 │   └── report.py                # 콘솔 표 출력 (한글 폭 처리 포함)
@@ -235,7 +246,9 @@ token-cost-lab/
 ├── experiments/
 │   ├── exp01_tokenizer_ko_en.py   ~ exp07_analyze_my_prompt.py
 │   ├── exp08_gemini_live.py       # 실제 API 호출 (키 있을 때만)
-│   └── exp09_dry.py               # DRY의 토큰 경제학
+│   ├── exp09_dry.py               # DRY의 토큰 경제학
+│   ├── exp10_thinking_cross_vendor.py  # 사고 토큰 3벤더 대조 (라이브 시 키 필요)
+│   └── exp11_tool_output_bloat.py      # 툴 출력 팽창 (A 시뮬레이션 무료)
 ├── tools/
 │   ├── live_lang_bench.py       # 한·영 × 설명형·추론형 실호출 벤치
 │   ├── stats_test.py            # 부트스트랩 CI · Welch · Cliff's δ
