@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "token-router": {
+      "command": "python3",
+      "args": [
+        "/ABSOLUTE/PATH/TO/agent_setup/mcp_server.py"
+      ]
+    }
+  }
+}

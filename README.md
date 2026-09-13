@@ -266,17 +266,20 @@ token-cost-lab/
     └── transcripts/             # 대화 전문 (토큰 계측 원본)
 ```
 
-### 이 저장소에 **없는** 것
+### 발표 자료는 `presentation` 브랜치에
 
-발표 산출물(`토큰_절약_발표.pptx` / `.pdf`, 발표 스크립트, 검증 보고서)은
-**별도 발표 패키지**에 있고 이 저장소에는 포함하지 않습니다.
-저장소는 *"수치를 재현하는 코드"* 만 담는다는 원칙입니다.
-
-그래서 `tools/verify_deck.py` 는 덱 파일이 없으면 해당 검사를 **SKIP**으로
-처리하고 나머지 87개 검사만 수행합니다. 저장소만 clone해도 정상 동작합니다.
+덱(pptx/pdf) · 발표 대본 · 검증 보고서는 **`presentation` 브랜치**에 있습니다.
+`main`은 *"수치를 재현하는 코드"* 만 담아 가볍게 유지합니다.
 
 ```bash
-python tools/verify_deck.py     # 덱 없이도 원자료 검증 87개 통과
+git checkout presentation     # 덱 29장 · PDF · 발표 대본 · 빌드 도구
+```
+
+그래서 `main`에서 `tools/verify_deck.py` 를 돌리면 덱 관련 검사는 **SKIP**되고
+원자료 검증 87개만 수행합니다. 저장소만 clone해도 정상 동작합니다.
+
+```bash
+python tools/verify_deck.py     # main: 87개 통과 · presentation: 98개 통과
 ```
 
 ## 기여
