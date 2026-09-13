@@ -2,19 +2,25 @@
   "breakeven_ratio": 1.0024,
   "asymptote_pct": -9.62,
   "models": {
-    "GPT-5": {
+    "GPT-5 (2026-08)": {
       "ratio": 8.0,
       "vibe_usd": 0.07135,
       "spec_usd": 0.0654,
       "delta_pct": -8.3
     },
-    "Claude Sonnet 4.5": {
+    "GPT-5.x (2026-09)": {
+      "ratio": 6.0,
+      "vibe_usd": 0.21469,
+      "spec_usd": 0.19769,
+      "delta_pct": -7.9
+    },
+    "Claude Sonnet 4.6": {
       "ratio": 5.0,
       "vibe_usd": 0.1076,
       "spec_usd": 0.09945,
       "delta_pct": -7.6
     },
-    "Claude Opus 4": {
+    "Claude Opus 4.7": {
       "ratio": 5.0,
       "vibe_usd": 0.17934,
       "spec_usd": 0.16574,
@@ -26,11 +32,11 @@
       "spec_usd": 0.03315,
       "delta_pct": -7.6
     },
-    "Gemini 2.5 Pro": {
-      "ratio": 8.0,
-      "vibe_usd": 0.07135,
-      "spec_usd": 0.0654,
-      "delta_pct": -8.3
+    "Gemini 3.1 Pro": {
+      "ratio": 6.0,
+      "vibe_usd": 0.08587,
+      "spec_usd": 0.07908,
+      "delta_pct": -7.9
     },
     "DeepSeek-chat": {
       "ratio": 4.1,
