@@ -252,6 +252,27 @@ REWORK_LADDER = [
 ]
 
 
+# 축소 사다리 원칙을 A 사다리에도 적용한 변형. DEFAULT_LADDER == "lean"일 때
+# 선택적으로 쓸 수 있다. 기본 REWORK_LADDER와의 차이: 3번째 칸이 무조건
+# tier-up 이 아니라 **범위 확대+리셋**이다. 결함 수정에서 모델을 올리는 건
+# 대부분 낭비 — 입력 누적을 끊는 리셋이 진짜 레버다. 티어 상승은
+# escalate(mismatch_kind="reasoning")로만 명시적으로 요청할 때만 일어난다.
+# (기본값은 여전히 REWORK_LADDER 다 — 하위 호환.)
+LEAN_REWORK_LADDER = [
+    dict(step="retry", scope_up=0, tier_up=0, reset=False,
+         opts={"attach": "failing-test + diff", "explain": "diagnosis-first",
+               "output": REWORK_PATCH_ONLY, "max_out_tok": REWORK_OUT_TOK},
+         why="같은 범위·같은 모델로 한 번 더. 실패의 상당수는 사소한 누락이라 "
+             "여기서 끝난다. 추가 비용이 거의 없는 칸을 먼저 쓴다."),
+    dict(step="widen", scope_up=1, tier_up=0, reset=True,
+         opts={"attach": "failing-test + diff + 호출부",
+               "output": REWORK_PATCH_ONLY, "max_out_tok": REWORK_OUT_TOK},
+         why="모델은 그대로 두고 보는 범위만 넓힌다. 두 번째 실패는 "
+             "모델이 약해서가 아니라 범위가 잘못 잘린 경우가 많다. "
+             "리셋으로 입력 누적도 함께 끊는다."),
+]
+
+
 def _tier_up(tier: Tier) -> Tier:
     """한 단계 상위 티어. 사다리 밖(EXTERNAL/BATCH)이면 MID에서 시작."""
     if tier not in TIER_LADDER:
@@ -265,7 +286,8 @@ def escalate(prev: Decision,
              failure: str = "test-fail",
              attempt: int | None = None,
              allow_external: bool = True,
-             max_attempts: int = 5) -> Decision:
+             max_attempts: int = 5,
+             mismatch_kind: str | None = None) -> Decision:
     """실패한 시도 → 다음 시도의 범위·티어·리셋 여부.
 
     한 칸에 축 하나씩만 올린다.
@@ -291,6 +313,16 @@ def escalate(prev: Decision,
             carry_over="specs/*.md + failures.md + 마지막 결정 사항")
 
     rung = REWORK_LADDER[min(n - 2, len(REWORK_LADDER) - 1)]
+
+    # 조건부 tier-up — 티어 상승이 정답인 건 reasoning 하나뿐.
+    # mismatch_kind가 명시됐고 'reasoning'이 아니면, tier-up 칸을
+    # 범위 확대+리셋으로 대체한다(상위 모델을 올려도 안 고쳐지는 종류).
+    # 기본값 None 이면 기존처럼 항상 티어를 올린다(하위 호환).
+    if rung.get("tier_up") and mismatch_kind is not None and mismatch_kind != "reasoning":
+        rung = dict(rung, step="widen", scope_up=1, tier_up=0, reset=True,
+                    why="티어 상승이 정답이 아닌 종류(범위·취향·전제·맥락). "
+                        "모델을 올려도 안 고쳐지므로 범위를 넓히고 맥락을 "
+                        "갈라 누적을 끊는다 — " + rung["why"])
 
     si = SCOPE_LADDER.index(prev.scope) if prev.scope in SCOPE_LADDER else 0
     scope = SCOPE_LADDER[min(si + rung["scope_up"], len(SCOPE_LADDER) - 2)]

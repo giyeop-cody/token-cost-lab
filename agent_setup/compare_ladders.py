@@ -88,8 +88,9 @@ for t in a["trail"]:
     a_rows.append((f"{t['attempt']} {t['step']}", t["tier"],
                    t["out_tok"], t["usd"], a_cum))
 
-# B: 사용자가 같은 의도를 4번 반복.
-it = B.IntentTracker()
+# B: 사용자가 같은 의도를 4번 반복. (비교의 정합성을 위해 7칸 INTENT_LADDER
+# 기준으로 세운다 — 기본값은 이제 3칸 LEAN_LADDER 다.)
+it = B.IntentTracker(ladder=B.INTENT_LADDER)
 cmds = [
     TASK,
     "결제 재시도 그거 다시 해줘",
