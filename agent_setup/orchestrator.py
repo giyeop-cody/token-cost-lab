@@ -41,6 +41,8 @@ from router import (
     RESET_PRIME_TOK,
 )
 from ladder_b import IntentTracker, rung_cost
+from config import CLASSIFY_MISMATCH
+from intent_guard import classify_mismatch
 
 _TIER_RANK = {Tier.SMALL: 0, Tier.MID: 1, Tier.LARGE: 2}
 
@@ -87,7 +89,12 @@ class Orchestrator:
         st.turns += 1
         st.inner_attempts = 0
 
-        obs = self.intent.observe(command)
+        # 의도불일치 분류를 사다리에 배선 — reasoning 종류만 조건부 tier-up.
+        # 첫 배정/새 의도에서는 observe가 mismatch_kind를 무시하므로 harmless.
+        kind = ""
+        if CLASSIFY_MISMATCH:
+            kind, _ = classify_mismatch(command)
+        obs = self.intent.observe(command, mismatch_kind=kind)
         action, step = obs["action"], obs["step"]
 
         # 사람에게 넘길 단계 — 더 좋은 모델로도 안 풀린다.

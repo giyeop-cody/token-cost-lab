@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 
 from router import Tier, looks_rejected
-from ladder_b import IntentTracker, same_intent, _content_words
+from ladder_b import IntentTracker, INTENT_LADDER, same_intent, _content_words
 
 P = F = 0
 def ck(cond, label):
@@ -60,7 +60,7 @@ for c in DIFFERENT:
 
 # ── 3. 사다리 진행 순서 ──────────────────────────────────────────────
 print("3. 사다리 순서 — 사용자 설계 그대로인가")
-it = IntentTracker()
+it = IntentTracker(ladder=INTENT_LADDER)
 it.observe(BASE)
 steps = []
 for c in REPEAT[:7]:
@@ -72,7 +72,7 @@ ck(steps == ["widen", "tier-up", "widen-2", "repeat-1",
 ck(steps.count("respec") == 1 and steps[-1] == "respec",
    "respec은 마지막에 한 번만")
 
-it2 = IntentTracker()
+it2 = IntentTracker(ladder=INTENT_LADDER)
 it2.observe(BASE)
 r1 = it2.observe("프로필 이미지 업로드 다시 구현해줘")
 ck(r1["scope"] == "file", f"1칸: 범위 확장돼야 함 → {r1['scope']}")
@@ -97,7 +97,7 @@ ck(r7["action"] == "respec", f"7칸: respec이어야 함 → {r7['action']}")
 
 # ── 4. 새 의도가 오면 사다리가 초기화되는가 ──────────────────────────
 print("4. 사다리 초기화")
-it3 = IntentTracker()
+it3 = IntentTracker(ladder=INTENT_LADDER)
 it3.observe(BASE)
 it3.observe("프로필 이미지 업로드 다시 구현해줘")   # 1칸 올라감
 ck(it3.rung == 1, f"올라간 상태 확인 → rung={it3.rung}")
@@ -108,7 +108,7 @@ ck(it3._scope_i == 0, "새 의도는 범위도 초기화")
 
 # ── 5. 리셋 이후에도 사다리를 다 쓰면 respec ─────────────────────────
 print("5. 소진 처리")
-it4 = IntentTracker()
+it4 = IntentTracker(ladder=INTENT_LADDER)
 it4.observe(BASE)
 for c in REPEAT[:7]:
     it4.observe(c)
@@ -121,20 +121,20 @@ print("5b. 생략형 재시도")
 # 생략형은 BASE의 내용어를 하나라도 물고 있거나 조응 표현이 있어야 한다.
 for c in ["업로드 다시", "이거 다시", "프로필 다시 좀", "다시 해줘",
           "아까 그거 다시", "그 기능 다시"]:
-    t = IntentTracker()
+    t = IntentTracker(ladder=INTENT_LADDER)
     t.observe(BASE)
     ck(t.observe(c)["step"] != "new-intent", f"생략형 미탐지: {c}")
 
 # 생략형이라도 재시도 표시가 없으면 새 의도다
 for c in ["썸네일도", "그럼 배포는", "테스트 커버리지"]:
-    t = IntentTracker()
+    t = IntentTracker(ladder=INTENT_LADDER)
     t.observe(BASE)
     ck(t.observe(c)["step"] == "new-intent", f"재시도 표시 없는데 오탐: {c}")
 
 # "다시"가 붙어도 명확히 다른 작업이면 새 의도
 for c in ["타임아웃 값을 다시 계산해서 30초로 바꿔줘",
           "문서를 다시 정리해서 위키에 올려줘"]:
-    t = IntentTracker()
+    t = IntentTracker(ladder=INTENT_LADDER)
     t.observe(BASE)
     ck(t.observe(c)["step"] == "new-intent", f"긴 다른 작업 오탐: {c}")
 

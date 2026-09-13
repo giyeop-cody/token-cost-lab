@@ -44,6 +44,7 @@ from router import (
     looks_rejected,
     looks_symptom,
 )
+from config import DEFAULT_INTENT_LADDER_NAME
 
 # ── 의도 반복 감지 ────────────────────────────────────────────────────
 #
@@ -200,6 +201,10 @@ LEAN_LADDER = [
              "스펙이 합의되지 않은 것이다. 구현을 멈추고 스펙을 다시 잡는다."),
 ]
 
+# 전역 설정이 기본값을 정한다. 'lean' → 3칸 축소안, 그 외 → 7칸 원안.
+# 덱(발표)은 이미 3칸을 쓰므로 라이브 시연과 맞추려면 'lean'이 정답.
+DEFAULT_LADDER = LEAN_LADDER if DEFAULT_INTENT_LADDER_NAME == "lean" else INTENT_LADDER
+
 
 @dataclass
 class IntentTracker:
@@ -210,8 +215,8 @@ class IntentTracker:
     """
 
     threshold: float = 0.5
-    ladder: list = field(default_factory=lambda: INTENT_LADDER)
-    max_rungs: int = field(default=len(INTENT_LADDER))
+    ladder: list = field(default_factory=lambda: DEFAULT_LADDER)
+    max_rungs: int | None = field(default=None)
     history: list[str] = field(default_factory=list)
     anchor: str = ""           # 현재 의도 묶음을 시작한 '내용 있는' 명령
     streak: int = 0            # 같은 의도가 연속으로 몇 번 왔나
@@ -220,8 +225,9 @@ class IntentTracker:
     _tier: Tier = Tier.MID
 
     def __post_init__(self) -> None:
-        # ladder를 바꿔 넘겼는데 max_rungs가 기본값이면 길이를 맞춘다.
-        if self.max_rungs == len(INTENT_LADDER) and self.ladder is not INTENT_LADDER:
+        # 기본값(None)이면 실제 사다리 길이에 맞춘다.
+        # 명시적으로 넘긴 ladder는 그 길이를 그대로 쓴다.
+        if self.max_rungs is None:
             self.max_rungs = len(self.ladder)
 
     def observe(self, command: str, *, prev_output: str = "",

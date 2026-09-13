@@ -27,6 +27,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, Iterable
 
+from config import TURN_GROWTH_TOK
+
 
 # ── 모델 티어 ────────────────────────────────────────────────
 class Tier(str, Enum):
@@ -609,6 +611,20 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
 
     return {"strategy": strategy, "turns": turns, "resets": resets,
             "usd": total, "trail": trail}
+
+
+def rework_cost_lean(task: str, tok_in: int, tok_out: int,
+                     fails: int, *, strategy: str = "escalate",
+                     **route_kw) -> dict:
+    """실측 보정(입력 누적)을 기본으로 켠 rework_cost.
+
+    리워크 비용의 지배항은 모델 티어가 아니라 **입력 누적**이다
+    (실측 페르소나 A 입력 79,130토큰). turn_growth_tok=0(고정 입력)으로
+    두면 실제보다 약 절반 과소평가된다. 덱·발표와 같은 기준(4,700토큰)을
+    쓰려면 이 함수를 쓴다. 내부 동작은 rework_cost와 동일.
+    """
+    return rework_cost(task, tok_in, tok_out, fails, strategy=strategy,
+                       turn_growth_tok=TURN_GROWTH_TOK, **route_kw)
 
 
 def breakeven(task: str, tok_in: int, tok_out: int,

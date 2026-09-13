@@ -3,7 +3,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from router import (rework_cost, cost_of, Tier, looks_rejected, looks_symptom,
-                    RESET_PRIME_TOK)
+                    RESET_PRIME_TOK, rework_cost_lean)
 from ladder_b import (IntentTracker, INTENT_LADDER, LEAN_LADDER,
                       CONDITIONAL_TIER_UP, rung_cost, _content_words)
 
@@ -15,6 +15,16 @@ def ck(name, cond, note=""):
 
 GROWTH, BASE = 4700, 1419
 
+# ── 1b. rework_cost_lean — 실측 보정(누적)을 기본으로 켠 비용 경로 ──
+lean_e = rework_cost_lean("버그 수정", BASE, 2500, 4, strategy="escalate")["usd"]
+raw_e = rework_cost("버그 수정", BASE, 2500, 4, strategy="escalate",
+                    turn_growth_tok=GROWTH)["usd"]
+zero_e = rework_cost("버그 수정", BASE, 2500, 4, strategy="escalate")["usd"]
+ck("rework_cost_lean == 누적 4700 명시값", abs(lean_e - raw_e) < 1e-9,
+   f"{lean_e:.4f} vs {raw_e:.4f}")
+ck("lean은 고정입력(0)보다 비싸다 — 누적이 지배항",
+   lean_e > zero_e, f"${zero_e:.4f} → ${lean_e:.4f}")
+
 # ── 1. 하위 호환 — 기본값에서 기존 수치가 변하지 않는다 ──────────
 ck("retry 기본값 불변",
    abs(rework_cost("버그 수정", 1800, 2500, 4, strategy="retry")["usd"] - 0.13625) < 1e-6)
@@ -24,8 +34,10 @@ ck("topfirst 기본값 불변",
    abs(rework_cost("버그 수정", 1800, 2500, 4, strategy="topfirst")["usd"] - 0.4200) < 1e-3)
 ck("rung_cost carried 기본 0이면 불변",
    abs(rung_cost(Tier.MID, 1800, reset=False, scope="file") - 0.0286) < 1e-4)
-ck("IntentTracker 기본 사다리는 7칸",
-   IntentTracker().max_rungs == len(INTENT_LADDER) == 7)
+ck("IntentTracker 기본 사다리는 3칸(축소안)",
+   IntentTracker().max_rungs == len(LEAN_LADDER) == 3)
+ck("INTENT_LADDER 명시 시 7칸 유지",
+   IntentTracker(ladder=INTENT_LADDER).max_rungs == 7)
 
 # ── 2. 입력 누적 ────────────────────────────────────────────
 g0 = rework_cost("버그 수정", BASE, 2500, 4, strategy="retry")["usd"]

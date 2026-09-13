@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, "/home/user/tcl/agent_setup")
 from orchestrator import Orchestrator, _max_tier
 from router import Tier
+from ladder_b import IntentTracker, INTENT_LADDER
 
 G, R, N = "\033[32m", "\033[31m", "\033[0m"
 n = f = 0
@@ -28,7 +29,7 @@ ck(_max_tier(Tier.LARGE, Tier.MID) is Tier.LARGE, "_max_tier 오동작")
 ck(_max_tier(Tier.EXTERNAL, Tier.MID) is Tier.MID, "EXTERNAL 처리 오류")
 
 print("2. 생략형이 섞여도 사다리가 초기화되지 않는다 (앵커)")
-o = Orchestrator()
+o = Orchestrator(intent=IntentTracker(ladder=INTENT_LADDER))
 cmds = [BASE, "결제 재시도 부분 다시 좀 해줘", "그 결제 재시도 다시",
         "결제 쪽 다시", "이거 다시", "아직도 아니야 결제 재시도 다시",
         "그 결제 로직 다시 좀", "결제 재시도 또 다시"]
@@ -74,6 +75,28 @@ for c in cmds:
         break
     o.inner("T4", ac_passed=True)
 ck(acts.count("respec") == 1 and acts[-1] == "respec", f"respec 위치 오류: {acts}")
+
+print("6. 워크플로우 기본 3칸 + classify_mismatch 배선")
+# 기본값은 LEAN(3칸) — 라이브 시연이 덱(3칸)과 정렬된다.
+o = Orchestrator()
+o.user_turn("T6", BASE)
+r1 = o.user_turn("T6", "결제 재시도 부분 다시 좀 해줘")
+ck(r1["action"] == "escalate" and r1["tier"] is Tier.MID,
+   f"1회 반복은 widen/MID → {r1['action']}/{r1['tier']}")
+o.inner("T6", ac_passed=True)
+# reasoning 종류 거절 → 조건부 tier-up 발동(LARGE)
+r2 = o.user_turn("T6", "이거 말고, 설계가 틀렸어. 구조 자체가 잘못됐어")
+ck(r2["tier"] is Tier.LARGE and "reasoning" in (r2.get("reason") or ""),
+   f"reasoning 거절은 tier-up/LARGE → {r2['tier']} / {r2.get('reason')}")
+
+# 다른 종류(taste)는 모델을 안 올린다 — MID 유지(reset 칸)
+o2 = Orchestrator()
+o2.user_turn("T7", BASE)
+o2.user_turn("T7", "결제 재시도 부분 다시 좀 해줘")
+o2.inner("T7", ac_passed=True)
+r3 = o2.user_turn("T7", "이거 말고, 색 배합이 너무 촌스러워")
+ck(r3["tier"] is Tier.MID and r3["action"] == "escalate",
+   f"taste 거절은 MID(reset, tier-up 안 함) → {r3['tier']} / {r3['action']}")
 
 print("=" * 60)
 print(f"  {n}건 중 {G if not f else R}{n-f} PASS{N} / {f} FAIL")
