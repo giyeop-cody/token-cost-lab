@@ -44,6 +44,7 @@ from router import (
     looks_rejected,
     looks_symptom,
 )
+from config import DEFAULT_LADDER
 
 # ── 의도 반복 감지 ────────────────────────────────────────────────────
 #
@@ -201,16 +202,26 @@ LEAN_LADDER = [
 ]
 
 
+def default_ladder() -> list:
+    """설정(config.DEFAULT_LADDER)에 맞는 기본 사다리를 반환한다.
+
+    데코레이터/시연은 기본 인자를 평가할 때 한 번만 부른다.
+    "lean"이면 3칸 축소 사다리, 그 외엔 7칸 원본 사다리.
+    """
+    return LEAN_LADDER if DEFAULT_LADDER == "lean" else INTENT_LADDER
+
+
 @dataclass
 class IntentTracker:
     """사용자 명령을 기록하고, 같은 의도의 반복을 세어 사다리를 올린다.
 
-    ladder: 사용할 사다리. 기본은 7칸 INTENT_LADDER(하위 호환).
-        LEAN_LADDER를 넘기면 실로그 검증으로 남긴 3칸만 쓴다.
+    ladder: 사용할 사다리. 기본은 config.DEFAULT_LADDER가 가리키는 사다리
+        (현재 "lean" → 3칸 LEAN_LADDER). INTENT_LADDER(7칸)를 명시하면
+        축소 적용 전 동작으로 되돌아간다.
     """
 
     threshold: float = 0.5
-    ladder: list = field(default_factory=lambda: INTENT_LADDER)
+    ladder: list = field(default_factory=default_ladder)
     max_rungs: int = field(default=len(INTENT_LADDER))
     history: list[str] = field(default_factory=list)
     anchor: str = ""           # 현재 의도 묶음을 시작한 '내용 있는' 명령

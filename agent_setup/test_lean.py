@@ -24,8 +24,10 @@ ck("topfirst 기본값 불변",
    abs(rework_cost("버그 수정", 1800, 2500, 4, strategy="topfirst")["usd"] - 0.4200) < 1e-3)
 ck("rung_cost carried 기본 0이면 불변",
    abs(rung_cost(Tier.MID, 1800, reset=False, scope="file") - 0.0286) < 1e-4)
-ck("IntentTracker 기본 사다리는 7칸",
-   IntentTracker().max_rungs == len(INTENT_LADDER) == 7)
+ck("IntentTracker 기본 사다리는 lean(3칸)",
+   IntentTracker().max_rungs == len(LEAN_LADDER) == 3)
+ck("INTENT_LADDER(7칸) 명시 시 유지",
+   IntentTracker(ladder=INTENT_LADDER).max_rungs == 7)
 
 # ── 2. 입력 누적 ────────────────────────────────────────────
 g0 = rework_cost("버그 수정", BASE, 2500, 4, strategy="retry")["usd"]

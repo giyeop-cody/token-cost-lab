@@ -4,13 +4,19 @@
 사례로 확인한다. 특히 **거짓 양성**(다른 의도를 반복으로 오인)이
 치명적이다 — 사용자가 새 작업을 시켰는데 사다리가 올라가면
 쓸데없이 비싼 티어로 처리된다.
+
+사다리 축소(Lean) 적용 후:
+    IntentTracker 기본값은 config.DEFAULT_LADDER (= "lean", 3칸) 이다.
+    그래서 이 파일의 '기본' 경로는 3칸(widen→reset→respec)을 단언하고,
+    7칸 원본 순서는 INTENT_LADDER를 명시한 블록에서 회귀한다.
 """
 from __future__ import annotations
 
 import sys
 
 from router import Tier, looks_rejected
-from ladder_b import IntentTracker, same_intent, _content_words
+from ladder_b import (IntentTracker, same_intent, _content_words,
+                      INTENT_LADDER, LEAN_LADDER)
 
 P = F = 0
 def ck(cond, label):
@@ -58,21 +64,35 @@ print("2. 다른 의도 (거짓 양성 방지)")
 for c in DIFFERENT:
     ck(not detect(BASE, c), f"거짓 양성: {c}")
 
-# ── 3. 사다리 진행 순서 ──────────────────────────────────────────────
-print("3. 사다리 순서 — 사용자 설계 그대로인가")
+# ── 3. 기본(lean) 사다리 순서 — widen → reset → respec ──────────
+print("3. 기본(lean) 사다리 순서")
 it = IntentTracker()
 it.observe(BASE)
 steps = []
-for c in REPEAT[:7]:
+for c in REPEAT[:3]:
     r = it.observe(c)
     steps.append(r["step"])
-ck(steps == ["widen", "tier-up", "widen-2", "repeat-1",
-             "reset", "repeat-2", "respec"],
-   f"사다리 순서: {steps}")
-ck(steps.count("respec") == 1 and steps[-1] == "respec",
-   "respec은 마지막에 한 번만")
+ck(steps == ["widen", "reset", "respec"], f"lean 순서: {steps}")
+ck(steps[-1] == "respec", "lean 마지막은 respec")
+ck(it.max_rungs == len(LEAN_LADDER) == 3, "기본 사다리는 3칸")
 
-it2 = IntentTracker()
+# ── 3b. 명시 INTENT_LADDER(7칸) 순서 — 사용자 설계 그대로 ────────
+print("3b. 명시 INTENT_LADDER(7칸) 순서 — 축소 전 회귀")
+itf = IntentTracker(ladder=INTENT_LADDER)
+itf.observe(BASE)
+steps7 = []
+for c in REPEAT[:7]:
+    r = itf.observe(c)
+    steps7.append(r["step"])
+ck(steps7 == ["widen", "tier-up", "widen-2", "repeat-1",
+             "reset", "repeat-2", "respec"],
+   f"7칸 순서: {steps7}")
+ck(steps7.count("respec") == 1 and steps7[-1] == "respec",
+   "respec은 마지막에 한 번만")
+ck(itf.max_rungs == 7, "명시 7칸은 그대로 7칸")
+
+# ── 3c. 7칸 상세 칸 판정 (축소 전 동작 보존) ──────────────────────
+it2 = IntentTracker(ladder=INTENT_LADDER)
 it2.observe(BASE)
 r1 = it2.observe("프로필 이미지 업로드 다시 구현해줘")
 ck(r1["scope"] == "file", f"1칸: 범위 확장돼야 함 → {r1['scope']}")
@@ -106,7 +126,7 @@ ck(it3.rung == 0, f"새 의도 후 초기화돼야 함 → rung={it3.rung}")
 ck(r["tier"] == Tier.MID, f"새 의도는 MID에서 시작 → {r['tier']}")
 ck(it3._scope_i == 0, "새 의도는 범위도 초기화")
 
-# ── 5. 리셋 이후에도 사다리를 다 쓰면 respec ─────────────────────────
+# ── 5. 소진 처리 (기본 lean) — 3칸에서도 respec 도달 ───────────────
 print("5. 소진 처리")
 it4 = IntentTracker()
 it4.observe(BASE)

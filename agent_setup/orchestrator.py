@@ -41,6 +41,7 @@ from router import (
     RESET_PRIME_TOK,
 )
 from ladder_b import IntentTracker, rung_cost
+from intent_guard import classify_mismatch
 
 _TIER_RANK = {Tier.SMALL: 0, Tier.MID: 1, Tier.LARGE: 2}
 
@@ -82,12 +83,20 @@ class Orchestrator:
     tasks: dict[str, TaskState] = field(default_factory=dict)
 
     # ── 사용자 턴 ────────────────────────────────────────────
-    def user_turn(self, task_id: str, command: str) -> dict:
+    def user_turn(self, task_id: str, command: str,
+                  *, mismatch_kind: str | None = None) -> dict:
         st = self.tasks.setdefault(task_id, TaskState(task_id))
         st.turns += 1
         st.inner_attempts = 0
 
-        obs = self.intent.observe(command)
+        # 반려 사유를 분류해 조건부 tier-up의 트리거로 쓴다.
+        # 명시적으로 mismatch_kind를 받으면 그걸 쓰고, 아니면
+        # 사용자 발화 자체를 classify_mismatch로 판정한다.
+        # (의도불일치 5종 중 'reasoning'일 때만 모델을 올린다 —
+        #  다른 4종은 티어를 올려도 안 고쳐지므로 낭비다.)
+        if mismatch_kind is None:
+            mismatch_kind, _ = classify_mismatch(command)
+        obs = self.intent.observe(command, mismatch_kind=mismatch_kind)
         action, step = obs["action"], obs["step"]
 
         # 사람에게 넘길 단계 — 더 좋은 모델로도 안 풀린다.
