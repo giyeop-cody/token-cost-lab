@@ -180,6 +180,7 @@ def corrections_report(e):
 - **시나리오:** 가치가 없다는 뜻이 아니다. ‘가정을 넣으면 이만큼’과 ‘정책을 적용해 실제 이만큼’을 분리한다.
 
 자세한 표와 재현 명령은 [LIVE_RESULTS.md](../LIVE_RESULTS.md)에 있다.
+격리·폐기했던 주장을 원자료로 되돌려 다시 쓸 수 있는지 판정한 표는 [REASSERTED.md](REASSERTED.md)에 있다.
 
 ## 2. 왜 Welch의 p값을 고쳐야 하나
 
@@ -304,9 +305,94 @@ PDF 재생성에는 LibreOffice와 Nanum 폰트가 필요하다:
 '''
 
 
+def reassertion_report(e):
+    """격리·폐기했던 주장을 원자료로 다시 계산해 '다시 쓸 수 있는 문장'을 판정한다.
+
+    값은 원자료/스크립트 재현값에서 가져온다. 손으로 적은 숫자는 tests/test_docs_consistency.py가
+    실제 스크립트 출력과 대조한다.
+    """
+    import json
+    fl = e["flores"]["tokenizers"]
+    sc = e["scenarios"]
+    sweep = {r["label"]: r for r in e["thinking_sweep"]["rows"]}
+    auto = sweep["자동 (-1)"]["ratio_to_unspecified"]
+    ts = e["thinking_sweep"]["thought_share_aggregate"]
+    p = sc["personas"]
+    sdd = sc["sdd"]
+    cc = sc["compression_cache"]
+    tb = sc["tool_bloat"]
+    cache = sc["cache"]
+    results_current = json.loads((ROOT / "demo/results_current.json").read_text(encoding="utf-8"))
+    results_legacy = json.loads((ROOT / "demo/results.json").read_text(encoding="utf-8"))
+    return f'''# 격리한 주장 재확인 — 다시 주장할 수 있는가
+
+확인일 **2026-09-20** · 새 유료 API 호출 **0회**. 격리하거나 폐기했던 주장을 원자료·스크립트로 다시 계산했다.
+[docs/CORRECTIONS.md](CORRECTIONS.md)가 “무엇이 틀렸는가”라면, 이 문서는 **“그래서 무엇을 다시 말할 수 있는가”**다.
+
+**결론: 절감 주장은 조건을 붙이면 전부 다시 쓸 수 있다.** 다시 쓰지 않는 것은 격리 사유가
+값이 아니라 **원자료 없음·미측정**인 항목뿐이다(§3). 값은 반드시 재현값으로 쓰고, 손으로 옮겨 적지 않는다.
+
+## 1. 다시 쓸 수 있는 절감 문장
+
+| # | 다시 쓸 문장 | 재확인 값 | 근거 유형 | 재현 |
+|---|---|---|---|---|
+| 1 | 같은 저장 발화를 두 정책으로 처리하면 3칸 사다리 쪽 지출이 **2.81배** 낮다 | 7칸 $0.4168 → 3칸 $0.1485 | 정책 지출 재생(가정) | `python analysis/lean_vs_full.py` |
+| 2 | 짧은 리워크에서도 이득: **1턴 27%, 2턴 43%** | $0.0594→$0.0434 · $0.0979→$0.0560 | 위와 동일 | 위와 동일 |
+| 3 | 실패가 반복될수록 벌어진다: 3회 1.28배 → 6회 **2.80배** (역전 구간 없음) | 누적 반영 후 | 위와 동일 | 위와 동일 |
+| 4 | 캐시 100% 적중이면 **{cache['saving_pct']:.1f}%** 절감, 배치를 틀리면 오히려 **{cache['all_miss_usd']/cache['no_cache_usd']*100-100:+.1f}%** | $8.55 → $3.219 / 잘못 배치 $10.05 | 비용 시나리오 | `python experiments/exp03_prompt_caching.py` |
+| 5 | 절반 압축 + 캐싱 병용 **{100-cc['both']/cc['plain']*100:.1f}%** (캐싱만 {100-cc['cached']/cc['plain']*100:.1f}%) | 원문 ${cc['plain']:.2f} → 캐시 ${cc['cached']:.4f} → 병용 ${cc['both']:.4f} | 비용 시나리오(압축 비용·품질 별도) | `python experiments/exp09_dry.py` |
+| 6 | 같은 예문에서 설명만 줄여 토큰 **83%** 감소 | 342 → 58 토큰 | 로컬 인코딩 실측(예문 한정) | `python experiments/exp05_verbosity_effort.py` |
+| 7 | 결정을 스펙으로 주입하면 입력 3배에도 총비용 **66%** 감소 | $0.0630 기준 | 비용 시나리오 | `python experiments/exp02_output_to_input.py` |
+| 8 | SDD 비용 시나리오 **{sdd['cold']['saving_pct']:.1f}%** (예열 캐시 가정 {sdd['legacy_warm']['saving_pct']:.1f}%) | 턴 40→12 가정 포함 | 비용 시나리오 | `python experiments/exp04_agent_loop_sdd.py` |
+| 9 | 페르소나 시나리오 **{p['current']['ratio']:.1f}배** = 연 ${results_current['year_gap']} (기존 가정 {p['legacy']['ratio']:.1f}배 · 연 ${results_legacy['year_gap']}) | A ${p['current']['a_usd']:.4f} / B ${p['current']['b_usd']:.4f} | 가정 시나리오 | `python demo/compare_personas.py` |
+| 10 | 카페 케이스 **-8.3%** (Sonnet -7.6%, 캐시 없이 -8.1%) | 고정 usage 산술 | 추정 usage의 산술 | `python demo/vibe_vs_spec/sensitivity.py` |
+| 11 | 전체 시스템 기준 subagent **{100-tb['subagent']['whole_system_usd']/tb['naive']['whole_system_usd']*100:.1f}%**, 컴팩션 {100-tb['compact']['whole_system_usd']/tb['naive']['whole_system_usd']*100:.1f}% | ${tb['naive']['whole_system_usd']:.3f} → ${tb['subagent']['whole_system_usd']:.3f} / ${tb['compact']['whole_system_usd']:.4f} | 비용 시나리오(자식·요약 포함) | `python experiments/exp11_tool_output_bloat.py` |
+| 12 | 레버 적층 시나리오 **{sc['stack_saving_pct']:.1f}%** | 잔여 14% | 순차 가정 산술 | `python experiments/exp06_other_levers.py` |
+| 13 | 같은 내용이면 한국어 출력 토큰이 **{fl['o200k_base']['ko_en_ratio']:.4f}배**(o200k) · **{fl['cl100k_base']['ko_en_ratio']:.4f}배**(cl100k) | FLORES-200 1,012쌍 실측 | 로컬 토크나이저 실측 | `python tools/parallel_tokenizer_bench.py` |
+| 14 | 사고 예산을 미지정하면 같은 답에 **{auto['actual']:.2f}배**(공식 단가) · **{auto['legacy']:.2f}배**(기존 환산) 지출 | $0.000028 → $0.00558525 | 저장 API 로그 재계산 | `python tools/thinking_sweep.py --summarize results/thinking_sweep.jsonl` |
+| 15 | 사고가 난 호출에서 사고 토큰이 출력 토큰의 **{ts*100:.2f}%** | 사고 127–3,704토큰 범위 | 저장 API 로그 재계산 | 위와 동일 |
+
+1·2·3은 정책 **지출 모형**이다. 완료 작업당 절감률도, 품질 동등성도 아니다.
+4~12는 토큰·단가·턴 가정 위의 계산이다. 13~15만 이 저장소가 직접 만든 실측·로그 재계산이다.
+모든 문장에 “~라는 가정에서”를 붙여 말한다.
+
+## 2. 근거를 새로 붙인 것 (격리 해제)
+
+| 격리했던 근거 | 문제였던 점 | 새 근거 |
+|---|---|---|
+| “37.5배”(단발 측정) | 그 회차 원자료가 저장소에 없음 | 저장 로그 30행 n=6 재계산 → **{auto['actual']:.2f}배** · **{auto['legacy']:.2f}배** (부트스트랩 95% [{e['thinking_sweep']['ratios']['actual']['auto_unspecified_ci95'][0]:.2f}, {e['thinking_sweep']['ratios']['actual']['auto_unspecified_ci95'][1]:.2f}]) |
+| “한국어가 비싸다”(N=5, 모델 혼합) | 표본 5·폴백 혼합·원자료 미포함 | FLORES-200 1,012쌍 인코딩 실측(해시 고정) + 저장 로그 80행(n=20/언어/과제) |
+| 정규근사 p값 | 구현 오류(1−CDF) | Welch 교정 후에도 네 비교 유의(1.6e-3 ~ 4.0e-7) |
+| “사다리 3.06배” | 옛 규칙·조건이 달랐음 | 현재 규칙 재생 2.81배(§1-1). 3.06배는 역사 기록으로만 |
+| “AC 16/16 PASS” | 문자열 검사가 동작을 보증하지 않음 | Chromium 실동작 AC + 변조 거부 회귀 |
+
+## 3. 다시 쓰지 않는 것 (원자료 없음·미측정)
+
+| 항목 | 이유 | 대신 쓰는 것 |
+|---|---|---|
+| “37.5배” 자체 | 해당 회차 원자료 미포함 | §1-14의 저장 로그 값 |
+| “한국어 +19.6%”(N=5), N=100 결과 | 원자료 미포함·모델 혼합 | FLORES 실측 + 80행 로그 |
+| “B 트리거 0/5 → 4/5 고쳐졌다” | 실로그 재생에서 에스컬레이션 3/5, 분류 2/5=40% | “실로그 6턴 중 3회 에스컬레이션(가정 없음, 재생)” |
+| “사다리 12배 절감” | 대조군을 최상위 모델로 잡을 때만 성립 | §1-1·2의 2.81배 / 1턴 27% |
+| “사고 토큰 = 더 깊은 추론” | 증거가 아님 | §1-15 “사고 토큰은 요금에 붙는다” |
+| “AC 통과 = 품질 보증” | 실로그 산출물에서 문구 5건 소실 | 브라우저 동작 검사 결과 |
+| exp07·exp10 live “확인됨” | 미실행(키 없음) | dry-run 구조 출력만 |
+| 캐시 히트율 61.7% / 5.8% | 가정값 | 히트율을 명시한 시나리오(§1-4) |
+| 라우터 오류율·검출률 | 미측정 | “오류율 미측정” 표기 유지 |
+
+## 4. 발표용 문장 형식
+
+> “정책 A는 (가정 X에서) 정책 B보다 N배 낮은 지출을 보였다. N은 저장 발화·토큰 가정의 재생값이며,
+> 품질 동등성과 완료 작업당 절감률은 검증하지 않았다.”
+
+숫자는 이 문서의 값(스크립트 재현값)을 쓰고, 발표 자료의 수치와 다르면 발표 자료를 다시 생성한다.
+'''
+
+
 def write_reports(e):
     (ROOT / "LIVE_RESULTS.md").write_text(live_report(e), encoding="utf-8")
     (ROOT / "docs/CORRECTIONS.md").write_text(corrections_report(e), encoding="utf-8")
+    (ROOT / "docs/REASSERTED.md").write_text(reassertion_report(e), encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -49,7 +49,8 @@ def main():
     artifacts=[*sorted((ROOT/"presentation").glob('*.pptx')),*sorted((ROOT/"presentation").glob('*.pdf')),
                *sorted((ROOT/"presentation/case_vibe_vs_spec").glob('*.pptx')),
                *sorted((ROOT/"presentation/case_vibe_vs_spec").glob('*.pdf')),
-               ROOT/"results/audit_metrics.json",ROOT/"LIVE_RESULTS.md",ROOT/"docs/CORRECTIONS.md"]
+               ROOT/"results/audit_metrics.json",ROOT/"LIVE_RESULTS.md",ROOT/"docs/CORRECTIONS.md",
+               ROOT/"docs/REASSERTED.md"]
     on_actions = os.environ.get("GITHUB_ACTIONS") == "true"
     result=dict(evidence_type="software_verification",execution_environment="GitHub Actions" if on_actions else "local workspace",audit_date="2026-09-20",timezone="Asia/Seoul",
                 python=platform.python_version(),new_paid_api_calls=0,log_normalization="trailing whitespace only",

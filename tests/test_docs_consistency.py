@@ -66,6 +66,17 @@ def test_lean_replay_ratio_in_corrections_matches_script(lean_output):
     assert f"{m.group(1)}배" in heading[0], f"현재 재생값 {m.group(1)}배가 표에 없음: {heading[0]}"
 
 
+def test_reasserted_doc_matches_generator(evidence):
+    """docs/REASSERTED.md는 생성기 출력이어야 한다(손으로 옮겨 적은 숫자 금지)."""
+    from tools.render_reports import reassertion_report
+    on_disk = (ROOT / "docs/REASSERTED.md").read_text(encoding="utf-8")
+    generated = reassertion_report(evidence)
+    assert generated == on_disk, "docs/REASSERTED.md가 생성기 출력과 다름(수기 수정 여부 확인)"
+    for heading in ("## 1. 다시 쓸 수 있는 절감 문장", "## 2. 근거를 새로 붙인 것",
+                    "## 3. 다시 쓰지 않는 것", "## 4. 발표용 문장 형식"):
+        assert heading in on_disk, heading
+
+
 def test_no_replacement_characters_or_stray_cjk():
     """손으로 쓴 문서·코드의 인코딩 깨짐/한자 혼입 검사.
 
