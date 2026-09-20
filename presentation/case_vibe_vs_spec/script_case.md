@@ -1,6 +1,6 @@
 # Vibe vs Spec — 정정판 대본
 
-9장 · 2026-09-20 · 생성 원천: `deckgen/build_verified.py`와 원자료.
+9장 · 2026-09-20 · 생성 원천: `presentation/deckgen/build_verified.py`와 원자료.
 
 ## 1. Vibe vs Spec
 

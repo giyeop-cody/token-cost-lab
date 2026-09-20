@@ -141,7 +141,7 @@ def render(specs, path):
 
 
 def script_text(specs):
-    content = f"# {specs[0]['title']} — 정정판 대본\n\n{len(specs)}장 · 2026-09-20 · 생성 원천: `deckgen/build_verified.py`와 원자료.\n\n"
+    content = f"# {specs[0]['title']} — 정정판 대본\n\n{len(specs)}장 · 2026-09-20 · 생성 원천: `presentation/deckgen/build_verified.py`와 원자료.\n\n"
     for i, spec in enumerate(specs, 1):
         content += f"## {i}. {spec['title']}\n\n**{spec['hero']}** · {spec['scope']}\n\n"
         content += "\n".join("- " + t for t in spec["lines"]) + f"\n\n근거: `{spec['source']}`\n\n"

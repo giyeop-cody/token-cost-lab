@@ -1,6 +1,6 @@
 # 견적서의 나머지 항목 — 정정판 대본
 
-10장 · 2026-09-20 · 생성 원천: `deckgen/build_verified.py`와 원자료.
+10장 · 2026-09-20 · 생성 원천: `presentation/deckgen/build_verified.py`와 원자료.
 
 ## 1. 견적서의 나머지 항목
 

@@ -143,7 +143,7 @@ def main():
         c = tok * m.inp / 1e6 * N
         cc = tok * m.inp * m.cache_read / 1e6 * N
         rows.append([tools, f"{tok:,}", pricing.usd(c, 2), pricing.usd(cc, 2)])
-    report.table(["툴 개수", "매 콜 스키마tok", f"월 비용(캐시無)", "월 비용(캐시有)"],
+    report.table(["툴 개수", "매 콜 스키마tok", "월 비용(캐시 없음)", "월 비용(캐시 있음)"],
                  rows, ["r", "r", "r", "r"])
     print("  → 툴 정의는 캐시 프리픽스에 반드시 넣어야 하는 1순위 후보다.")
     print("     참고: 2,500개 API를 툴 2개(약 1,000토큰)로 접어 넣은 사례도 있다")

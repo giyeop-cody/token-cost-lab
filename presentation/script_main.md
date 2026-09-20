@@ -1,6 +1,6 @@
 # 시키지도 않은 시공비 청구서 — 정정판 대본
 
-22장 · 2026-09-20 · 생성 원천: `deckgen/build_verified.py`와 원자료.
+22장 · 2026-09-20 · 생성 원천: `presentation/deckgen/build_verified.py`와 원자료.
 
 ## 1. 시키지도 않은 시공비 청구서
 

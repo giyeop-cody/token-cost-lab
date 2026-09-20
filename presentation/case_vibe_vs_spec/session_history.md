@@ -8,6 +8,7 @@
 - **요청 ID**: `req_1786763476385_b368fc`
 - **모드**: ✨ VIBE
 - **결과물**: `site/index.html` (13,423 bytes)
+  — 원 세션의 경로 표기. 현재 저장 위치는 `demo/vibe_vs_spec/artifacts/index_vibe.html`(같은 13,423 bytes)이며 `site/` 디렉터리는 저장소에 없다.
 
 ---
 
@@ -65,4 +66,4 @@
 | **세션 누적 (1건)** | **486** | **1,240** | **5,830** | **312** | **7,868** |
 
 ---
-*이 기록 후 히스토리·토큰 카운터는 초기화됨. 결과물 `site/index.html` 은 보존.*
+*이 기록 후 히스토리·토큰 카운터는 초기화됨. 결과물(`site/index.html` 당시 경로 → 현재 `demo/vibe_vs_spec/artifacts/index_vibe.html`)은 보존.*

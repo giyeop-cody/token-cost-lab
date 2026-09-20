@@ -59,7 +59,7 @@ SciPy `ttest_ind(equal_var=False)`와 독립 대조하는 회귀 테스트를 �
 | 수정 페르소나 | **19.0배**. 기본 사고 언어 승수 1.0, 캐시 최소 길이 적용. 여전히 비용 모형 | `python demo/compare_personas.py` |
 | SDD 약 71% | 예열된 캐시의 기존 가정으로 **70.993%**. 스펙 작성 토큰 비용은 원래부터 포함 | `python experiments/exp04_agent_loop_sdd.py --warm-cache` |
 | 기본 SDD | 사이클별 cold-cache 첫 쓰기 포함 **68.730%**. 40→12턴은 여전히 가정 | `python experiments/exp04_agent_loop_sdd.py` |
-| 사다리 3.06배 | 과거 고정 발화 재생의 가정값으로 역사 기록에 보존. 실제 정책 A/B 절감 실측으로 인용하지 않음 | `analysis/lean_vs_full.py`의 현재 규칙 재생 |
+| 사다리 3.06배 | 과거 고정 발화 재생의 가정값으로 역사 기록에 보존. 실제 정책 A/B 절감 실측으로 인용하지 않음. 현재 규칙으로 다시 재생하면 2.81배 | `presentation/archive/ladder_lean.md` · `analysis/lean_vs_full.py` |
 | 카페 -8.3% | 고정 usage 추정치와 GPT-5 단가에서 산술 유지. 백지 스펙 작성·재작업 감소의 인과 효과 아님 | `demo/vibe_vs_spec/sensitivity.py` |
 | 압축+캐시 | 원문 캐시 **$0.4014**, 절반 압축+캐시 **$0.2007**. 압축 자체 비용·품질은 별도 | `experiments/exp09_dry.py` |
 | 누적 절감 | **85.825%** 산술 유지. 60–80%에 포함된다는 표현과 검증된 상한 표현 제거 | `experiments/exp06_other_levers.py` |

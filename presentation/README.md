@@ -14,7 +14,7 @@
 ## 수정·검증
 
 숫자와 조건은 `lab/evidence.py`에서 원자료를 읽어 계산하고,
-`deckgen/build_verified.py` 하나에서 모든 덱·대본을 생성합니다.
+`presentation/deckgen/build_verified.py` 하나에서 모든 덱·대본을 생성합니다.
 기존 디자인의 짙은 배경·초록 강조는 유지하고, 오해를 줄이도록 문안을 다시 구성했습니다.
 
 ```bash

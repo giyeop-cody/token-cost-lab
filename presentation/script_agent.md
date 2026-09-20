@@ -1,6 +1,6 @@
 # 작은 모델이 지휘한다 — 정정판 대본
 
-18장 · 2026-09-20 · 생성 원천: `deckgen/build_verified.py`와 원자료.
+18장 · 2026-09-20 · 생성 원천: `presentation/deckgen/build_verified.py`와 원자료.
 
 ## 1. 작은 모델이 지휘한다
 
