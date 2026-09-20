@@ -1,276 +1,107 @@
-# 출처 (Sources)
+# Sources — 원문과 인용 범위
 
-이 저장소와 발표 자료에서 인용한 모든 근거의 원본 제목과 링크입니다.
-자체 실측(exp01~exp08)이 아닌 모든 수치는 아래 출처를 병기합니다.
+확인일 **2026-09-20**. 로컬 재계산은 `results/audit_metrics.json`, 원자료 해시는 `data/evidence_manifest.json`.
+문헌 결과, 로컬 계측, API usage 로그, mock/브라우저 테스트, 비용 시나리오는 서로 다른 증거다.
 
-인용 원칙:
-- 외부 수치는 **원문 제목 + 저자 + 링크**를 함께 적는다.
-- 자체 시뮬레이션과 외부 실측을 **반드시 구분**해서 말한다.
-- 가격은 수시로 바뀌므로 **확인 날짜**를 병기한다. (이 문서 기준일: 2026-08)
+## 1. 언어·추론
 
----
+### 1.1 토크나이저
 
-## 1. 학술 문헌
-
-### 1.1 토크나이저와 언어 불평등
-
-**Language Model Tokenizers Introduce Unfairness Between Languages**
-Aleksandar Petrov, Emanuele La Malfa, Philip H.S. Torr, Adel Bibi (University of Oxford) · NeurIPS 2023
+Aleksandar Petrov, Emanuele La Malfa, Philip H. S. Torr, Adel Bibi.
+**Language Model Tokenizers Introduce Unfairness Between Languages**. NeurIPS 2023.
 https://arxiv.org/abs/2305.15425
 
-- 동일한 내용의 텍스트가 언어에 따라 토큰 길이 **최대 15배** 차이.
-- 일부 언어 사용자는 영어 대비 **최소 2.5배** 비용을 지불.
-- 다국어 지원을 표방한 토크나이저에서도 최대 13배 편차가 남음.
-- 포르투갈어처럼 영어와 가까운 언어조차 토큰 수 +50%.
-
-> 관련 실험: `exp01_tokenizer_ko_en.py`
-
----
-
-### 1.2 추론 언어와 정확도
-
-**When Models Reason in Your Language: Controlling Thinking Language Comes at the Cost of Accuracy**
-XReasoning 벤치마크 · 2025
-https://arxiv.org/abs/2505.22888
-코드: https://github.com/Betswish/mCoT-XReasoning
-
-- 프롬프트로 사용자 언어 사고를 강제하면 언어 일치율 **46% → 98%**로 상승.
-- 그러나 정확도는 **26% → 17%**로 하락.
-- 비영어 질의라도 **영어로 추론할 때 정확도가 일관되게 높음**.
-- 100개 사례 post-training으로 완화해도 정확도 손실이 남음.
-- 평가 대상: Distilled-R1 / Skywork-OR1 계열 6개 모델.
-
-**Language Matters: How Do Multilingual Input and Reasoning Paths Affect Large Reasoning Models?**
-2025
-https://arxiv.org/abs/2505.17407
-
-- 영어·중국어가 LRM의 **"reasoning hub"** 언어로 작동.
-- 수학·지식 과제에서 hub 언어 추론이 정확도를 **최대 +26.8%** 개선
-  (DeepSeek-R1-Distill-Llama-8B 기준 평균 개선폭).
-- 반대로 비hub 언어 추론은 독성 탐지·문화 이해 과제에서 유리 —
-  **성능/안전성 트레이드오프** 존재.
-- 사고 언어 제어 방법으로 prefilling 기법 제안.
-
-> 위 두 편은 서로 반대 방향에서 같은 결론에 도달합니다.
-> 관련 슬라이드: 원칙 ① / 트레이드오프
-
----
-
-### 1.3 컨텍스트 배치
-
-**Lost in the Middle: How Language Models Use Long Contexts**
-Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, Percy Liang (Stanford) · TACL vol.12 (2024), NAACL 2024
-https://arxiv.org/abs/2307.03172
-
-- 관련 정보가 컨텍스트 **중간**에 위치하면 성능이 급락 (U자 곡선).
-- 컨텍스트가 길수록 추가 성능 저하.
-- 실무 함의: 핵심 지시는 **맨 앞 또는 맨 뒤**에 배치.
-
-> 관련 실험: `exp03_prompt_caching.py`, `exp07_analyze_my_prompt.py`
-
----
-
-### 1.4 모델 라우팅
-
-**RouteLLM: Learning to Route LLMs with Preference Data**
-Isaac Ong, Amjad Almahairi, Vincent Wu, Wei-Lin Chiang, Tianhao Wu, Joseph E. Gonzalez, M. Waleed Kadous, Ion Stoica (UC Berkeley · Anyscale · Canva) · ICLR 2025
-https://arxiv.org/abs/2406.18665
-
-- Chatbot Arena 인간 선호 데이터로 강/약 모델 이진 라우터 학습.
-- **비용 2배 이상 절감, 응답 품질 유지**.
-- 평가 지표: CPT(Call-Performance Threshold), APGR.
-- 실험 구성: 강 = gpt-4-1106-preview, 약 = Mixtral-8x7B.
-
-> 관련 실험: `exp06_other_levers.py`
-
----
-
-### 1.5 프롬프트 압축
-
-**LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models**
-Huiqiang Jiang, Qianhui Wu, Chin-Yew Lin, Yuqing Yang, Lili Qiu (Microsoft Research) · EMNLP 2023
-https://arxiv.org/abs/2310.05736
-
-- **최대 20× 압축에 성능 손실 1.5포인트**.
-- coarse-to-fine 방식, budget controller + 반복적 토큰 단위 압축.
-
-**LongLLMLingua: Accelerating and Enhancing LLMs in Long Context Scenarios via Prompt Compression**
-Huiqiang Jiang 외 (Microsoft Research)
-https://arxiv.org/abs/2310.06839
-
-- 질문 인지형(query-aware) 압축으로 롱컨텍스트 시나리오 대응.
-
-**LLMLingua-2: Data Distillation for Efficient and Faithful Task-Agnostic Prompt Compression**
-Zhuoshi Pan, Qianhui Wu, Huiqiang Jiang 외 (Microsoft Research) · ACL 2024 Findings
-https://arxiv.org/abs/2403.12968
-코드: https://aka.ms/LLMLingua-2
-
-- 압축을 **토큰 분류 문제**로 정식화. XLM-RoBERTa-large / mBERT 기반.
-- **압축률 2~5×**, 기존 압축법 대비 **3~6배 빠름**, end-to-end 지연 1.6~2.9× 개선.
-
-> ⚠️ **자주 발생하는 인용 오류**: "20× 압축"은 원본 LLMLingua(2310.05736)의 결과입니다.
-> LLMLingua-2(2403.12968)는 2~5× 압축이며 속도에 초점을 둔 후속작입니다. 둘을 구분해서 인용하세요.
-
----
-
-### 1.6 시맨틱 캐싱
-
-**GPT Semantic Cache: Reducing LLM Costs and Latency via Semantic Embedding Caching**
-Sajal Regmi, Chetan Phakami Pun · 2024
-https://arxiv.org/abs/2411.05276
-
-- 쿼리 임베딩을 Redis 인메모리에 저장해 의미가 유사한 질의를 매칭.
-- **API 호출 최대 68.8% 감소**, 캐시 히트율 61.6~68.8%.
-- positive hit rate **97% 이상** (캐시된 응답의 신뢰성).
-
-> 관련 실험: `exp06_other_levers.py`
-
----
-
-## 2. 벤더 공식 문서
-
-> 아래 수치는 모두 2026-08 기준입니다. **인용 전 반드시 재확인하세요.**
-
-### 2.1 프롬프트 캐싱
-
-| 제공사 | 캐시 읽기 | 캐시 쓰기 | 최소 토큰 | 방식 |
-|---|---|---|---|---|
-| Anthropic | 0.1× (90% 할인) | 1.25× (5분) / 2× (1시간) | 1,024 | 명시적 `cache_control` |
-| OpenAI | 0.5× (50%) ~ 0.1× (신형) | 없음 | 1,024 | 자동 프리픽스 감지 |
-| Google | 약 0.25× (75% 할인) | 별도 | 모델별 상이 | implicit / explicit |
-| DeepSeek | 0.1× (90% 할인) | 없음 | — | 자동 |
-
-- **Anthropic — Prompt caching**
-  https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
-- **OpenAI — Prompt caching**
-  https://platform.openai.com/docs/guides/prompt-caching
-- **Google — Gemini context caching**
-  https://ai.google.dev/gemini-api/docs/caching
-
-> 관련 실험: `exp03_prompt_caching.py`
-
----
-
-### 2.2 배치 API
-
-- **Anthropic — Message Batches API**
-  https://docs.anthropic.com/en/docs/build-with-claude/batch-processing
-  50% 할인 · 최대 24시간 · 배치당 10만 요청 · 결과 29일 보관 · 캐싱과 중첩 적용 가능.
-- **OpenAI — Batch API**
-  https://platform.openai.com/docs/guides/batch
-  50% 할인 · 24시간 SLA · 배치당 5만 요청 · JSONL 업로드 방식.
-
-> 관련 실험: `exp06_other_levers.py`
-
----
-
-### 2.3 토큰 사용량 계측 (Gemini)
-
-- **Gemini API — Understanding and counting tokens**
-  https://ai.google.dev/gemini-api/docs/tokens
-- **GenerateContentResponse.UsageMetadata 필드 레퍼런스**
-  https://ai.google.dev/api/generate-content#UsageMetadata
-
-`usageMetadata` 주요 필드:
-
-| 필드 | 의미 |
-|---|---|
-| `promptTokenCount` | 입력 토큰 (시스템 지시·히스토리 포함, **캐시 토큰도 포함**) |
-| `candidatesTokenCount` | 생성된 응답 토큰 |
-| `thoughtsTokenCount` | **사고(thinking) 토큰 — 출력 단가로 과금** |
-| `cachedContentTokenCount` | 캐시에서 읽은 토큰 |
-| `toolUsePromptTokenCount` | 함수 호출·코드 실행이 내부적으로 소비한 입력 토큰 |
-| `totalTokenCount` | 위 항목의 합 |
-
-> ⚠️ `promptTokenCount`는 캐시 토큰을 **이미 포함**합니다.
-> 실제 과금 입력 = `promptTokenCount − cachedContentTokenCount`.
-> 이 차감을 빠뜨리면 캐싱 절감 효과가 보이지 않습니다.
-
-> 관련 실험: `exp08_gemini_live.py` (실제 API 호출로 위 필드를 직접 관측)
-
----
-
-### 2.4 가격 페이지
-
-- Anthropic — https://www.anthropic.com/pricing
-- OpenAI — https://openai.com/api/pricing
-- Google Gemini — https://ai.google.dev/pricing
-- DeepSeek — https://api-docs.deepseek.com/quick_start/pricing
-
-> 단가 테이블 위치: `lab/pricing.py` (이 저장소의 유일한 가격 진실 공급원)
->
-> **2026-09-11 갱신**: `lab/pricing.py`에 Gemini 3.5/3.6/3.7/3.8 Flash 와
-> Claude Haiku 4.5 를 추가했다 (출처: 위 가격 페이지, 확인일 2026-09-11).
-> ⚠️ Gemini 3.6/3.7/3.8 Flash 의 $0.75/$3.75 는 **2026-12-31까지 introductory 가격**이며
-> 2027-01-01부터 $1.50/$7.50 으로 인상된다. 3.5 Flash($1.50/$9.00)는 상시 가격.
-> Google context caching 은 입력 단가의 10% (90% 할인), 쓰기 프리미엄 없음.
-
----
-
-### 2.5 확장 사고 (Extended thinking / Reasoning) — 출력 단가로 과금
-
-- **Anthropic — Extended thinking**
-  https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
-  `thinking.budget_tokens` 로 사고 예산 제어. 사고 토큰은 `usage.output_tokens`
-  **안에 포함**(별도 필드 없음), 출력 단가로 과금.
-- **OpenAI — Reasoning models**
-  https://platform.openai.com/docs/guides/reasoning
-  `reasoning_effort`(minimal/low/medium/high)로 제어.
-  `usage.completion_tokens_details.reasoning_tokens` 에 별도 노출, 출력 단가.
-- **Google — Gemini thinking**
-  https://ai.google.dev/gemini-api/docs/thinking
-  `thinkingConfig.thinkingBudget`(0=끔, 양수=상한, -1=자동)로 제어.
-  `usageMetadata.thoughtsTokenCount` 에 별도 노출, 출력 단가.
-
-> 세 벤더 모두 "보이지 않는 사고 토큰이 출력 단가로 청구된다"는 구조는 동일하지만
-> **파라미터 이름·단위·노출 방식이 다르다** (exp10 이 이 차이를 재는 실험).
-
----
-
-## 3. 엔지니어링 자료
-
-**Effective context engineering for AI agents** (Anthropic Engineering, 2025-09)
-https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
-
-- **context rot**: 컨텍스트 토큰이 늘수록 정보 회수 정확도가 떨어짐 (모든 모델에서 관측).
-- **attention budget**: 트랜스포머의 n² 관계로 인해 컨텍스트는 유한 자원.
-- 롱호라이즌 전략 3종: **컴팩션 / 구조적 노트 작성 / 서브에이전트**.
-- 서브에이전트는 수만 토큰을 탐색해도 **1,000~2,000 토큰의 요약만 반환**.
-
-**How we built our multi-agent research system** (Anthropic Engineering, 2025)
-https://www.anthropic.com/engineering/multi-agent-research-system
-
-- 에이전트는 일반 챗 대비 약 **4배**, 멀티에이전트는 약 **15배** 토큰 소모.
-
-> 관련 실험: `exp04_agent_loop_sdd.py`
-
----
-
-## 4. 반증 · 한계 자료
-
-> 유리한 근거만 모으면 검증이 아니라 영업입니다. 반대 방향 근거도 함께 싣습니다.
-
-**Spec-Kit vs OpenSpec 토큰 벤치마크** (2026)
-
-- 스펙 주도 개발(SDD) 도구 간 토큰 소비 비교에서 Spec-Kit이 OpenSpec 대비 **토큰 +97~109%**.
-- 시사점: SDD가 항상 절감이 아니며, **무거운 프레임워크는 역효과**.
-
-**ETH Zurich — LLM 생성 컨텍스트 파일 연구**
-
-- LLM이 자동 생성한 컨텍스트/규약 파일은 성공률을 소폭 떨어뜨리면서 **비용은 20%+ 증가**.
-- 시사점: 컨텍스트 파일은 **사람이 짧게** 쓸 때만 이득.
-
-> 관련 슬라이드: "SDD는 조건부로만 참이다"
-
----
-
-## 5. 자체 실측
-
-**token-cost-lab** — 이 저장소.
-
-- `exp01`~`exp07`: tiktoken(o200k_base / cl100k_base) 기반 실측 + 단가 시뮬레이션.
-- `exp08`: **Gemini API 실제 호출** — 실시간 토큰 사용량 및 비용 관측.
-- 한·영 문장쌍 데이터: `data/sentence_pairs.json`.
-
-시뮬레이션 결과는 "가정에 기반한 계산"이고, `exp08`만이 "실제 청구되는 값"입니다.
-발표 시 이 둘을 구분해서 말하세요.
+언어별 토큰화 효율 격차의 문헌 근거. 특정 한국어 배수를 모든 모델에 옮기는 근거는 아니다.
+
+NLLB Team et al. **No Language Left Behind: Scaling Human-Centered Machine Translation** (2022).
+FLORES-200: https://github.com/facebookresearch/flores/tree/main/flores200
+
+이번 로컬 측정은 devtest `eng_Latn`/`kor_Hang`의 1,012쌍 전체.
+`data/flores200/README.md`에 다운로드 URL, 해시, CC-BY-SA 4.0 라이선스와 저자 표시를 보존했다.
+문장별 토큰 합계를 사용한다. 생성 결과나 추론 정확도 측정이 아니다.
+
+### 1.2 정확도와 사고 언어
+
+**Language Matters: How Do Multilingual Input and Reasoning Paths Affect Large Reasoning Models?** (2025),
+https://arxiv.org/html/2505.17407v1#S4.T1
+
+표 1의 한국어 MATH-500: 영어/한국어 prefilling의 네 모델 평균 **83.7% / 75.4%**.
+모델별 (EN / KO): Llama-8B 69.8/41.6, Qwen-14B 84.4/83.8, QwQ-32B 90.6/88.2,
+Qwen3-30B-A3B 89.8/88.0. 평균은 반올림값이다.
+이 범위는 조건부 영어 우위를 지지한다. 더 많은 사고 토큰이 더 깊은 추론이라는 증거가 아니며,
+모든 상용 모델·안전성·문화 이해 과제의 영어 우위를 뜻하지 않는다.
+
+**When Models Reason in Your Language: Controlling Thinking Language Comes at the Cost of Accuracy** (2025),
+https://arxiv.org/abs/2505.22888 · https://github.com/Betswish/mCoT-XReasoning
+
+사고 언어 제어의 정확도 트레이드오프를 다룬 외부 연구. 저장소에서 이 모델들을 새로 재실행하지 않았다.
+
+## 2. 비용·캐시·API 공식 문서
+
+| 항목 | 원문 | 이 저장소에서 사용하는 범위 |
+|---|---|---|
+| Gemini 가격 | https://ai.google.dev/gemini-api/docs/pricing | Flash-Lite 3.1 Standard text 입력 $0.25/M, 사고 포함 출력 $1.50/M, 캐시 읽기 $0.025/M |
+| Claude 가격·캐시 | https://platform.claude.com/docs/en/build-with-claude/prompt-caching | 모델별 최소 길이, 5분 캐시 쓰기와 읽기. Haiku 4.5 최소 4,096 |
+| OpenAI 가격 | https://developers.openai.com/api/docs/pricing.md | 정확한 `gpt-5` 행 $1.25/$0.125/$10; ‘GPT-5.x 최신 flagship’와 혼용하지 않음 |
+| DeepSeek 가격 | https://api-docs.deepseek.com/quick_start/pricing/ | V4.1 Flash peak/off-peak 구분. 현재 alias와 가격 연결 |
+| Gemini 캐시 | https://ai.google.dev/gemini-api/docs/generate-content/caching | 모델별 implicit 최소 길이, explicit 저장료 별도 |
+| Gemini usage | https://ai.google.dev/api/generate-content#UsageMetadata | prompt는 cache 포함. thoughts와 candidates를 구분 |
+| Gemini 함수 호출 | https://ai.google.dev/gemini-api/docs/generate-content/function-calling | Content의 role+parts, 모델 Content/signature/id 보존 |
+| Gemini 사고 | https://ai.google.dev/gemini-api/docs/generate-content/thinking | 모델에 따라 thinkingBudget/thinkingLevel 지원이 다름 |
+| Claude 사고 | https://platform.claude.com/docs/en/build-with-claude/extended-thinking | output_tokens에 사고 포함. output_tokens_details.thinking_tokens가 있으면 관측, 없으면 분리 미확인 |
+| OpenAI 추론 | https://developers.openai.com/api/docs/guides/reasoning | reasoning_tokens는 출력 과금 토큰의 부분집합 |
+| Batch | https://platform.claude.com/docs/en/build-with-claude/batch-processing | 지원 모델·서비스의 할인·지연 조건; 모든 가격표에 공통 보장하지 않음 |
+
+`lab/pricing.py`와 [PRICING.md](docs/PRICING.md)에 스냅샷 범위를 적었다.
+저장 usage × 단가는 실제 청구서 확인이 아니다. 캐시 생성/저장·도구·지역·장문·세금·계약조건은 별도다.
+`totalTokenCount`는 캐시와 prompt를 중복 합산하는 산식으로 정의하지 않는다.
+
+## 3. 컨텍스트·최적화 문헌
+
+- Nelson F. Liu et al. **Lost in the Middle: How Language Models Use Long Contexts**, TACL 2024.
+  https://arxiv.org/abs/2307.03172 — 관련 정보의 위치와 장문 활용. 모든 상황의 비용 법칙은 아님.
+- Isaac Ong et al. **RouteLLM: Learning to Route LLMs with Preference Data**, ICLR 2025.
+  https://arxiv.org/abs/2406.18665 — 학습된 라우팅의 조건부 비용/성능 결과.
+  저장소의 규칙 라우터에 같은 절감률을 자동 적용하지 않음.
+- Huiqiang Jiang et al. **LLMLingua**, EMNLP 2023.
+  https://arxiv.org/abs/2310.05736 — 프롬프트 압축. 후속 LLMLingua-2의 결과와 혼용 금지.
+- **LongLLMLingua**, https://arxiv.org/abs/2310.06839;
+  Zhuoshi Pan et al. **LLMLingua-2**, ACL Findings 2024, https://arxiv.org/abs/2403.12968.
+- Sajal Regmi, Chetan Phakami Pun. **GPT Semantic Cache** (2024), https://arxiv.org/abs/2411.05276.
+  의미 유사도 캐시의 외부 실험. 우리 워크로드의 hit rate는 따로 측정해야 함.
+- Anthropic. **Effective context engineering for AI agents** (2025),
+  https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents.
+- Anthropic. **How we built our multi-agent research system** (2025),
+  https://www.anthropic.com/engineering/multi-agent-research-system.
+  서브에이전트·요약은 메인 컨텍스트만이 아니라 자식 호출과 요약 비용까지 함께 봐야 함.
+
+## 4. 반례와 비교 대상
+
+### 4.1 Spec-Kit 대 OpenSpec
+
+**Is Your “Safe” Choice Burning Your Budget?** (2026-03-18), 외부 블로그의 두 사례.
+보고된 총토큰은 57,740 대 120,947 및 91,729 대 181,040으로,
+Spec-Kit의 증가가 각각 약 109%, 97%다. 둘 다 SDD 접근이며 **SDD 대 무스펙 비교가 아니다**.
+다수 과제의 무작위 시험이나 본 저장소의 재현 실측으로 소개하지 않는다.
+[1](https://medium.com/it-chronicles/is-your-safe-choice-burning-your-budget-1cfddf8782e4)
+
+### 4.2 저장소 컨텍스트 파일 연구
+
+Thibaud Gloaguen, Niels Mündler, Mark Müller, Veselin Raychev, Martin Vechev.
+**Evaluating AGENTS.md: Are Repository-Level Context Files Helpful for Coding Agents?** (2026).
+
+v1 §4.2/Table 2는 LLM 생성 컨텍스트 파일 조건의 평균 비용 증가를 SWE-bench Lite에서 20%,
+AGENTbench에서 23%로 보고한다. 사람 작성 파일도 비용이 증가할 수 있다.
+따라서 ‘사람이 짧게 쓰면 항상 이득’이나 ‘모든 SDD는 손해’로 일반화하지 않는다.
+[4](https://arxiv.org/html/2602.11988v1)
+
+## 5. 로컬 증거와 미실행 영역
+
+- `results/live_lang_thinking.jsonl`, `results/thinking_sweep.jsonl`: 원래 보존된 API usage 투영 로그. 새 호출 아님.
+- `results/flores_tokenizers.jsonl`: 새 로컬 인코딩 계측, 모델 API 과금 없음.
+- `demo/results*.json`, `analysis/`: 가정 기반 비용 시나리오 / 고정 발화 재생.
+- `demo/vibe_vs_spec/usage.json`: 세션 토큰 추정치. API 공급자의 raw billing usage 아님.
+- `tests/`, `results/browser_*.json`: 소프트웨어 계약·동작 테스트. 모델 품질 실측 아님.
+- 과거 N=5/N=100과 37.5배 예비 기록은 원자료 미포함으로 재검증 보류.
+
+이 구분을 유지하는 것이 핵심 주장과 실측의 일관성을 지키는 방법이다.

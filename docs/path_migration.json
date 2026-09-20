@@ -1,0 +1,110 @@
+[
+  {
+    "old_path_hex": "64656d6f2fd9a6e4dbc1c92e68746d6c",
+    "new_path": "demo/compare.html"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2f41425fdddcbffddcaedba62b5fdde8a9d9aabcdba6a6fdeafde1f22e6d64",
+    "new_path": "presentation/archive/ladder_ab_efficacy.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fd9a6a3dde6a35ffde8f1ddfcbcd9aaa2dde8a92e6d64",
+    "new_path": "presentation/script.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fd9a6a3dde6a35ffde8f1ddfcbcd9aaa2dde8a95fd9a6a6d9e4eafde8f12e6d64",
+    "new_path": "presentation/script_bonus.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fd9a6a3dde6a35ffde8f1ddfcbcd9aaa2dde8a95fd9a6a9ddc4a92e6d64",
+    "new_path": "presentation/script_bonus.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fd9a6a3dde6a35ffde8f1ddfcbcd9aaa2dde8a95fddf8e4fde5ec2e6d64",
+    "new_path": "presentation/script_agent.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdba6c7fdaad8d9a6a6dba6e1fde4a32e6d64",
+    "new_path": "presentation/archive/validation_history.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdbc02bdba6a6fdd7c9d9faee5fdbc1bcdde4ddefa6fdfba6fdd6c7d9a6a6fda62e6d64",
+    "new_path": "presentation/archive/sources_implementation_batch.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a32e706466",
+    "new_path": "presentation/token_cost.pdf"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a32e70707478",
+    "new_path": "presentation/token_cost.pptx"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a35fd9a6a6d9e4eafde8f12e706466",
+    "new_path": "presentation/token_cost_bonus.pdf"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a35fd9a6a6d9e4eafde8f12e70707478",
+    "new_path": "presentation/token_cost_bonus.pptx"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a35fd9a6a9ddc4a92e706466",
+    "new_path": "presentation/token_cost_main.pdf"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a35fd9a6a9ddc4a92e70707478",
+    "new_path": "presentation/token_cost_main.pptx"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a35fddf8e4fde5ec5ffdf9c9fdd8a6fde1e4dde8a9fde0efddeee02e706466",
+    "new_path": "presentation/token_cost_agent.pdf"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2fdde5e1ddfca65ffde1eafdf2a25fd9a6a3dde6a35fddf8e4fde5ec5ffdf9c9fdd8a6fde1e4dde8a9fde0efddeee02e70707478",
+    "new_path": "presentation/token_cost_agent.pptx"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2ffdd8d9c5e4d9c2eafdd82bfda65fdba6c7fdaad8d9a6e4fddcaedba62b5fd9eec7fda6e02e6d64",
+    "new_path": "presentation/archive/verification_intent.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2ffde9bcd9eff1d9aabc5f415f76735f425fd9a6e4dbc1c92e6d64",
+    "new_path": "presentation/archive/ladder_ab.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2ffde9bcd9eff1d9aabc5fdba6a6ddf2ae5ffddca6fdfcfde4f1dba6e42e6d64",
+    "new_path": "presentation/archive/ladder_orchestration.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2ffde9bcd9eff1d9aabc5fddc5c9dba9a6dba6c7dde5e12e6d64",
+    "new_path": "presentation/archive/ladder_review.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2ffde9bcd9eff1d9aabc5ffdc2f2fde5ee5fdba6c7fdaad8dba6a6dba62b2e6d64",
+    "new_path": "presentation/archive/ladder_lean.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2ffdeff1d9eda3dbc0a95ffd2bc7fdd8a6fde8f1dba6c7fdaad82e6d64",
+    "new_path": "presentation/archive/replay_history.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2ffdfa2bfdd7d15fdba6c7fdaad85fd9baf1dde8a9d9aaa1fde8f12e6d64",
+    "new_path": "presentation/archive/claims_history.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2f636173655f766962655f76735f737065632f566962652d76732d537065635fdde5e1ddfca6d9a6e4fddcae5fd9aabcddc5bcdde8a92e70707478",
+    "new_path": "presentation/case_vibe_vs_spec/vibe_vs_spec.pptx"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2f636173655f766962655f76735f737065632fdde5e1ddfca65fdba6c7dba6ae5fd9a6e4dbc1c92e6d64",
+    "new_path": "presentation/case_vibe_vs_spec/cost_comparison.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2f636173655f766962655f76735f737065632ffd2bc7fdd8a6fde8f15fd9a6e4dbc1c95fd9aabcddc5bcdde8a92e6d64",
+    "new_path": "presentation/case_vibe_vs_spec/case_report.md"
+  },
+  {
+    "old_path_hex": "70726573656e746174696f6e2f636173655f766962655f76735f737065632ffde4a9fde05fdba9a6d9edd82e6d64",
+    "new_path": "presentation/case_vibe_vs_spec/session_history.md"
+  }
+]

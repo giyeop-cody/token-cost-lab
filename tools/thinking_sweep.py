@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-thinking_sweep.py — 사고 예산(thinkingBudget)만 바꿔가며 실제 과금을 계측한다.
+thinking_sweep.py — 과거 thinkingBudget 로그 재계산 또는 명시적 새 usage 관측.
 
-발표 슬라이드 24("사고 토큰 37배")의 근거를 N회 반복 표본으로 재생산한다.
+기존 30행은 당시 요청 조건을 담은 저장 usage 기록이다. 현재 API 지원과 같다고 보장하지 않는다.
 같은 질문 · 같은 모델 · 오직 thinkingBudget만 변경 → 사고 토큰이 요금에서
 차지하는 비중을 분리 측정한다.
 
@@ -36,16 +36,17 @@ PROMPT = (
 # (라벨, thinkingBudget)  None=미지정(모델 기본값)
 LEVELS = [
     ("미지정(기본)", None),
-    ("끔 (0)", 0),
+    ("명시적 0", 0),
     ("512", 512),
     ("2048", 2048),
     ("자동 (-1)", -1),
 ]
 
-# ⚠️ 이 스크립트는 flash-lite를 호출하지만, 비용은 관례상 gemini-25($1.25/$10)
-# 단가로 환산해 왔다(덱의 240× 근거). 실단가 기준 배수도 함께 출력해 전제를 드러낸다.
-IN_R, OUT_R = 1.25 / 1e6, 10.0 / 1e6          # 환산 기준 (gemini-25)
-ALT_IN, ALT_OUT = 0.10 / 1e6, 0.40 / 1e6      # 실제 모델(flash-lite) 공식 단가
+# Prices are not usage metadata. Keep actual and historical conversion separate.
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lab.pricing import log_cost
 
 
 def key() -> str:
@@ -137,81 +138,62 @@ def wilson(k, n, z=1.96):
     return ((c - m) / d, (c + m) / d)
 
 
-def n_correct(rows):
-    """응답에서 첫 숫자를 뽑아 정답(±0.05) 개수를 센다.
-    '문자열이 같은가'가 아니라 '정답인가'를 세야 한다 —
-    실제로 38.016 / $38.016 / 37.9944(off-by-one)가 섞여 나온다."""
+def numeric_answer(text):
+    """Only accept a final numeric amount, not an arbitrary first number in prose."""
     import re
-    n = 0
-    for r in rows:
-        m = re.findall(r"[\d.]+", (r.get("text") or "").replace(",", ""))
-        if m:
-            try:
-                if abs(float(m[0]) - ANSWER) <= ANSWER_TOL:
-                    n += 1
-            except ValueError:
-                pass
-    return n
+    m = re.fullmatch(r"\s*\$?\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))(?:\s*USD)?\s*", text.replace(",", ""))
+    return float(m[1]) if m else None
+
+
+def n_correct(rows, tol=ANSWER_TOL):
+    return sum((v := numeric_answer(r.get("text", ""))) is not None
+               and abs(v - ANSWER) <= tol for r in rows)
 
 
 def summarize(path):
-    rows = [json.loads(l) for l in open(path, encoding="utf-8")]
-    ok = [r for r in rows if "error" not in r and r.get("finish") in ("STOP", "")]
-    print(f"\n{'='*84}\n  사고 예산 스윕 — 표본 {len(rows)}건 중 유효 {len(ok)}건")
-    print(f"  질문 고정 · 모델 고정 · thinkingBudget만 변경\n")
-    print(f"  {'예산':<14}{'n':>3}{'사고':>9}{'응답':>8}{'출력계':>9}"
-          f"{'비용':>12}{'배수':>9}   정답률(±0.05) [Wilson 95% CI]")
-    base = None
-    out_rows = []
+    rows = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
+    ok = [r for r in rows if "error" not in r and r.get("finish") == "STOP"]
+    models = {r["model"] for r in ok}
+    if len(models) != 1:
+        raise ValueError(f"Compare one model per sweep; found {models}")
+    print(f"\n{'='*100}\n사고 예산 스윕 — {len(rows)}건, STOP {len(ok)}건, 제외 {len(rows)-len(ok)}건")
+    print(f"모델: {next(iter(models))}; 과제 1개 반복. 완료/허용오차 통과/정확한 정답을 구분한다.")
+    print("actual=2026-09-20 Standard 단가 환산; legacy=발표 $1.25/$10 가정. 청구서 확인 아님.")
+    groups = {budget: [r for r in ok if r.get("budget") == budget] for _, budget in LEVELS}
+    base = groups[None]
+    if not base:
+        raise ValueError("미지정 기준 조건이 없습니다; 임의의 첫 행을 기준으로 쓰지 않습니다")
+    means = {}
+    for budget, g in groups.items():
+        if g:
+            means[budget] = {k: st.mean(log_cost(r, k) for r in g) for k in ("actual", "legacy")}
+    print("예산 | n | 사고 평균 | 응답 평균 | actual $/호출 | actual/미지정 | legacy/미지정 | ±0.05 통과 [Wilson95%] | exact")
     for label, budget in LEVELS:
-        d = [r for r in ok if r.get("label") == label]
-        if not d:
-            continue
-        th = st.mean(r["thoughts"] for r in d)
-        ca = st.mean(r["cands"] for r in d)
-        pr = st.mean(r["prompt"] for r in d)
-        cost = pr * IN_R + (th + ca) * OUT_R
-        if base is None:
-            base = cost
-        _k = n_correct(d)
-        _lo, _hi = wilson(_k, len(d))
-        ans = f"{_k}/{len(d)}  [{_lo*100:.0f}–{_hi*100:.0f}%]"
-        print(f"  {label:<14}{len(d):>3}{th:>9.0f}{ca:>8.0f}{th+ca:>9.0f}"
-              f"{cost:>12.6f}{cost/base:>8.1f}×   {ans}")
-        out_rows.append((label, th, ca, cost, cost / base))
-    if len(out_rows) >= 2:
-        hi = max(out_rows, key=lambda r: r[3])
-        lo = min(out_rows, key=lambda r: r[3])
-        print(f"\n  최대/최소 비용 배수: {hi[3]/lo[3]:.1f}× "
-              f"({hi[0]} vs {lo[0]})")
-        nc_hi = n_correct([r for r in ok if r.get("label") == hi[0]])
-        nc_lo = n_correct([r for r in ok if r.get("label") == lo[0]])
-        print(f"  → 정답률은 {nc_lo}/6 vs {nc_hi}/6 로 같은데 요금만 "
-              f"{hi[3]/lo[3]:.1f}배 차이난다.")
-        print(f"     (주의: 응답 '문자열'까지 동일한 것은 아니다. "
-              f"38.016 / $38.016 / 37.9944 가 섞여 있다.)")
-        vis = [r for r in out_rows if r[1] > 0]
-        if vis:
-            sh = st.mean(r[1] / max(r[1] + r[2], 1) for r in vis)
-            print(f"  → 사고가 켜진 구간에서 출력 토큰의 평균 {sh*100:.0f}%가 "
-                  f"'보이지 않는' 사고 토큰이다.")
-
-        # 단가 민감도 — 배수는 단가 가정에 의존한다
-        def alt_cost(label):
-            d = [r for r in ok if r.get("label") == label]
-            if not d:
-                return None
-            return (st.mean(r["prompt"] for r in d) * ALT_IN
-                    + (st.mean(r["thoughts"] for r in d)
-                       + st.mean(r["cands"] for r in d)) * ALT_OUT)
-
-        a_hi, a_lo = alt_cost(hi[0]), alt_cost(lo[0])
-        if a_hi and a_lo:
-            print(f"\n  [단가 민감도] 위 배수는 gemini-25($1.25/$10) 환산 기준이다.")
-            print(f"  실제 호출 모델의 공식 단가($0.10/$0.40)로 계산하면 "
-                  f"{a_hi/a_lo:.0f}×.")
-            print(f"  → 인용할 때 '어느 단가 기준인지'를 반드시 함께 말할 것.")
-    print(f"{'='*84}")
+        g = groups[budget]
+        if not g:
+            print(f"{label} | 미실행"); continue
+        k, exact = n_correct(g), n_correct(g, tol=1e-9)
+        lo, hi = wilson(k, len(g))
+        c = means[budget]
+        print(f"{label} | {len(g)} | {st.mean(r['thoughts'] for r in g):.2f} | "
+              f"{st.mean(r['cands'] for r in g):.2f} | {c['actual']:.8f} | "
+              f"{c['actual']/means[None]['actual']:.2f}× | {c['legacy']/means[None]['legacy']:.2f}× | "
+              f"{k}/{len(g)} [{lo:.1%}, {hi:.1%}] | {exact}/{len(g)}")
+    if -1 in means:
+        for ref in (None, 0):
+            if ref not in means: continue
+            print(f"자동 / {ref!r}: actual {means[-1]['actual']/means[ref]['actual']:.2f}×; "
+                  f"legacy {means[-1]['legacy']/means[ref]['legacy']:.2f}×")
+        print("같은 허용오차 통과 횟수는 일반 정확도의 동등성 증명이 아니다.")
+    active = [r for r in ok if r['thoughts'] > 0]
+    if active:
+        share = sum(r['thoughts'] for r in active) / sum(r['thoughts']+r['cands'] for r in active)
+        print(f"사고 발생 행의 합계 기준 사고/출력계 = {share:.3%} (행별 비율의 평균과 다름)")
+    if groups[512]:
+        th = [r['thoughts'] for r in groups[512]]
+        print(f"512 조건 STOP 행의 사고량 {min(th)}–{max(th)}; 예산 절단이 오답 원인이라고 확인하지 않음.")
+    print("새 live 실행은 유료이며 모델·설정·시점에 따라 달라질 수 있다.")
+    print('='*100)
 
 
 def main():
@@ -219,12 +201,18 @@ def main():
     ap.add_argument("--n", type=int, default=5)
     ap.add_argument("--model", default="gemini-3.1-flash-lite")
     ap.add_argument("--sleep", type=float, default=1.5)
-    ap.add_argument("--out", default="results/thinking_sweep.jsonl")
+    ap.add_argument("--out", default="results/thinking_sweep_new.jsonl")
     ap.add_argument("--summarize", metavar="PATH")
+    ap.add_argument("--allow-legacy-budget", action="store_true",
+                    help="explicit opt-in to historical thinkingBudget requests; unsupported by current Gemini 3 docs")
     args = ap.parse_args()
     if args.summarize:
         summarize(args.summarize)
     else:
+        if args.n < 1:
+            ap.error("--n must be positive")
+        if args.model.startswith("gemini-3") and not args.allow_legacy_budget:
+            ap.error("Current Gemini 3 docs use thinkingLevel, not this historical budget sweep. Use exp10 or explicitly --allow-legacy-budget; no result is pre-confirmed.")
         run(args)
 
 

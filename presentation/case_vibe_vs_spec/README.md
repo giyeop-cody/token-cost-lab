@@ -1,23 +1,14 @@
-# 발표 패키지 — Vibe vs Spec 토큰·비용 비교
+# 카페 케이스 발표 — 정정판
 
-`demo/vibe_vs_spec/` 케이스 스터디의 발표 산출물.
-main은 "수치를 재현하는 코드만 담는다"는 저장소 원칙에 따라
-발표 자료는 이 `presentation` 브랜치의 `presentation/case_vibe_vs_spec/` 에 둔다.
-본 발표 자료(29장 덱·대본)는 상위 `presentation/` 폴더 참고.
+[PPTX 9장](vibe_vs_spec.pptx) · [PDF 9쪽](vibe_vs_spec.pdf) · [대본](script_case.md)
 
-## 내용
+근거는 [케이스 설명](../../demo/vibe_vs_spec/README.md)의 **세션 토큰 추정치**입니다.
+실제 청구 실측·재작업 감소의 인과 실험으로 소개하지 않습니다.
 
-| 파일 | 설명 |
-|---|---|
-| `Vibe-vs-Spec_토큰비용_리포트.pptx` | 9장 슬라이드 덱 (과정 → 스크린샷 → 토큰 → 비용 → 분석 → 결론) |
+```bash
+python presentation/case_vibe_vs_spec/verify_case.py --with-pdf
+python demo/vibe_vs_spec/verify_ac.py
+```
 
-모든 수치는 `demo/vibe_vs_spec/usage.json`에서 재계산 검증했다 (`presentation/case_vibe_vs_spec/verify_case.py`).
-| `케이스_비교_리포트.md` | 산출물·토큰 비교 상세 |
-| `토큰_가격_비교.md` | Claude/GPT-5 단가 적용 비용 계산 (Claude −7.6% · GPT-5 −8.3%) |
-| `세션_기록.md` | Vibe 세션 원본 기록 |
-
-## 수치 원자료
-
-모든 수치의 원자료와 재검증 스크립트는 main 브랜치
-[`demo/vibe_vs_spec/`](../../tree/main/demo/vibe_vs_spec)에 있다
-(usage.json · verify_ac.py · transcripts).
+첫 명령은 실제 발표파일 정합, 둘째는 현재 HTML의 AC를 검사합니다. 검증 파일이 없으면 실패합니다.
+`session_history.md`는 옛 세션 기록이고, 현재 비용/품질 근거의 해석은 상위 정정 보고서를 따릅니다.

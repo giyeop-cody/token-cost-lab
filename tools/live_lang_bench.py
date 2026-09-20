@@ -12,7 +12,7 @@ exp08 은 시연용 1회 호출이다. 이 스크립트는 통계를 내기 위�
   - 한 호출 끝날 때마다 flush → 중간에 죽어도 데이터가 남는다
 
   python tools/live_lang_bench.py --n 25 --model gemini-3.1-flash-lite
-  python tools/live_lang_bench.py --summarize results/live_lang.jsonl
+  python tools/live_lang_bench.py --summarize results/live_lang_thinking.jsonl
 """
 
 import argparse
@@ -134,9 +134,13 @@ def summarize(path):
     trunc = [r for r in ok if r.get("finish") not in ("STOP", "")]
     if trunc:
         print(f"  ⚠️ 잘린 표본 {len(trunc)}건 (finishReason != STOP) — 평균에서 제외")
-    ok = [r for r in ok if r.get("finish") in ("STOP", "")]
+    ok = [r for r in ok if r.get("finish") == "STOP"]
 
-    IN_R, OUT_R = 1.25 / 1e6, 10.0 / 1e6
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from lab.pricing import log_cost
+    print("  모델별 Standard 단가 환산 (2026-09-20), 실제 청구서 아님")
     for task in sorted({r["task"] for r in ok}):
         print(f"\n── 과제: {task} " + "─" * 50)
         agg = {}
@@ -159,7 +163,7 @@ def summarize(path):
         for lang in ("en", "ko"):
             a = agg[lang]
             out = a["thoughts"] + a["cands"]
-            c = a["prompt"] * IN_R + out * OUT_R
+            c = st.mean(log_cost(r) for r in ok if r["task"] == task and r["lang"] == lang)
             cost[lang] = c
             print(f"  {lang.upper():<6}{a['n']:>4}{a['prompt']:>8.0f}"
                   f"{a['thoughts']:>9.0f}{a['cands']:>9.0f}{out:>9.0f}{c:>12.6f}")
@@ -182,12 +186,18 @@ def main():
     ap.add_argument("--thinking", type=int, default=None,
                     help="사고 예산: 0=끔, -1=자동, N=N토큰. 미지정이면 모델 기본값")
     ap.add_argument("--sleep", type=float, default=1.5)
-    ap.add_argument("--out", default="results/live_lang.jsonl")
+    ap.add_argument("--out", default="results/live_lang_new.jsonl")
+    ap.add_argument("--allow-legacy-budget", action="store_true",
+                    help="opt in to historical Gemini 3 thinkingBudget requests, not current documented thinkingLevel")
     ap.add_argument("--summarize", help="기존 JSONL 요약만")
     args = ap.parse_args()
     if args.summarize:
         summarize(args.summarize)
     else:
+        if args.n < 1:
+            ap.error("--n must be positive")
+        if args.thinking is not None and args.model.startswith("gemini-3") and not args.allow_legacy_budget:
+            ap.error("Current Gemini 3 thinking control is thinkingLevel. Use exp10, or explicitly --allow-legacy-budget for historical request replay; not pre-verified.")
         run(args)
 
 

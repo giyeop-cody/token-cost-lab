@@ -119,13 +119,17 @@ def count_tokens(model: str, text: str, key: str) -> int:
 
 
 def generate(model: str, text: str, key: str,
-             thinking_budget=None, max_out: int = 400) -> dict:
+             thinking_budget=None, max_out: int = 400, thinking_level=None) -> dict:
     """실제 생성. usageMetadata 와 응답 텍스트를 돌려준다."""
     url = f"{API_ROOT}/{model}:generateContent"
     payload = {
         "contents": [{"parts": [{"text": text}]}],
         "generationConfig": {"maxOutputTokens": max_out},
     }
+    if thinking_budget is not None and thinking_level is not None:
+        raise ValueError("choose one thinking control")
+    if thinking_level is not None:
+        payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": thinking_level}
     if thinking_budget is not None:
         payload["generationConfig"]["thinkingConfig"] = {
             "thinkingBudget": int(thinking_budget)
@@ -139,10 +143,13 @@ def generate(model: str, text: str, key: str,
     out_text = ""
     for cand in data.get("candidates", []):
         for part in (cand.get("content", {}) or {}).get("parts", []) or []:
-            if "text" in part:
+            if "text" in part and not part.get("thought"):
                 out_text += part["text"]
 
-    return {"usage": usage, "text": out_text.strip(), "elapsed": elapsed}
+    finish = (data.get("candidates") or [{}])[0].get("finishReason")
+    usage_present = "promptTokenCount" in usage and "candidatesTokenCount" in usage
+    return {"usage": usage, "text": out_text.strip(), "elapsed": elapsed, "finish": finish,
+            "usage_present": usage_present, "valid": bool(usage_present and finish == "STOP" and out_text.strip())}
 
 
 def _billable(usage: dict) -> tuple:
@@ -152,7 +159,7 @@ def _billable(usage: dict) -> tuple:
     thoughts = int(usage.get("thoughtsTokenCount", 0) or 0)
     cands = int(usage.get("candidatesTokenCount", 0) or 0)
     tools = int(usage.get("toolUsePromptTokenCount", 0) or 0)
-    fresh_in = max(prompt - cached, 0) + tools
+    fresh_in = prompt - cached  # toolUse field is observed, not automatically added as billable
     out = cands + thoughts          # ★ 사고 토큰도 출력 단가로 과금
     return fresh_in, cached, out
 
@@ -171,8 +178,7 @@ def show_usage(usage: dict) -> None:
 
 
 def price_it(usage: dict, m) -> float:
-    fresh_in, cached, out = _billable(usage)
-    return pricing.cost(m, fresh_in + cached, out, cached_tok=cached)
+    return pricing.gemini_usage_cost(m, usage)
 
 
 # ─────────────────────────────────────────────────────────── 모드
@@ -192,12 +198,12 @@ def mode_count_only(args, key):
         ["l", "r", "r", "r"],
     )
     print()
-    report.kv("Gemini 실측 배수", f"{ratio:.2f}×", "(exp01 tiktoken 실측: 1.44×)")
+    report.kv("Gemini 실측 배수", f"{ratio:.2f}×", "(exp01 예문 인코딩과 별도 지표)")
     print("\n  → 벤더 토크나이저마다 배수가 다릅니다. 자기 모델로 재보는 것이 정답입니다.")
 
 
 def mode_compare(args, key):
-    m = pricing.get(args.price_model)
+    m = (pricing.get(args.price_model) if args.price_model else pricing.for_api(args.model))
     report.section(f"한국어 vs 영어 실호출 비교  ·  model={args.model}")
     print(f"  단가 기준: {m.name}  (${m.inp}/1M 입력, ${m.out}/1M 출력)")
     print("  ※ 실제 과금됩니다.\n")
@@ -210,6 +216,10 @@ def mode_compare(args, key):
         results[lang] = r
         print(f"  [{label}] 완료 ({r['elapsed']:.1f}초)\n")
 
+    if any(not r["valid"] for r in results.values()):
+        for lang, r in results.items():
+            print(lang, "valid=", r["valid"], "finish=", r["finish"], "usage=", r["usage"])
+        raise SystemExit("Incomplete comparison: failed/truncated/missing usage; no cost-effect conclusion")
     rows = []
     for lang in ("en", "ko"):
         u = results[lang]["usage"]
@@ -245,47 +255,40 @@ def mode_compare(args, key):
 
     print()
     report.verdict(
-        "한국어 사고·응답은 영어보다 비싸다",
+        "이번 조건의 한/영 호출당 환산 비용 비교",
         f"실측 {(c_ko / c_en - 1) * 100:+.1f}%" if c_en else "측정 실패",
         "단, 1회 호출은 표본 1개입니다. 응답 길이가 매번 달라 배수가 흔들리므로 "
-        "여러 번 돌려 평균으로 말하세요. tiktoken 실측(exp01)은 1.44×였습니다.",
+        "다수 대응 과제로 재측정하세요. 토크나이저 인코딩과 생성 usage·정확도를 분리합니다.",
     )
 
 
 def mode_thinking(args, key):
-    m = pricing.get(args.price_model)
-    report.section(f"사고 예산(thinking budget) 비교  ·  model={args.model}")
-    print("  같은 질문에 사고 예산만 바꿔 호출합니다.")
-    print("  사고 토큰은 응답에 보이지 않지만 출력 단가로 과금됩니다.\n")
-
-    prompt = args.prompt or PAIR["en"]
-    budgets = [0, 512, -1]        # 0=사고끔, -1=모델 자동
-    rows = []
-    for b in budgets:
-        name = {0: "사고 끔 (0)", -1: "자동 (-1)"}.get(b, f"제한 {b}")
-        print(f"  [{name}] 호출 중...", flush=True)
+    m = pricing.get(args.price_model) if args.price_model else pricing.for_api(args.model)
+    report.section(f"사고 설정 비교 · model={args.model}")
+    print("같은 문제, 고정 출력 상한. Gemini 3는 thinkingLevel, 2.5는 thinkingBudget.")
+    print(f"maxOutputTokens={args.max_out}에는 사고도 포함. 절단되면 실패로 보고한다.")
+    settings = [(x, {"thinking_level":x}) for x in ("minimal","low","high")] if args.model.startswith("gemini-3") else [
+        (str(x), {"thinking_budget":x}) for x in (0,512,-1)]
+    rows, failed = [], 0
+    for label, config in settings:
         try:
-            r = generate(args.model, prompt, key,
-                         thinking_budget=b, max_out=args.max_out)
-        except SystemExit as e:
-            print(f"  [{name}] 지원되지 않음 — 건너뜁니다.\n")
-            rows.append([name, "-", "-", "-", "미지원"])
+            r = generate(args.model, args.prompt or PAIR["en"], key, max_out=args.max_out, **config)
+        except (Exception, SystemExit):
+            failed += 1
+            rows.append([label, "-", "-", "미관측", "요청 실패 (미지원으로 단정하지 않음)"])
             continue
         u = r["usage"]
-        th = int(u.get("thoughtsTokenCount", 0) or 0)
-        ca = int(u.get("candidatesTokenCount", 0) or 0)
-        rows.append([name, f"{th:,}", f"{ca:,}", f"{th + ca:,}",
-                     pricing.usd(price_it(u, m), 6)])
-        print(f"  [{name}] 완료 ({r['elapsed']:.1f}초, 사고 {th:,}tok)\n")
-
-    report.table(["사고 예산", "사고 tok", "응답 tok", "출력계", "비용"],
-                 rows, ["l", "r", "r", "r", "r"])
-    print("\n  → 사고 토큰이 출력계에 그대로 더해지는 것을 확인하세요.")
-    print("     이것이 '추론 강도를 낮추라'는 원칙의 근거입니다.")
+        cost = pricing.usd(price_it(u,m),6) if r["usage_present"] else "미관측"
+        rows.append([label,u.get("thoughtsTokenCount",0),u.get("candidatesTokenCount",0),cost,r["finish"]])
+        if not r["valid"]: failed += 1
+    report.table(["설정","사고 tok","응답 tok","환산 비용","종료/상태"],rows)
+    if failed:
+        raise SystemExit("미완료/실패 있음. 절단 요청의 토큰 비용도 발생할 수 있다. 검증 완료 아님.")
+    print("요청과 usage 관측 완료. 설정별 정확도 동등성·청구서를 검증한 것은 아니다.")
 
 
 def mode_prompt(args, key):
-    m = pricing.get(args.price_model)
+    m = (pricing.get(args.price_model) if args.price_model else pricing.for_api(args.model))
     report.section("내 프롬프트 실측")
     pre = count_tokens(args.model, args.prompt, key)
     report.kv("호출 전 입력 토큰 (countTokens)", f"{pre:,}")
@@ -297,6 +300,8 @@ def mode_prompt(args, key):
     r = generate(args.model, args.prompt, key, max_out=args.max_out)
     print(f"  완료 ({r['elapsed']:.1f}초)\n")
     show_usage(r["usage"])
+    if not r["valid"]:
+        raise SystemExit("미완료/절단/usage 누락 — 성공으로 보고하지 않음")
     print()
     report.kv("이번 호출 비용", pricing.usd(price_it(r["usage"], m), 6),
               f"({m.name} 단가 기준)")
@@ -305,9 +310,9 @@ def mode_prompt(args, key):
 
 
 def mode_list_models(args, key):
-    """이 키로 실제 generateContent 가 가능한 모델만 추린다. 과금 없음."""
+    """목록에 generateContent가 등재되고 countTokens가 통과한 모델. 생성 권한 검증 아님."""
     import urllib.parse
-    report.section("이 키로 사용 가능한 모델 (countTokens 로 검증 · 과금 없음)")
+    report.section("모델 목록 + countTokens 접근 검사 (실제 생성 권한은 별도)")
     url = "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200"
     req = urllib.request.Request(url, headers={"x-goog-api-key": key})
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -322,13 +327,13 @@ def mode_list_models(args, key):
             continue
         try:
             count_tokens(name, "ping", key)
-            rows.append([name, "사용 가능", f"{m.get('inputTokenLimit', 0):,}"])
+            rows.append([name, "countTokens 통과", f"{m.get('inputTokenLimit', 0):,}"])
         except SystemExit:
-            rows.append([name, "차단됨 (404)", "-"])
+            rows.append([name, "countTokens 실패 (원인 별도 확인)", "-"])
 
     report.table(["모델", "상태", "입력 한도"], rows, ["l", "l", "r"])
-    print("\n  ※ gemini-2.5-* 계열은 신규 키에 더 이상 제공되지 않습니다.")
-    print("     --model 로 '사용 가능' 표시된 모델을 지정하세요.")
+    print("\n  countTokens 성공은 generateContent 권한/파라미터 지원을 보증하지 않습니다.")
+    print("  특정 계정 오류를 모든 신규 키의 모델 차단으로 일반화하지 않습니다.")
 
 
 def mode_dry_run(args):
@@ -351,7 +356,7 @@ def mode_dry_run(args):
 
   과금 계산식 (lab/pricing.py 의 cost() 에 넣는 값):
 
-    과금 입력 = promptTokenCount - cachedContentTokenCount + toolUsePromptTokenCount
+    비캐시 입력 = promptTokenCount - cachedContentTokenCount; 캐시분은 별도 할인율
     과금 출력 = candidatesTokenCount + thoughtsTokenCount
     비용     = 입력x입력단가 + 캐시x캐시단가 + 출력x출력단가
 
@@ -373,12 +378,12 @@ def mode_dry_run(args):
 def main():
     ap = argparse.ArgumentParser(
         description="Gemini 실시간 토큰 사용량 측정 (라이브 시연용)")
-    ap.add_argument("--model", default="gemini-flash-latest",
-                    help="Gemini 모델명 (기본: gemini-flash-latest). "
-                         "gemini-2.5-* 는 신규 키에서 404 가 납니다 — "
+    ap.add_argument("--model", default="gemini-3.1-flash-lite",
+                    help="Gemini 모델명 (기본: gemini-3.1-flash-lite). "
+                         "접근 권한은 계정·시점에 따라 다릅니다 — "
                          "사용 가능 목록은 --list-models 로 확인하세요.")
-    ap.add_argument("--price-model", default="gemini-25",
-                    help="lab/pricing.py 의 단가 키 (기본: gemini-25)")
+    ap.add_argument("--price-model", default=None,
+                    help="명시적 환산 단가 키 (기본은 API 모델 ID에 맞춰 매핑)")
     ap.add_argument("--count-only", action="store_true",
                     help="countTokens 만 호출 — 과금 없음")
     ap.add_argument("--thinking", action="store_true",
@@ -388,7 +393,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true",
                     help="API 호출 없이 동작 구조만 출력")
     ap.add_argument("--list-models", action="store_true",
-                    help="이 키로 실제 호출 가능한 모델을 확인 (과금 없음)")
+                    help="모델 목록 확인 (목록 등재가 호출 권한을 보증하지 않음) (과금 없음)")
     args = ap.parse_args()
 
     report.title("실험 08 — Gemini 실시간 토큰 사용량 (실제 API)")

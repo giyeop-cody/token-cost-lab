@@ -1,0 +1,13 @@
+{
+  "note": "Observed local reproduction environment, not a lockfile or a paid API result.",
+  "date": "2026-09-20",
+  "python": "3.13.14",
+  "packages": {
+    "tiktoken": "0.14.0",
+    "scipy": "1.17.1",
+    "pytest": "9.0.3",
+    "python-pptx": "1.0.2",
+    "playwright": "1.63.0",
+    "pymupdf": "1.28.2"
+  }
+}

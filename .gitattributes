@@ -1,0 +1,10 @@
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+results/live_lang_thinking.jsonl -text
+results/thinking_sweep.jsonl -text
+data/flores200/*.devtest -text
+*.pptx binary
+*.pdf binary

@@ -7,16 +7,17 @@
 #   4층 설정 파일만 보고 찾아가서 접속            (connect_from_config.py)
 #
 # 1층만 통과하면 "내 기준에 맞다"는 뜻이고,
-# 3층까지 통과해야 "규격에 맞다"고 말할 수 있고,
-# 4층까지 통과해야 "IDE에 실제로 붙는다"고 말할 수 있다.
+# 3층은 Inspector 경유 연결, 4층은 설정 기반 연결을 검사한다.
+# 규격 전체 준수나 실제 IDE GUI 작동의 완전한 검증은 별도다.
 #
 #   bash agent_setup/verify_all.sh
-set -u
+set -uo pipefail
 
 # 서버가 노출하는 도구 수. 도구를 추가하면 여기만 고친다.
 EXPECT_TOOLS=6
 cd "$(dirname "$0")/.." || exit 1
 fail=0
+skip=0
 
 echo "=============================================================="
 echo " 1층 — 프로토콜 왕복 (의존성 0)"
@@ -30,6 +31,7 @@ echo "=============================================================="
 if python3 -c "import mcp" 2>/dev/null; then
     python3 agent_setup/verify_client.py | tail -3 || fail=1
 else
+    skip=$((skip + 1))
     echo "  건너뜀 — pip install mcp 후 다시 실행"
 fi
 
@@ -40,7 +42,7 @@ echo "=============================================================="
 if command -v npx >/dev/null 2>&1; then
     tools=$(npx -y @modelcontextprotocol/inspector --cli \
             python3 agent_setup/mcp_server.py --method tools/list 2>/dev/null \
-            | grep -c '"name":')
+            | grep -c '"name":') || { tools=-1; fail=1; }
     if [ "$tools" -eq "$EXPECT_TOOLS" ]; then
         echo "  PASS  Inspector가 도구 $EXPECT_TOOLS개를 인식했다"
     else
@@ -53,13 +55,14 @@ if command -v npx >/dev/null 2>&1; then
            --tool-arg task="정해진 스펙대로 결제 핸들러 구현해줘" \
            2>/dev/null | python3 -c \
            'import json,sys; print(json.load(sys.stdin)["structuredContent"]["tier"])' \
-           2>/dev/null)
+           2>/dev/null) || { tier="COMMAND_FAILED"; fail=1; }
     if [ "$tier" = "mid" ]; then
         echo "  PASS  Inspector 경유 route_task → tier=mid"
     else
         echo "  FAIL  Inspector 경유 호출 결과 '$tier' (기대 mid)"; fail=1
     fi
 else
+    skip=$((skip + 1))
     echo "  건너뜀 — node/npx 없음"
 fi
 
@@ -70,12 +73,20 @@ echo "=============================================================="
 if python3 -c "import mcp" 2>/dev/null; then
     python3 agent_setup/connect_from_config.py | tail -12 || fail=1
 else
+    skip=$((skip + 1))
     echo "  건너뜀 — pip install mcp 후 다시 실행"
 fi
 
 echo
 echo "=============================================================="
-[ "$fail" -eq 0 ] && echo "  네 층위 모두 통과 — 규격에 맞고, 설정대로 붙는다." \
-                  || echo "  실패 있음."
+if [ "$fail" -ne 0 ]; then
+    echo "  실패 있음."
+elif [ "$skip" -gt 0 ]; then
+    echo "  실행한 층위 통과 / $skip 층위 미검증 (전체 통과 아님)."
+else
+    echo "  네 층위 프로토콜 연결 통과 (IDE GUI에서의 수동 확인은 별도)."
+fi
 echo "=============================================================="
-exit "$fail"
+if [ "$fail" -ne 0 ]; then exit 1; fi
+if [ "$skip" -gt 0 ]; then exit 2; fi
+exit 0

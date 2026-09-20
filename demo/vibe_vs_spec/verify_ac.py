@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Spec 산출물 AC 자동 검증 — 16항목.
+"""Spec 산출물 AC 검증 — 정적 16항목 + 실제 Chromium 레이아웃/동작.
 
 케이스 스터디(demo/vibe_vs_spec)의 Spec 모드 산출물이
 4필드 스펙(pages·stack·design·ac)을 결정적으로 준수하는지 검사한다.
@@ -16,7 +16,7 @@ from pathlib import Path
 DEFAULT = Path(__file__).parent / "artifacts" / "index_spec.html"
 
 
-def run(path: Path) -> int:
+def run(path: Path, static_only=False) -> int:
     html = path.read_text(encoding="utf-8")
     checks = []
     add = lambda name, ok, note="": checks.append((name, ok, note))
@@ -47,12 +47,25 @@ def run(path: Path) -> int:
     for name, ok, note in checks:
         print(f"{'PASS' if ok else 'FAIL'}  {name}" + (f"  ({note})" if note else ""))
         passed += ok
-    print(f"\n{passed}/{len(checks)} 통과")
-    return 0 if passed == len(checks) else 1
+    print(f"\n정적 문자열/구조 검사 {passed}/{len(checks)} (동작 보증 아님)")
+    if static_only:
+        print("STATIC ONLY — 실제 AC gate 미검증")
+        return 0 if passed == len(checks) else 1
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from tools.browser_ac import browser_checks
+    try:
+        dynamic = browser_checks("cafe", path)
+    except Exception as e:
+        print(f"UNVERIFIED browser: {type(e).__name__}; install requirements-dev + playwright chromium")
+        return 2
+    for c in dynamic:
+        print(f"{'PASS' if c['ok'] else 'FAIL'}  {c['name']} {c['detail']}")
+    return 0 if passed == len(checks) and all(c["ok"] for c in dynamic) else 1
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", type=Path, default=DEFAULT)
+    ap.add_argument("--static-only", action="store_true", help="partial inspection only, not an AC gate")
     args = ap.parse_args()
-    sys.exit(run(args.file))
+    sys.exit(run(args.file, args.static_only))

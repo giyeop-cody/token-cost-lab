@@ -1,295 +1,120 @@
 # token-cost-lab
 
-**LLM 토큰 비용 절감 기법을, 남의 블로그 숫자 대신 내 손으로 재보는 실험 모음.**
+**LLM 토큰 비용을 줄이는 원칙을, 관측과 가정을 구분해서 재현하는 실험 모음.**
 
-> 이 문서는 한국어입니다 · [English](README_EN.md)
+[English](README_EN.md) · [실측·저장 로그](LIVE_RESULTS.md) · [상세 정정 보고서](docs/CORRECTIONS.md) · [발표 자료](presentation/README.md) · [출처](SOURCES.md)
 
-발표 자료 *"확실하게 토큰 사용량을 줄이는 방법"* 의 부속 저장소입니다.
-발표에 나온 모든 수치는 이 저장소의 스크립트로 재현할 수 있습니다.
+## 주장은 유지합니다
+
+1. **영어 활용:** 대응 내용의 토큰 비용이나 추론 정확도에 유리한 경우가 있습니다. 모델·과제별로 확인하세요.
+2. **KISS/DRY/YAGNI:** 불필요한 코드, 전체 재출력, 반복 재작업을 줄이세요.
+3. **설명·사고 예산 조절:** 필요한 출력만 받고 정확도 게이트를 함께 두세요.
+4. **스펙 선주입:** 짧고 결정적인 요구사항을 먼저 정하세요. 작성 비용과 실제 재작업 감소를 함께 측정하세요.
+5. **캐싱·컨텍스트 관리·라우팅:** 조건에 맞을 때 적용하고 전체 비용·품질로 검증하세요.
+
+‘한국어가 항상 비싸다’, ‘사고 토큰이 길면 더 깊게 생각한다’, ‘모든 정책이 품질을 유지하며 같은 비율로 절감된다’는 보장은 아닙니다.
+
+
+초기 패키지·브라우저·tiktoken 인코딩 파일 설치에는 네트워크가 필요할 수 있지만 LLM API 과금은 없습니다.
+
+## 2026-09-20 정정의 핵심
+
+| 근거 종류 | 확인된 내용 | 범위 |
+|---|---|---|
+| **새 로컬 실측** | FLORES-200 대응 번역문 1,012쌍: KO/EN **1.4723배**(`o200k_base`), **2.3669배**(`cl100k_base`) | 토크나이저 인코딩. Gemini·Claude 생성 비용 실측 아님 |
+| **기존 API 로그 재계산** | 간단한 계산 1문제, 자동/미지정: 공식 Standard **199.47배**, 기존 발표 환산 **240.02배** | 허용오차 통과 각각 6/6. 명시적 0은 5/6, 정확도 동등성 증명 아님 |
+| **통계 교정** | reason 문자당 비용 p: **6.08e-10 → 4.02e-7** | 기존 단가 고정, 정규근사 → Welch t분포. 네 비교의 유의성 유지 |
+| **외부 정확도 연구** | 한국어 MATH-500의 영어/한국어 사고 유도 평균 **83.7% / 75.4%** | *Language Matters* 표 1, 네 모델. 이번 저장소에서 모델 재실행한 결과 아님 |
+| **시나리오** | 페르소나 **20.8배**·SDD **약 71%**는 과거 가정으로 보존 | 수정 기본은 19.0배·68.7%. 실제 품질 동등 정책 A/B가 아님 |
+
+**이번 정정의 새 유료 API 호출은 0회입니다.** 저장된 API 원자료 110행은 그대로 보존합니다.
+문자당 비용은 의미량 정규화가 아니며, 호출당 비용이 낮다는 관측을 ‘착시’로 지우지 않습니다.
+
+## 빠른 시작 — 무과금
+
+Python **3.10+**.
 
 ```bash
-git clone <this-repo> && cd token-cost-lab
+git clone https://github.com/giyeop-cody/token-cost-lab.git
+cd token-cost-lab
 pip install -r requirements.txt
-python run_all.py
+python run_all.py                      # 기본값은 API 호출 없음
+python tools/parallel_tokenizer_bench.py
+python tools/stats_test.py results/live_lang_thinking.jsonl
+python tools/thinking_sweep.py --summarize results/thinking_sweep.jsonl
+python demo/compare_personas.py
+python demo/compare_personas.py --scenario legacy  # 20.8배: 과거 가정 재현
 ```
 
-API 키가 필요 없습니다. 토크나이저 실측 + 공개 단가 기반 시뮬레이션으로 동작합니다.
+`run_all.py --live`나 개별 live 명령은 유료 호출을 할 수 있습니다. 저장 로그 재계산과 새 요청을 구분하세요.
 
----
+## 실험과 증거 등급
 
-## 왜 이걸 만들었나
+| 파일 | 내용 | 증거 |
+|---|---|---|
+| `exp01_tokenizer_ko_en.py` | 저장소 예문 6쌍의 인코딩 | 로컬 토크나이저 실측; 전체 언어 일반화 금지 |
+| `tools/parallel_tokenizer_bench.py` | FLORES-200 1,012쌍 | 새 로컬 실측, 원문·해시·문장별 토큰·라이선스 포함 |
+| `exp02_output_to_input.py` | 입력으로 결정 전달, 출력 절감 | 토큰 가정의 비용 계산 |
+| `exp03_prompt_caching.py` | 캐시 최소 길이·히트율·첫 쓰기 | 비용 시나리오; 저장료·품질 별도 |
+| `exp04_agent_loop_sdd.py` | 턴 누적·스펙 작성·컴팩션 | 40→12턴 등은 가정. `--warm-cache`는 과거 예열 가정 |
+| `exp05_verbosity_effort.py` | 출력 길이·effort·툴 스키마 | 일부 인코딩 + 가정 기반 비용 |
+| `exp06_other_levers.py` | Batch·압축·캐싱·라우팅 적층 | 비용 시나리오. 상호작용·품질 미측정 |
+| `exp07_analyze_my_prompt.py` | 내 프롬프트 진단 | 인코딩 + 휴리스틱; 실제 캐시 적중 보장 아님 |
+| `exp08_gemini_live.py` | Gemini count/generate usage | 키가 있을 때 실제 요청; 기본 모델 ID와 가격 연결 |
+| `exp09_dry.py` | diff·리워크·압축+캐시 | 비용 시나리오 |
+| `exp10_thinking_cross_vendor.py` | 3벤더 usage 비교 | live 실행 시 기록. dry-run/mock을 live 측정으로 부르지 않음 |
+| `exp11_tool_output_bloat.py` | 툴 본문 누적·전체 시스템 비용 | A는 시나리오, `--live`는 3요청 관측 |
 
-토큰 절감 글은 많은데, 대부분 이렇게 끝납니다. *"프롬프트 캐싱을 쓰면 90% 절감됩니다."*
-
-문제는 그 90%가 **어떤 프리픽스 길이에서, 몇 번의 호출에서, 어떤 히트율일 때** 나온 숫자인지
-아무도 말해주지 않는다는 점입니다. 파라미터가 바뀌면 90%는 18% 손해로도 뒤집힙니다
-(실험 03의 E절이 그 경우입니다).
-
-이 저장소는 **모든 가정을 명령줄 인자로 노출**합니다. 자기 팀의 실제 숫자를 넣고 다시 돌리세요.
-
----
-
-## 실험 목록
-
-| # | 파일 | 무엇을 재는가 | 근거 문헌 |
-|---|---|---|---|
-| 01 | `exp01_tokenizer_ko_en.py` | 한국어/영어 토큰 배수 (tiktoken 실측) | [Petrov+ NeurIPS'23](https://arxiv.org/abs/2305.15425) |
-| 02 | `exp02_output_to_input.py` | 출력→입력 환전, 손익분기 | 벤더 [가격표](#4-가격-페이지) |
-| 03 | `exp03_prompt_caching.py` | 캐싱 절감 곡선, 캐시 파괴 대가 | [Anthropic](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching) · [OpenAI](https://platform.openai.com/docs/guides/prompt-caching) · [Lost in the Middle](https://arxiv.org/abs/2307.03172) |
-| 04 | `exp04_agent_loop_sdd.py` | 루프의 2차 함수 비용, SDD, YAGNI | [Anthropic 컨텍스트 엔지니어링](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) |
-| 05 | `exp05_verbosity_effort.py` | 설명 길이, reasoning effort, 툴 스키마 | [XReasoning](https://arxiv.org/abs/2505.22888) · 벤더 문서 |
-| 06 | `exp06_other_levers.py` | Batch·압축·시맨틱캐싱·라우팅·적층 | [RouteLLM](https://arxiv.org/abs/2406.18665) · [LLMLingua](https://arxiv.org/abs/2310.05736) · [GPT Semantic Cache](https://arxiv.org/abs/2411.05276) |
-| 07 | `exp07_analyze_my_prompt.py` | **내 프롬프트 파일을 직접 진단** | [Lost in the Middle](https://arxiv.org/abs/2307.03172) |
-| 08 | `exp08_gemini_live.py` | **실제 Gemini API 호출 → 진짜 청구 토큰** | [Gemini 토큰 문서](https://ai.google.dev/gemini-api/docs/tokens) |
-| 10 | `exp10_thinking_cross_vendor.py` | 사고 토큰·과금 **3벤더 대조** (Gemini/Anthropic/OpenAI) | [Anthropic extended thinking](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking) · [OpenAI reasoning](https://platform.openai.com/docs/guides/reasoning) |
-| 11 | `exp11_tool_output_bloat.py` | **툴 출력의 컨텍스트 팽창** (시뮬레이션 + function calling 실측) | [Gemini function calling](https://ai.google.dev/gemini-api/docs/function-calling) |
-
-각 항목의 정확한 인용 정보는 **[SOURCES.md](SOURCES.md)** 에 정리되어 있습니다.
-
-실전 케이스 스터디: **[demo/vibe_vs_spec/](demo/vibe_vs_spec/)** — 같은 페이지를 자유 지시(Vibe)와
-결정적 스펙(Spec)으로 각각 생성해 토큰·비용을 비교. 짧은 4필드 스펙은 토큰 +1.8%에
-비용 −8.3%로, exp04(SDD)와 반증 절의 결론("짧고 결정만 담은 스펙을 써라")을 지지한다.
-
-### 개별 실행
+파일은 `experiments/`에 있습니다. 예:
 
 ```bash
-python experiments/exp01_tokenizer_ko_en.py
-python experiments/exp02_output_to_input.py --model opus --devs 25
-python experiments/exp03_prompt_caching.py --static 40000 --calls 500
-python experiments/exp04_agent_loop_sdd.py --turns 40
-python experiments/exp05_verbosity_effort.py --calls 5000
-python experiments/exp06_other_levers.py --calls 100000
-python experiments/exp08_gemini_live.py --dry-run       # 구조만 (키 불필요)
-python experiments/exp08_gemini_live.py --list-models    # 가용 모델 확인 (무과금)
-python experiments/exp10_thinking_cross_vendor.py --dry-run  # 3벤더 구조 (키 불필요)
+python experiments/exp03_prompt_caching.py --model haiku --static 3000
+python experiments/exp07_analyze_my_prompt.py --demo
+python experiments/exp10_thinking_cross_vendor.py --dry-run
 python experiments/exp11_tool_output_bloat.py --turns 40 --tool-tokens 20000
 ```
 
-### 07번은 특히 실용적입니다
-
-자기 시스템 프롬프트를 넣으면 캐시를 깨뜨리는 부분을 짚어줍니다.
+## 검증 — 실패를 성공으로 표시하지 않기
 
 ```bash
-python experiments/exp07_analyze_my_prompt.py my_system_prompt.md
-python experiments/exp07_analyze_my_prompt.py --demo     # 예제로 먼저 보기
-cat CLAUDE.md | python experiments/exp07_analyze_my_prompt.py -
+pip install -r requirements-dev.txt
+python -m playwright install --with-deps chromium
+python tools/reproduce_audit.py         # 로그 재계산·보고서·PPTX/대본 재생성, 무과금
+python -m pytest -q
+python demo/vibe_vs_spec/verify_ac.py    # 문자열 검사 + 실제 브라우저 AC
+python tools/verify_deck.py              # 실제 PPTX 모든 텍스트와 근거 대조
 ```
 
-출력 예:
+PDF 재생성: LibreOffice와 Nanum 폰트를 설치한 뒤
+`python presentation/deckgen/make_pdf.py --check`.
+기존 PDF까지 검증하려면 `python tools/verify_deck.py --with-pdf`.
 
-```
-── 3. 캐시 파괴 요소 — 앞쪽의 동적 값
-  위치       문서상 위치  종류            값
-  🔴 앞부분           7%  타임스탬프      2026-08-14 09:31
-  🔴 앞부분          12%  요청/세션 ID    req_8f3a21c9
-  🔴 앞 1/3 구간에 동적 값 5건. 캐시 히트율이 0에 가까워진다.
-```
+- 실제 PPTX의 `240→999` 변조, 모바일 `1열→2열` 변조, 무동작 메모를 거부하는 회귀 테스트가 있습니다.
+- 실패 assertion은 nonzero 종료입니다. 의존성 부족·실행 생략은 PASS가 아닙니다.
+- 검증 범위와 실행 결과는 `results/verification.json`에 기록합니다. 테스트 개수를 영구 보증처럼 고정하지 않습니다.
+- 전체 로컬 게이트와 실행 기록: `python tools/check_audit.py` → `results/verification.json`.
+- CI: `.github/workflows/ci.yml` — 같은 검사를 유료 API 호출 없이 수행하도록 추가했습니다. 원격 CI 실행 상태와 로컬 성공은 구분합니다.
 
-### 08번은 유일하게 "진짜 청구서"를 봅니다
+## 요금 계산 원칙
 
-> **실측 완료(2026-08-15)**: 실제 호출 결과는 **[LIVE_RESULTS.md](LIVE_RESULTS.md)** 에 있습니다.
-> 하이라이트 — 같은 질문에 사고 예산만 바꿨더니 응답은 4~5토큰으로 동일한데
-> **비용이 37배** 차이났습니다. 전액이 화면에 안 보이는 `thoughtsTokenCount` 입니다.
->
-> ⚠️ `gemini-2.5-*` 는 신규 키에서 404 입니다. `--list-models` 로 가용 모델을 먼저 확인하세요.
+`lab/pricing.py`에 공식 가격 스냅샷과 **별도로 명명한 과거 환산/티어 시나리오**가 있습니다.
+[기준일·범위](docs/PRICING.md)를 함께 보세요. 최신 flagship 별칭과 개별 모델 ID를 혼용하지 않습니다.
 
-01~07·09번은 전부 시뮬레이션입니다. **08번(Gemini)과 11-B·10번(Gemini/Anthropic/OpenAI)이
-API를 실제로 호출**해서 `usageMetadata`·`usage` 에 찍힌 진짜 토큰 수를 읽습니다.
-(키가 없으면 dry-run/시뮬레이션으로 안전하게 동작합니다.)
+Gemini의 `promptTokenCount`는 캐시 입력을 포함합니다.
 
-```bash
-export GEMINI_API_KEY="..."        # https://aistudio.google.com/apikey (무료 등급 있음)
-
-python experiments/exp08_gemini_live.py --dry-run     # 구조만, 키·과금 불필요
-python experiments/exp08_gemini_live.py --count-only  # 입력 토큰만, 과금 없음
-python experiments/exp08_gemini_live.py               # 한/영 실호출 비교
-python experiments/exp08_gemini_live.py --thinking    # 사고 예산별 토큰
-python experiments/exp08_gemini_live.py --prompt "$(cat my_prompt.md)"
+```text
+비캐시 입력 = prompt - cached
+비용 = 비캐시 입력 × 입력 단가 + cached × 캐시 단가
+       + (candidates + thoughts) × 출력 단가
 ```
 
-발표 중 라이브 시연에는 `--thinking` 이 가장 잘 먹힙니다.
-사고 예산만 바꿔 같은 질문을 세 번 던지면, **응답에는 보이지 않는 사고 토큰이
-출력 요금에 그대로 더해지는 것**이 표로 나옵니다.
+캐시를 입력에서 두 번 빼지 않습니다. `toolUsePromptTokenCount`를 로컬 함수 응답 크기나
+추가 청구액으로 자동 간주하지 않습니다. 전체 캐시 적격성은 모델별로 다릅니다(예: Haiku 4.5는 4,096).
 
-```
-  사고 예산    사고 tok  응답 tok  출력계  비용
-  -----------  --------  --------  ------  ---------
-  사고 끔 (0)         0        30      30  $0.000355
-  제한 512          480        30     510  $0.005155
-  자동 (-1)         640        30     670  $0.006755
-```
+## 하지 않은 검증
 
-**계측할 때 틀리기 쉬운 두 가지:**
+새 상용 모델의 한/영 정확도 재현, 실제 정책 A/B, 실제 청구서 대조, 다양한 과제의 품질 동등성 검정은
+이번 정정에서 하지 않았습니다. 기존 N=5·N=100 예비 기록의 누락 원자료도 새로 만들어 채우지 않았습니다.
+단가 환산은 무료 티어·계약·세금·구독료·장문 할증·도구 사용료를 모두 포함한 실제 청구액과 다를 수 있습니다.
 
-1. `promptTokenCount` 는 캐시 토큰을 **이미 포함**합니다.
-   실제 과금 입력 = `promptTokenCount − cachedContentTokenCount`.
-   이걸 빼지 않으면 캐싱을 켜도 절감이 장부에 안 보입니다.
-2. 스트리밍에서 `usageMetadata` 는 **청크마다 누적값**으로 옵니다.
-   합산하지 말고 **마지막 청크 값만** 쓰세요. (일부 SDK는 `cachedContentTokenCount` 가
-   0이 아니라 `undefined` 로 옵니다.)
-
----
-
-## 발표의 핵심 주장과 검증 결과
-
-| # | 주장 | 판정 | 근거 |
-|---|---|---|---|
-| ① | 추론은 영어로 시켜라 | **참**, 단 배수는 모델마다 다름 | o200k에서 한국어 1.44배, cl100k 2.22배 (exp01) · [Petrov+ 2023](https://arxiv.org/abs/2305.15425) |
-| ② | KISS/DRY/YAGNI를 지켜라 | **참**, 단 근거는 단가가 아닌 턴 수 | 안 쓰는 코드는 매 턴 재전송된다 (exp04-D) |
-| ③ | 장황한 설명을 금지하라 | **참** | 설명만 줄여 출력 40~60% 감소 (exp05-A) |
-| ④ | 웹에서 추론시키고 결과를 주입하라 | **참** (= SDD) | 턴 수 감소로 기능당 71% 절감 (exp04-B) · [Anthropic 2025](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) |
-| ⑤ | 출력을 입력으로 환전하는 게 핵심 | **참** | 입력 3배 늘리고 총비용 66% 절감 (exp02-B) |
-
-### 반증도 같이 싣습니다
-
-이 저장소는 주장을 보강하는 근거만 모으지 않습니다. 반대 증거는 실험 스크립트 안에
-`⚠️` 로 함께 출력됩니다.
-
-- **영어 추론이 항상 싸지는 않다** — Qwen3는 중국어 CoT가 영어보다 토큰 40% 적다는 보고가 있습니다.
-- **사용자 언어로 사고를 강제하면 정확도가 떨어진다** — XReasoning(arXiv:2505.22888)에서
-  언어 매칭률은 46%→98%로 올랐지만 정확도는 26%→17%로 하락했습니다.
-- **스펙이 항상 이득은 아니다** — ETH Zurich 연구([SOURCES.md §4](SOURCES.md#4-반증--한계-자료))에서 LLM 생성 컨텍스트 파일은
-  성공률을 약간 낮추면서 추론 비용을 20% 이상 올렸습니다. 한 벤치마크에서는
-  Spec-Kit이 OpenSpec 대비 토큰을 최대 2배 썼습니다.
-  → 결론은 "스펙을 써라"가 아니라 **"짧고, 설명이 아닌 결정만 담은 스펙을 써라"** 입니다.
-- **캐싱은 잘못 쓰면 손해다** — 동적 값이 프리픽스 앞에 있으면 쓰기 프리미엄만 매번 물어
-  캐시를 안 쓴 것보다 18% 비싸집니다 (exp03-E).
-
----
-
-## 오늘 바로 할 수 있는 것 (우선순위)
-
-| 순위 | 레버 | 난이도 | 리스크 | 적용 조건 |
-|---|---|---|---|---|
-| 1 | 프롬프트 캐싱 | 낮음 | 없음 | 고정 프리픽스 1K tok 이상 |
-| 2 | verbosity / reasoning effort | 낮음 | 낮음 | 설정 한 줄인 경우가 많음 |
-| 3 | Batch API (50% 할인) | 낮음 | 없음 | 지연에 둔감한 잡이 있는가 |
-| 4 | 스펙 먼저 (SDD) | 중간 | 낮음 | 재작업이 3사이클 이상인가 |
-| 5 | 컨텍스트 컴팩션 | 중간 | 중간 | 세션이 20턴을 넘는가 |
-| 6 | 모델 라우팅 | 높음 | 중간 | 품질 측정 도구가 있는가 |
-| 7 | 시맨틱 캐싱 | 높음 | 높음 | 질의 반복률 20% 이상인가 |
-| 8 | 프롬프트 압축 | 높음 | 중간 | RAG 컨텍스트가 10K tok 이상인가 |
-
-1~3번은 오후에 켜고 되돌릴 수 있습니다. 6~8번은 품질 측정 체계가 먼저 필요합니다.
-
----
-
-## 가격 정보 갱신
-
-모든 단가는 **`lab/pricing.py` 한 곳**에만 있습니다. 2026-08 공개 리스트 기준이며,
-가격은 자주 바뀌므로 발표나 보고 전에 아래 공식 페이지에서 확인하고 갱신하세요.
-
-- [Anthropic](https://www.anthropic.com/pricing) ·
-  [OpenAI](https://openai.com/api/pricing) ·
-  [Google Gemini](https://ai.google.dev/pricing) ·
-  [DeepSeek](https://api-docs.deepseek.com/quick_start/pricing)
-
-```python
-MODELS = {
-    "sonnet": Model("Claude Sonnet 4.6", 3.00, 15.00, 0.10, 1.25),
-    #                                    입력  출력   캐시읽기 캐시쓰기
-}
-```
-
-모델을 추가하면 모든 실험에서 `--model <키>` 로 바로 쓸 수 있습니다.
-
----
-
-## 이 저장소가 하지 않는 것
-
-정직하게 밝힙니다.
-
-- **exp01~07·09와 exp11-A는 실제 API를 호출하지 않습니다.** 토큰 수는 tiktoken 실측이지만, 비용은
-  공개 단가 기반 시뮬레이션입니다. 워크플로별 토큰 수(예: "대충 지시하면 출력 12,000 tok")는
-  전형적인 값을 가정한 것이지 측정값이 아닙니다.
-  실제 청구되는 값을 보려면 **exp08**(Gemini) · **exp10**(3벤더) · **exp11-B**(function calling)를
-  쓰세요. 단, 실호출 실험의 단발 호출은 표본 1개이므로 여러 번 돌려 평균으로 말해야 합니다.
-- **exp10·11-B 는 2026-09 추가 실험입니다.** 아직 이 저장소의 LIVE_RESULTS 로
-  확정된 실측치가 없고, 키+과금이 있는 환경에서 돌려야 숫자가 생깁니다.
-  exp10 은 조건당 n=1 이므로 결론으로 쓰지 말고 재현·확장용으로 쓰세요.
-- **품질을 측정하지 않습니다.** 비용만 봅니다. effort를 낮추거나 압축을 세게 걸면
-  정확도가 떨어질 수 있고, 그 손실은 여기서 잡히지 않습니다.
-- **Anthropic 토크나이저를 직접 쓰지 않습니다.** 공개 라이브러리가 없어 tiktoken으로
-  근사했습니다. 외부 코퍼스 측정에서 Claude 토크나이저의 한국어 배수는 1.88로,
-  o200k보다 나쁩니다. 즉 이 저장소의 한국어 비용 추정은 **보수적인** 쪽입니다.
-
-가장 정확한 방법은 언제나 **자기 계정의 usage 로그**입니다. 이 저장소는
-그 로그를 보기 전에 어디를 먼저 볼지 정하는 용도입니다.
-
----
-
-## 요구 사항
-
-- Python 3.9+
-- `tiktoken` (유일한 필수 의존성)
-
-```bash
-pip install -r requirements.txt
-```
-
-## 구조
-
-```
-token-cost-lab/
-├── README.md
-├── SOURCES.md                   # 인용한 모든 근거의 원본 링크
-├── LIVE_RESULTS.md              # 실호출 실측 기록 (2026-08-15)
-├── requirements.txt
-├── LICENSE                      # MIT
-├── run_all.py                   # exp01~11 전체 실행 (무과금)
-├── .github/workflows/ci.yml     # CI: 전체 실험 + 수치 회귀 검사 (무과금)
-├── lab/
-│   ├── pricing.py               # 단가 테이블 (여기만 고치면 됨)
-│   └── report.py                # 콘솔 표 출력 (한글 폭 처리 포함)
-├── data/
-│   └── sentence_pairs.json      # 한/영 동일 의미 문장 쌍 6개
-├── experiments/
-│   ├── exp01_tokenizer_ko_en.py   ~ exp07_analyze_my_prompt.py
-│   ├── exp08_gemini_live.py       # 실제 API 호출 (키 있을 때만)
-│   ├── exp09_dry.py               # DRY의 토큰 경제학
-│   ├── exp10_thinking_cross_vendor.py  # 사고 토큰 3벤더 대조 (라이브 시 키 필요)
-│   └── exp11_tool_output_bloat.py      # 툴 출력 팽창 (A 시뮬레이션 무료)
-├── tools/
-│   ├── live_lang_bench.py       # 한·영 × 설명형·추론형 실호출 벤치
-│   ├── stats_test.py            # 부트스트랩 CI · Welch · Cliff's δ
-│   ├── thinking_sweep.py        # 사고 예산 스윕 (+ Wilson CI · 단가 민감도)
-│   └── verify_deck.py           # 슬라이드 수치 회귀 검사
-├── results/                     # 실측 원자료 (재실행 없이 검증 가능)
-│   ├── live_lang_thinking.jsonl   # 80행
-│   ├── thinking_sweep.jsonl       # 30행
-│   ├── stats_thinking.txt · sweep_summary.txt
-└── demo/                        # 페르소나 A/B 토큰 비교
-    ├── compare_personas.py      # 입력·출력·사고·캐싱 4축 실측 비교
-    ├── memo.html                # 두 페르소나가 만든 동일 산출물
-    ├── 비교.html                 # 결과 시각화
-    ├── qr_repo.png
-    └── transcripts/             # 대화 전문 (토큰 계측 원본)
-```
-
-### 발표 자료는 `presentation` 브랜치에
-
-덱(pptx/pdf) · 발표 대본 · 검증 보고서는 **`presentation` 브랜치**에 있습니다.
-`main`은 *"수치를 재현하는 코드"* 만 담아 가볍게 유지합니다.
-
-```bash
-git checkout presentation     # 덱 29장 · PDF · 발표 대본 · 빌드 도구
-```
-
-그래서 `main`에서 `tools/verify_deck.py` 를 돌리면 덱 관련 검사는 **SKIP**되고
-원자료 검증 87개만 수행합니다. 저장소만 clone해도 정상 동작합니다.
-
-```bash
-python tools/verify_deck.py     # main: 87개 통과 · presentation: 98개 통과
-```
-
-## 기여
-
-자기 팀의 실측치로 `data/sentence_pairs.json` 을 늘리거나,
-`lab/pricing.py` 에 모델을 추가하는 PR을 환영합니다.
-외부 수치를 인용할 때는 반드시 출처를 함께 적어주세요 — 원문 제목, 저자, 링크를
-**[SOURCES.md](SOURCES.md)** 에 추가하고, 해당 실험 스크립트의 docstring 하단
-`출처:` 블록에도 링크를 남기면 됩니다.
-
-## 라이선스
-
-MIT
+가격이나 과제가 바뀌면 배수도 바뀝니다. **주장을 유지하는 가장 좋은 방법은, 근거가 실제로 말하는 범위를 정확히 지키는 것입니다.**

@@ -29,6 +29,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab import pricing, report  # noqa: E402
 
+EVIDENCE = "시나리오: 토큰·턴·효과 가정의 비용 계산. 실제 정책 A/B나 품질 동등 절감 실측 아님."
+
 # 같은 결과물에 붙는 설명의 3단계 (실제 토큰 수는 tiktoken으로 측정)
 SAMPLES = {
     "장황함 (기본값)": """물론입니다! 요청하신 작업을 수행하겠습니다. 먼저 현재 코드의 구조를 살펴보면,
@@ -77,6 +79,7 @@ def main():
     ap.add_argument("--model", default="sonnet", choices=list(pricing.MODELS))
     ap.add_argument("--calls", type=int, default=1_760, help="월 요청 수")
     args = ap.parse_args()
+    print(EVIDENCE)
 
     try:
         import tiktoken
@@ -106,9 +109,9 @@ def main():
     verbose_t = count(list(SAMPLES.values())[0])
     terse_t = count(list(SAMPLES.values())[-1])
     cut = (1 - terse_t / verbose_t) * 100
-    print(f"  → 정보량은 같은데 출력 토큰은 {cut:.0f}% 줄었다.")
+    print(f"  → 핵심 코드가 같은 이 예문의 인코딩 토큰은 {cut:.0f}% 줄었다.")
     print("     이 샘플은 차이를 보여주려고 다소 극단적으로 잡았다. 실무 기준선은")
-    print("     Codex model_verbosity=low 보고치인 '설명형 출력 40~60% 절감'으로 잡는 게 안전하다.")
+    print("     자기 작업에서 설명량과 정답·완료조건을 함께 재측정해야 한다.")
     print("  ⚠️ 주의: 코드 자체를 줄이는 게 아니다. '코드를 읽으면 아는 내용'만 지운다.")
 
     report.section("B. reasoning effort 단계별 비용")
@@ -116,7 +119,7 @@ def main():
     for name, tok, use in EFFORT:
         c = tok * m.out / 1e6
         rows.append([name, f"{tok:,}", pricing.usd(c), pricing.usd(c * N, 2), use])
-    report.table(["effort", "thinking tok(전형)", "요청당", f"월 {N:,}건", "적합한 작업"],
+    report.table(["effort", "thinking tok(가정)", "요청당", f"월 {N:,}건", "적합한 작업"],
                  rows, ["l", "r", "r", "r", "l"])
     print("  ※ thinking 토큰은 출력 단가로 과금된다. 눈에 안 보여도 청구서에는 보인다.")
 

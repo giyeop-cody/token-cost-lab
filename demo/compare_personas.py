@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-compare_personas.py — 같은 결과물, 두 가지 습관. 토큰을 실제로 센다.
+compare_personas.py — 같은 목표 결과물, 두 가지 습관의 비용 시나리오.
 
 페르소나 A(김낭비): 토큰 절약 원칙 0개
 페르소나 B(박절약): 원칙 전부 적용
-→ 최종 산출물은 동일한 memo.html
+→ 동일한 memo.html을 목표로 두는 모형. 두 실제 세션의 품질 동등성 실험 아님
 
 측정 방식:
-  · 입력/출력 토큰: tiktoken o200k_base 로 실제 인코딩 (추정 아님)
-  · 사고 토큰: LIVE_RESULTS §7 실측 사고/응답 비율을 적용해 추정 (근거 명시)
+  · 일부 텍스트만 tiktoken 인코딩. 확대 출력·턴 수·사고량은 가정
+  · 사고 토큰: 턴별 가정. 다른 과제/모델의 hidden reasoning에 토크나이저 배수를 적용할 근거 없음
   · 캐싱: 프리픽스 고정 여부에 따라 read/write 단가 적용
   · 에이전트 루프: 매 턴 전체 이력 재전송 (2차 함수)
 
@@ -46,17 +46,18 @@ def tok(s):
 #
 #    사고량은 '출력 길이'가 아니라 '과제 난이도'에 붙는다.
 #    코드를 길게 쓴다고 그만큼 더 생각하지 않는다. 그래서 여기서는
-#    턴의 성격별로 사고량을 직접 배정하고, 실측 관측 범위(898~3,049) 안에 가둔다.
+#    턴 성격별 사고량을 가정한다. 다른 과제의 898~3,049를 참고했지만
+#    이 범위로 제한한 것은 아니며 300 같은 값과 legacy 1.44 승수가 포함된다.
 THINK_OBSERVED_MAX = 3049          # §7 reason 과제 실측 최대
 THINK_OBSERVED_MEAN = 1366         # §7 reason 과제 EN/KO 평균
 
-# 턴 성격별 사고량 (실측 범위 내에서 배정)
+# 턴 성격별 사고량 가정 (현재 과제의 hidden 사고 실측 아님)
 THINK_DESIGN = 2600     # 새 설계·처음부터 다시 (난이도 높음)
 THINK_REWORK = 1900     # 버그 원인 추적·수정 (중간)
 THINK_TWEAK = 300       # 한 줄 수정 (낮음)
 
-EFFORT_LOW = 0.35       # effort low/medium 로 낮췄을 때의 감쇄 (벤더 문서 기준 보수적)
-KO_PENALTY = 1.44       # 한국어 사고 토큰 페널티 (exp01 o200k 실측)
+EFFORT_LOW = 0.35       # effort 감소 승수 가정 (벤더가 보장한 65% 절감률이 아님)
+KO_PENALTY = 1.44       # legacy 승수 가정; exp01 예문 인코딩을 hidden 사고에 적용하는 것은 미검증
 
 
 def read(path):
@@ -147,8 +148,8 @@ B_THINK = [THINK_DESIGN, THINK_TWEAK]
 
 
 def simulate(name, sys_prompt, users, outputs, thinks, *, effort,
-             ko_thinking, cache_ok, m):
-    """매 턴 전체 이력을 재전송하는 실제 에이전트 루프를 그대로 계산한다."""
+             ko_thinking, cache_ok, m, legacy=False, ko_multiplier=1.0):
+    """매 턴 보이는 이력을 전부 재전송한다는 비용 모형 (API 제어 흐름·사고 이력은 별도)."""
     rows = []
     hist = 0
     tot_in = tot_out = tot_think = 0.0
@@ -162,17 +163,18 @@ def simulate(name, sys_prompt, users, outputs, thinks, *, effort,
         # 사고 토큰: 턴 난이도별 배정값 × effort 감쇄 (출력 길이와 무관)
         think = base_think * effort
         if ko_thinking:
-            think *= KO_PENALTY      # 한국어 사고 페널티 (exp01 실측)
+            think *= KO_PENALTY if legacy else ko_multiplier  # 명시적 감도 가정, 실측 페널티 아님
 
         # 캐싱: 프리픽스가 고정이면 첫 턴 write, 이후 read
-        if cache_ok:
+        if cache_ok and (legacy or pricing.cache_eligible(m, sys_tok)):
             cached = sys_tok
             fresh = inp - cached
             rate = m.cache_write if i == 0 else m.cache_read
             in_cost = (fresh * m.inp + cached * m.inp * rate) / 1e6
         else:
             # 맨 앞 동적값 → 매 턴 캐시 미스. write 프리미엄만 계속 지불
-            in_cost = (inp * m.inp * m.cache_write) / 1e6
+            write = m.cache_write if (legacy or (not cache_ok and pricing.cache_eligible(m, inp))) else 1.0
+            in_cost = (inp * m.inp * write) / 1e6
             cached = 0
 
         out_cost = (o + think) * m.out / 1e6
@@ -203,26 +205,46 @@ def bar(v, mx, w=34, ch="█"):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="sonnet", choices=list(pricing.MODELS))
+    ap.add_argument("--scenario", choices=["current", "legacy"], default="current")
+    ap.add_argument("--ko-multiplier", type=float, default=1.0,
+                    help="assumed thinking multiplier, NOT learned from tokenizer counts")
+    ap.add_argument("--write-results", help="write the chosen scenario and assumptions to JSON")
     a = ap.parse_args()
     m = pricing.get(a.model)
 
     A = simulate("A 김낭비 (원칙 0개)", A_SYS, A_USERS, A_OUTPUTS, A_THINK,
-                 effort=1.0, ko_thinking=True, cache_ok=False, m=m)
+                 effort=1.0, ko_thinking=True, cache_ok=False, m=m, legacy=a.scenario == "legacy", ko_multiplier=a.ko_multiplier)
     B = simulate("B 박절약 (원칙 전부)", B_SYS, [B_USER1, B_USER2], B_OUTPUTS,
                  B_THINK, effort=EFFORT_LOW, ko_thinking=False,
-                 cache_ok=True, m=m)
+                 cache_ok=True, m=m, legacy=a.scenario == "legacy", ko_multiplier=a.ko_multiplier)
 
+    if a.write_results:
+        import json
+        from pathlib import Path
+        result = {"evidence_type": "cost_scenario", "scenario": a.scenario,
+                  "note": "API policy A/B 아님. legacy는 최소길이 미달 캐싱·한국어 사고 1.44 가정을 재현할 뿐.",
+                  "price_model": m.name, "price_input": m.inp, "price_output": m.out,
+                  "ko_thinking_multiplier": KO_PENALTY if a.scenario == "legacy" else a.ko_multiplier,
+                  "effort_low_multiplier": EFFORT_LOW, "expanded_html_multiplier": 2.9,
+                  "memo_tok": f"{MEMO_TOK:,}", "ratio": f"{A['cost']/B['cost']:.1f}",
+                  "year_gap": f"{(A['cost']-B['cost'])*1760*12:,.0f}",
+                  "A": A, "B": B}
+        for name, case in (("a", A), ("b", B)):
+            for key, field in (("in", "in"), ("out", "out"), ("th", "think")):
+                result[name + "_" + key] = f"{case[field]:,.0f}"
+            result[name + "_cost"] = f"{case['cost']:.4f}"
+        Path(a.write_results).write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
     W = 86
     print("=" * W)
-    print("  같은 메모장, 두 가지 습관 — 토큰 실측 비교")
+    print("  같은 메모장, 두 가지 습관 — 토큰·비용 시나리오 비교")
     print("=" * W)
     print(f"  모델        {m.name}  (입력 ${m.inp}/1M · 출력 ${m.out}/1M · "
           f"캐시읽기 {m.cache_read}×)")
     print(f"  결과물      memo.html  {MEMO_TOK:,} tok  (양쪽 동일)")
-    print(f"  토큰 계측   tiktoken o200k_base 실제 인코딩")
+    print(f"  토큰 계측   실파일 인코딩 + 출력 확대·턴 수 가정")
     print(f"  사고 추정   턴 난이도별 배정 "
           f"(설계 {THINK_DESIGN} · 리워크 {THINK_REWORK} · 수정 {THINK_TWEAK})")
-    print(f"              §7 실측 관측범위 898~{THINK_OBSERVED_MAX} 안으로 제한")
+    print(f"              사고량은 관측 보장이 없는 가정 (300 포함, 승수 적용 후 범위 밖 가능)")
 
     for P in (A, B):
         print()
@@ -263,7 +285,7 @@ def main():
           f"{(1-B['cost']/A['cost'])*100:>8.0f}%")
     print(f"  {'턴 수':<16}{A['turns']:>13}{B['turns']:>13}")
     print()
-    print(f"  ★ 같은 결과물에 A가 B보다 {ratio:.1f}배 비싸다.")
+    print(f"  ★ 같은 목표 결과물을 가정할 때 A 비용이 B보다 {ratio:.1f}배 비싸다.")
 
     # 팀 단위
     print()
@@ -287,38 +309,37 @@ def main():
           f"{rework:>10,.0f} tok  ← 가장 큰 덩어리")
     print(f"  ② 설명 3종세트(계획·해설·요약)       "
           f"{explain_tot:>10,.0f} tok")
-    print(f"  ③ 한국어 사고 페널티 ({KO_PENALTY}×)          "
-          f"{A['think']*(1-1/KO_PENALTY):>10,.0f} tok")
+    print(f"  ③ 한국어 사고 승수 가정 = {KO_PENALTY if a.scenario == 'legacy' else a.ko_multiplier} (hidden 사고의 실측 이점 아님)")
     print(f"  ④ 캐시 미스(맨 앞 동적값)            "
-          f"{'':>10}      A는 매 턴 write 프리미엄 1.25×")
+          f"{'':>10}      A는 적격 길이일 때만 쓰기 프리미엄 (legacy는 길이 무시)")
     print(f"  ⑤ 과잉설계(안 쓸 코드) 생성·재전송   "
           f"{OVERSPEC:>10,.0f} tok  ← 턴1에서만")
 
     print()
     print("─" * W)
-    print("  덱 주장과의 정합성 교차검증")
+    print("  다른 시나리오와의 범위 비교 (독립 검증 아님)")
     print("─" * W)
     rw_only = A["cost"] / B["cost"]
     print(f"  exp09-C  리워크 6사이클 = 1사이클의 16.6배")
     print(f"           → 이 시뮬레이션의 리워크 축만 보면 A는 6턴, B는 2턴")
-    print(f"  슬라이드21 스택 적층 최대 86% 절감 (레버 5종)")
+    print(f"  exp06 스택 적층 85.825% 산술 (검증된 상한 아님)")
     print(f"           → 여기는 리워크 제거까지 포함하므로 "
           f"{(1-B['cost']/A['cost'])*100:.0f}%가 더 크다. 축이 다르다.")
-    print(f"  슬라이드15 스펙 주입 66% 절감 (리워크 제외, 단일 요청)")
+    print(f"  exp02 스펙 주입 약 66% 시나리오 (리워크 제외, 단일 요청)")
     print(f"           → 본 비교는 리워크 4회를 포함한 세션 전체라 배수가 커진다.")
     print()
-    print(f"  ⚠️ {rw_only:.1f}배는 '리워크가 발생한 세션'과 '안 한 세션'의 비교다.")
-    print(f"     운 좋게 한 번에 끝난 날은 차이가 3~5배로 줄어든다.")
-    print(f"     발표에서는 '최대 이만큼 벌어질 수 있다'로 말할 것.")
+    print(f"  ⚠️ {rw_only:.1f}배는 '6턴 세션'과 '수정 1회를 포함한 2턴 세션'의 비교다.")
+    print(f"     턴 감소·품질 동등성은 관측한 것이 아니다. 단일 레버의 인과 효과도 아니다.")
+    print(f"     발표에서는 '이 가정하의 예시 계산'으로 말할 것. 검증된 상한 아님.")
 
     print()
     print("=" * W)
     print("  결론")
     print("=" * W)
-    print("  · 두 사람의 실력 차이가 아니다. 최종 코드는 글자까지 같다.")
-    print("  · 차이는 전부 '습관'이다 — 스펙 선주입 · 변경분만 출력 ·")
+    print("  · 같은 memo.html을 목표 산출물로 두었다. 독립된 실제 두 세션의 성공을 측정하지 않았다.")
+    print("  · 비용 차이는 가정한 턴 수·출력량·사고량·캐시 조건의 결과다.")
     print("    영어 사고 · verbosity low · 동적값을 뒤로.")
-    print(f"  · 그 습관의 값이 연 ${(am-bm)*12:,.0f}다 (10인 팀 기준).")
+    print(f"  · 이 시나리오 환산 차액은 연 ${(am-bm)*12:,.0f}다 (10인 팀 기준).")
     print("=" * W)
 
 

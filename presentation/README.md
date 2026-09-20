@@ -1,87 +1,43 @@
-# presentation — 발표 자료
+# 발표 자료 — 2026-09-20 정정판
 
-`main` 브랜치가 **수치를 재현하는 코드**라면, 이 브랜치는 그 수치로 만든
-**발표 산출물**입니다. 코드와 자료를 섞지 않으려고 브랜치를 나눴습니다.
+핵심 원칙은 유지하고 **실측 / 로그 재계산 / 외부 연구 / 시나리오 / 소프트웨어 테스트**를 구분한 자료입니다.
+현재 `main`에는 코드와 발표 산출물이 함께 있습니다. 과거의 별도 presentation 브랜치 안내는 폐기했습니다.
 
-```
-git checkout main           # 실험 코드 · 원자료 · 데모
-git checkout presentation   # 덱 · PDF · 발표 대본 · 빌드 도구  ← 여기
-```
-
----
-
-## 무엇이 들어 있나
-
-| 파일 | 설명 |
-|---|---|
-| `토큰_절약_발표.pptx` | 발표 덱 **29장** (삼성 전자칠판 / PowerPoint) |
-| `토큰_절약_발표.pdf` | 동일 내용 PDF 29쪽 — **전자칠판에서는 이걸 권장** |
-| `발표_스크립트.md` | 30분 발표 대본 + 시간배분 · 컷 순서 · 질문 대비 · 준비물 |
-| `검증보고서.md` | 전수 검증 기록 — 발견한 오류 20건과 조치 |
-| `README_FIRST.md` | 발표자용 빠른 시작 |
-| `build/` | 덱을 다시 굽는 도구 3종 |
-
----
-
-## 덱 수정하기
-
-슬라이드는 손으로 편집하지 말고 **코드로 굽는 것을 권장**합니다.
-그래야 수치가 원자료와 어긋났을 때 `verify_deck.py`가 잡아냅니다.
-
-```bash
-cd presentation/build
-
-python build_deck.py      # build_deck.py → ../토큰_절약_발표.pptx (29장)
-python check_layout.py    # 텍스트가 카드 밖으로 넘쳤는지 검사
-python make_pdf.py --check   # PDF 재생성 + 쪽수·텍스트 추출 검증
-```
-
-세 명령은 **이 순서대로** 돌리세요. 덱을 고쳤으면 마지막으로 수치 검사도:
-
-```bash
-cd ../..                            # 저장소 루트
-python tools/verify_deck.py         # 98개 검사 (원자료 ↔ 슬라이드 대조)
-```
-
-### 폰트 주의
-
-덱은 **맑은 고딕** 기준입니다. Windows/Office에서는 그대로 열리지만,
-Linux/macOS에서 PDF로 변환하면 폰트가 치환돼 글자 폭이 달라지고 표가 넘칩니다.
-`make_pdf.py`가 `맑은 고딕 → NanumGothic`, `Consolas → NanumGothicCoding`으로
-자동 매핑하고 변환 결과까지 검증합니다.
-
-```bash
-sudo apt-get install -y libreoffice-impress fonts-nanum   # Debian/Ubuntu
-brew install --cask libreoffice                           # macOS
-```
-
----
-
-## 발표장 준비물
-
-- [ ] **전자칠판에서 PDF 열기 사전 테스트** — 실기기에서만 확인 가능
-- [ ] pptx를 USB로 옮기거나, PDF를 백업으로 함께 지참
-- [ ] 리포 QR은 **슬라이드 29**에 있음 (50 DPI에서도 스캔됨)
-- [ ] 라이브 시연(슬라이드 25)은 선택 — 네트워크 불안 시 표만으로 논지 완결
-
-## 발표 중 말조심할 곳
-
-검증 과정에서 **과장이었던 표현**을 고쳤습니다. 대본에도 반영돼 있지만
-슬라이드만 보고 말하면 틀리기 쉬운 지점입니다.
-
-| 슬라이드 | ❌ 이렇게 말하면 틀림 | ✅ 이렇게 |
+| 덱 | PPTX / PDF | 대본 |
 |---|---|---|
-| 25 | "답이 여섯 번 다 같았다" | "**정답률**이 6/6으로 같았다" (문자열은 다름) |
-| 25 | "240배" | "**이 단가 기준** 240배" (실단가로는 149배) |
-| 25 | "512는 오답을 냈다" | "정답률 2/6 — **n=6이라 경향**" (CI 겹침) |
-| 2 | "1,000 토큰이 15센트" | "**10,000 토큰**이 15센트" |
-| 6 | "원자료 보여주세요" | N=100분은 미포함, **N=80(§7)이 본 근거** |
+| 통합 29장 | [PPTX](token_cost.pptx) · [PDF](token_cost.pdf) | [대본](script.md) |
+| 본편 22장 | [PPTX](token_cost_main.pptx) · [PDF](token_cost_main.pdf) | [대본](script_main.md) |
+| 보너스 10장 | [PPTX](token_cost_bonus.pptx) · [PDF](token_cost_bonus.pdf) | [대본](script_bonus.md) |
+| 에이전트 18장 | [PPTX](token_cost_agent.pptx) · [PDF](token_cost_agent.pdf) | [대본](script_agent.md) |
+| 카페 케이스 9장 | [PPTX](case_vibe_vs_spec/vibe_vs_spec.pptx) · [PDF](case_vibe_vs_spec/vibe_vs_spec.pdf) | [대본](case_vibe_vs_spec/script_case.md) |
 
-자세한 경위는 `검증보고서.md`에 있습니다.
+## 수정·검증
 
----
+숫자와 조건은 `lab/evidence.py`에서 원자료를 읽어 계산하고,
+`deckgen/build_verified.py` 하나에서 모든 덱·대본을 생성합니다.
+기존 디자인의 짙은 배경·초록 강조는 유지하고, 오해를 줄이도록 문안을 다시 구성했습니다.
 
-## 이 브랜치를 main에 머지하지 마세요
+```bash
+pip install -r requirements-dev.txt
+python tools/reproduce_audit.py
+python tools/verify_deck.py
+# Linux 예: sudo apt-get install libreoffice-impress fonts-nanum
+python presentation/deckgen/make_pdf.py --check
+```
 
-의도적으로 분리한 상태입니다. `main`은 clone해서 바로 `run_all.py`가 도는
-가벼운 코드 저장소로 유지하고, 1.2MB짜리 PDF·PPTX는 여기에만 둡니다.
+검증기는 실제 PPTX의 **모든 텍스트·수치·비교 조건**을 재생성된 명세와 대조합니다.
+`240→999` 같은 변조는 실패합니다. PDF는 실제 페이지 수·추출 텍스트까지 대조합니다.
+텍스트 박스 경계 검사는 시각적 완벽성이나 외부 사실의 참을 보증하지 않습니다.
+PDF 일부 페이지는 로컬 렌더링으로 확인했지만 발표장 기기에서는 아직 시험하지 않았습니다.
+
+## 발표자가 지켜야 할 구분
+
+- 240배는 **기존 $1.25/$10 환산**, 공식 Standard는 약 199배. 비교는 **자동/미지정**.
+- 미지정 6/6과 명시적 0의 5/6을 섞지 않기. ‘같은 정확도’보다 ‘허용오차 통과 횟수가 같음’.
+- 문자당 비용을 ‘동일 의미량’으로 읽지 않기. 사고 토큰을 ‘더 깊은 추론’의 자체 증거로 읽지 않기.
+- 20.8배·SDD 71%·리플레이 배수를 실제 품질 동등 정책 A/B의 성과로 소개하지 않기.
+- 브라우저/mock 테스트를 새 live LLM 측정이라고 부르지 않기.
+
+변경 상세: [CORRECTIONS.md](../docs/CORRECTIONS.md).
+수정 전 작업 노트는 [archive/](archive/README.md)에 비현행으로 격리했습니다.
+파일명 27개의 원 바이트→ASCII 경로 매핑은 `docs/path_migration.json`에 있습니다.

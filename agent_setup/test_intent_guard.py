@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """의도 불일치 분류·승격 검증."""
 import sys
-sys.path.insert(0, "/home/user/tcl/agent_setup")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from intent_guard import (classify_mismatch, MISMATCH_KINDS, ACLedger,
                           preflight_cost, preflight_prompt)
 
@@ -61,3 +62,5 @@ ck("세 줄" in preflight_prompt("x") or "3)" in preflight_prompt("x"),
 
 print("=" * 60)
 print(f"  {n}건 중 {G if not f else R}{n-f} PASS{N} / {f} FAIL")
+
+raise SystemExit(1 if f else 0)

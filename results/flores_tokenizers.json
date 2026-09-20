@@ -1,0 +1,29 @@
+{
+  "evidence_type": "local_tokenizer_measurement",
+  "dataset": "FLORES-200 devtest eng_Latn / kor_Hang",
+  "source": "https://dl.fbaipublicfiles.com/nllb/flores200_dataset.tar.gz",
+  "archive_sha256": "b8b0b76783024b85797e5cc75064eb83fc5288b41e9654dabc7be6ae944011f6",
+  "input_sha256": {
+    "en": "612e9fbe87997617c0fa8fa8929654a4f49b728d96738112c2b86ef6a1d78d88",
+    "ko": "540972696230a56e888f1fbd04b7000135c436351f5e467f99ce67fdccd8df0f"
+  },
+  "n_pairs": 1012,
+  "tiktoken_version": "0.14.0",
+  "chars": {
+    "en": 131966,
+    "ko": 65965
+  },
+  "tokenizers": {
+    "o200k_base": {
+      "en": 26873,
+      "ko": 39566,
+      "ko_en_ratio": 1.472332824768355
+    },
+    "cl100k_base": {
+      "en": 27182,
+      "ko": 64338,
+      "ko_en_ratio": 2.3669340004414687
+    }
+  },
+  "ko_en_char_ratio": 0.49986360123062
+}

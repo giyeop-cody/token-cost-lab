@@ -38,7 +38,7 @@ from dataclasses import dataclass, field
 from router import (
     Decision, Tier, ReworkTracker, SessionMemory, SCOPE_LADDER,
     route, escalate, cost_of, FIRST_OUT_TOK, REWORK_OUT_TOK,
-    RESET_PRIME_TOK,
+    RESET_PRIME_TOK, decision_cost,
 )
 from ladder_b import IntentTracker, rung_cost
 from intent_guard import classify_mismatch
@@ -65,6 +65,8 @@ class TaskState:
     turns: int = 0                    # 사용자 턴을 몇 번 태웠나
     cost: float = 0.0
     trace: list[dict] = field(default_factory=list)
+    carried_tok: int = 0
+    status: str = "active"
 
 
 @dataclass
@@ -81,6 +83,14 @@ class Orchestrator:
     intent: IntentTracker = field(default_factory=IntentTracker)
     memory: SessionMemory = field(default_factory=SessionMemory)
     tasks: dict[str, TaskState] = field(default_factory=dict)
+    intents: dict[str, IntentTracker] = field(default_factory=dict)
+    turn_growth_tok: int = 0  # total per-turn increment incl. output; 0=fixed-input scenario
+
+    def tracker_for(self, task_id: str) -> IntentTracker:
+        if task_id not in self.intents:
+            self.intents[task_id] = IntentTracker(threshold=self.intent.threshold,
+                ladder=self.intent.ladder, max_rungs=self.intent.max_rungs)
+        return self.intents[task_id]
 
     # ── 사용자 턴 ────────────────────────────────────────────
     def user_turn(self, task_id: str, command: str,
@@ -96,11 +106,12 @@ class Orchestrator:
         #  다른 4종은 티어를 올려도 안 고쳐지므로 낭비다.)
         if mismatch_kind is None:
             mismatch_kind, _ = classify_mismatch(command)
-        obs = self.intent.observe(command, mismatch_kind=mismatch_kind)
+        obs = self.tracker_for(task_id).observe(command, mismatch_kind=mismatch_kind)
         action, step = obs["action"], obs["step"]
 
         # 사람에게 넘길 단계 — 더 좋은 모델로도 안 풀린다.
         if action == "respec":
+            st.status = "respec"
             st.trace.append(dict(layer="B", step="respec", cost=0.0))
             return dict(layer="B", action="respec", tier=None, scope="respec",
                         cost=0.0, reason=obs["reason"], task=st)
@@ -108,10 +119,13 @@ class Orchestrator:
         # 새 의도 → 둘 다 초기화하고 첫 배정.
         if step in ("first", "new-intent"):
             st.tier_floor = Tier.SMALL
+            st.carried_tok = 0
+            st.status = "active"
             d = self.rework.first(task_id, command)
             st.last = d
             st.tier_floor = _max_tier(st.tier_floor, d.tier)
-            c = cost_of(d.tier, self.tok_in, FIRST_OUT_TOK)
+            c = decision_cost(d, self.tok_in, FIRST_OUT_TOK)["usd"]
+            st.carried_tok += self.turn_growth_tok
             st.cost += c
             st.trace.append(dict(layer="A", step="first", tier=d.tier.value,
                                  scope=d.scope, cost=c))
@@ -122,7 +136,10 @@ class Orchestrator:
         tier = _max_tier(obs["tier"], st.tier_floor)
         scope = obs["scope"]
         reset = obs.get("reset", False)
-        c = rung_cost(tier, self.tok_in, reset=reset, scope=scope)
+        c = rung_cost(tier, self.tok_in, reset=reset, scope=scope,
+                      carried_tok=st.carried_tok)
+        st.carried_tok = (0 if reset else st.carried_tok) + self.turn_growth_tok
+        st.status = "active"
         st.cost += c
         st.tier_floor = _max_tier(st.tier_floor, tier)
         # B가 새 조건을 깔았으므로 A는 그 조건에서 처음부터 센다.
@@ -130,7 +147,7 @@ class Orchestrator:
         if st.last is not None:
             # B가 깐 새 조건을 A가 이어받을 수 있도록 Decision을 갱신한다.
             st.last = Decision(
-                kind=st.last.kind, tier=tier, options=dict(st.last.options),
+                kind=st.last.kind, tier=tier, options={"max_out_tok": FIRST_OUT_TOK, "verbosity": "low"},
                 reason=obs["reason"], classified_by=st.last.classified_by,
                 attempt=1, scope=scope, reset=reset, step=step)
         st.trace.append(dict(layer="B", step=step, tier=tier.value,
@@ -147,24 +164,33 @@ class Orchestrator:
         `ac_passed=True`면 여기서 멈추고 결과물이 사용자에게 나간다.
         그 결과물이 틀렸다면 다음 사용자 턴에서 B가 잡는다.
         """
+        if task_id not in self.tasks or self.tasks[task_id].last is None:
+            raise ValueError("user_turn must initialize this task_id before inner")
         st = self.tasks[task_id]
+        if st.status == "respec":
+            return dict(layer="A", action="respec", cost=0.0, reason="스펙 재정의 대기", task=st)
         if ac_passed:
+            st.status = "delivered"
             st.trace.append(dict(layer="A", step="pass", cost=0.0))
             return dict(layer="A", action="deliver", cost=0.0,
                         reason="AC 통과 — 사용자에게 전달", task=st)
 
         st.inner_attempts += 1
         if st.inner_attempts >= self.max_inner:
+            st.status = "respec"
             return dict(layer="A", action="respec", cost=0.0,
                         reason="A 사다리 소진 — 스펙 재정의", task=st)
 
         d = self.rework.again(task_id, st.last, failure=failure)
         st.last = d
         st.tier_floor = _max_tier(st.tier_floor, d.tier)
-        out = 0 if d.tier is Tier.EXTERNAL else REWORK_OUT_TOK
-        c = cost_of(d.tier, self.tok_in, out)
-        if d.reset:
-            c += cost_of(d.tier, RESET_PRIME_TOK, 0)
+        if d.step == "respec":
+            st.status = "respec"
+            st.trace.append(dict(layer="A", step="respec", cost=0.0))
+            return dict(layer="A", action="respec", cost=0.0, reason=d.reason, task=st)
+        priced = decision_cost(d, self.tok_in, FIRST_OUT_TOK, carried_tok=st.carried_tok)
+        c = priced["usd"]
+        st.carried_tok = (0 if d.reset else st.carried_tok) + self.turn_growth_tok
         st.cost += c
         st.trace.append(dict(layer="A", step=d.step, tier=d.tier.value,
                              scope=d.scope, reset=d.reset, cost=c))

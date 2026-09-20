@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-"""실로그 재생 — 저장된 세션 기록을 분류기·사다리에 그대로 태운다.
-입력은 전부 저장소에 있는 실제 발화. 가정값 없음."""
+"""저장 발화 재생 — 저장된 세션 기록을 분류기·사다리에 그대로 태운다.
+입력은 전부 저장소에 있는 실제 발화. 발화는 저장본, 정책 비용·성과는 가정."""
+print("[증거 범위] 저장 발화/산출물의 재생 + 정책 비용 시나리오. 실제 정책 A/B의 품질·성공률·절감 실측 아님.")
+
 import re, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,7 +22,7 @@ def user_turns(md):
 A = user_turns("demo/transcripts/persona_A_wasteful.md")
 B = user_turns("demo/transcripts/persona_B_frugal.md")
 
-print("="*84); print("1. 페르소나 A 실로그 6턴 — 반려 발화 분류 (턴1은 최초 지시)"); print("="*84)
+print("="*84); print("1. 페르소나 A 저장 발화 6턴 — 반려 발화 분류 (턴1은 최초 지시)"); print("="*84)
 ledger = ACLedger(); hit = 0; rej = 0
 for i, u in enumerate(A, 1):
     if i == 1:
@@ -37,7 +39,7 @@ for i, u in enumerate(A, 1):
         print(f"   판정 unknown — {ev}")
     rec = ledger.promote(u, task_id=f"A{i}")
     print(f"   AC승격 {'○' if rec else '×'}")
-print(f"\n>>> 실로그 분류 성공률: {hit}/{rej} = {hit/rej*100:.0f}%  (나머지는 unknown=되물어야 함)")
+print(f"\n>>> 저장 발화 비-unknown 분류 비율 (정답 라벨 정확도 아님): {hit}/{rej} = {hit/rej*100:.0f}%  (나머지는 unknown=되물어야 함)")
 print("승격 AC:"); print(ledger.as_checklist())
 
 print("\n" + "="*84); print("2. 같은 6턴을 사다리 B 감지기에 통과"); print("="*84)
@@ -51,7 +53,7 @@ for i, u in enumerate(A, 1):
 print(f"\n>>> B 사다리 에스컬레이션: {esc}/{len(A)-1}회. "
       f"최종 칸={tr.rung}, 티어={tr._tier.name}")
 
-print("\n" + "="*84); print("3. 페르소나 B 실로그 2턴"); print("="*84)
+print("\n" + "="*84); print("3. 페르소나 B 저장 발화 2턴"); print("="*84)
 tr2 = IntentTracker()
 for i, u in enumerate(B, 1):
     d = tr2.observe(u)

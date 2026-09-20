@@ -37,14 +37,12 @@ class Tier(str, Enum):
     BATCH = "batch"    # 비동기 배치 (단가 50%)
 
 
-# 단가 ($ per 1M tokens) — 발표 시점 리스트가 기준. 각자 값으로 교체할 것.
-PRICES: dict[Tier, tuple[float, float]] = {
-    Tier.SMALL: (0.15, 0.60),
-    Tier.MID: (1.25, 10.00),
-    Tier.LARGE: (5.00, 30.00),
-    Tier.EXTERNAL: (0.0, 0.0),   # 구독료에 포함 — 종량 과금 없음
-    Tier.BATCH: (0.625, 5.00),   # MID의 50%
-}
+# Hypothetical tier budgets, NOT current named-model prices. All dollars live in lab/pricing.py.
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lab.pricing import TIER_SCENARIOS
+PRICES: dict[Tier, tuple[float, float]] = {Tier(k): v for k, v in TIER_SCENARIOS.items()}
 
 
 class Kind(str, Enum):
@@ -85,7 +83,7 @@ class Decision:
 # "TODO 전부 grep"은 분량 수식어가 붙었을 뿐 여전히 셸 한 줄로 끝나는 일이다.
 RULES: list[tuple[Kind, re.Pattern]] = [
     (Kind.TOOL, re.compile(
-        r"파일|디렉터리|디렉토리|경로|이름.*바꾸|이동|복사|삭제|"
+        r"이름.*바[꾸꿔]|이동해|옮겨|복사해|삭제해|"
         r"grep|검색해|찾아줘|포맷|변환|커밋|푸시", re.I)),
     (Kind.BULK, re.compile(
         r"일괄|배치|목록.*조사|정규화|라벨링|임베딩|크롤|수집|"
@@ -102,6 +100,11 @@ RULES: list[tuple[Kind, re.Pattern]] = [
     (Kind.IMPLEMENT, re.compile(
         r"구현|만들어|작성해|추가해|고쳐|수정해|리팩터|버그|테스트.*작성", re.I)),
 ]
+
+# Higher-level intent beats an incidental noun such as file/search/format.
+_PRIORITY = {Kind.REASONING: 0, Kind.IMPLEMENT: 1, Kind.EXPLAIN: 2,
+             Kind.TOOL: 3, Kind.BULK: 4}
+RULES.sort(key=lambda r: _PRIORITY[r[0]])
 
 CLASSIFY_PROMPT = (
     "Classify the request into exactly one label: "
@@ -212,7 +215,7 @@ TIER_LADDER = [Tier.SMALL, Tier.MID, Tier.LARGE]
 
 # 첫 배정에도 출력 예산을 준다. 상한이 이 설계의 가장 큰 레버인데
 # 첫 턴만 무제한이면 정작 제일 긴 출력이 그대로 나간다.
-# 2500은 "구현 한 덩어리 + 3줄 설명"의 실측 상한이다.
+# 2500은 "구현 한 덩어리 + 3줄 설명"의 시나리오 출력 예산이다.
 FIRST_OUT_TOK = 2500
 EXPLAIN_OUT_TOK = 500         # 3줄 설명에 2500을 열어둘 이유가 없다
 
@@ -223,7 +226,7 @@ EXPLAIN_OUT_TOK = 500         # 3줄 설명에 2500을 열어둘 이유가 없�
 # "왜 깨졌는가" 몇 줄과 최소 패치뿐이다. 전문 재작성을 막으면
 # 상한 비용이 45% 내려간다. 상한 탓에 성공률이 20%p 떨어져도
 # 여전히 무제한보다 싸다 — 출력 단가가 그만큼 지배적이다.
-REWORK_OUT_TOK = 900          # 진단 + 통합 diff에 필요한 실측 여유분
+REWORK_OUT_TOK = 900          # 진단 + 통합 diff의 가정 예산 (품질 미검증)
 REWORK_PATCH_ONLY = "unified-diff"
 
 # 리셋은 공짜가 아니다. 새 세션은 이월 문서를 다시 읽혀야 하고,
@@ -576,6 +579,29 @@ def estimate(workload: Iterable[tuple[str, int, int]],
             "routed_usd": routed_total, "saved_pct": saved}
 
 
+SCOPE_MULT = {"unit": 1.0, "file": 1.6, "module": 2.4, "respec": 1.2}
+
+
+def decision_cost(d: Decision, tok_in: int, tok_out: int, *, carried_tok: int = 0) -> dict:
+    """Shared A-ladder estimate. Caps, scope, reset and diagnosis+apply are all counted.
+
+    tok_in is the unit-context budget; both diagnosis and application get the
+    scaled input budget (handoff text is assumed to fit that budget). This is a
+    scenario, not invoice accounting; use actual usage for observed costs.
+    """
+    if min(tok_in, tok_out, carried_tok) < 0:
+        raise ValueError("negative token budget")
+    if d.step == "respec":
+        return {"usd": 0.0, "tok_in": 0, "out_tok": 0, "apply_usd": 0.0}
+    tin = int(tok_in * SCOPE_MULT[d.scope])
+    tin += RESET_PRIME_TOK if d.reset else carried_tok
+    tout = min(tok_out, d.options.get("max_out_tok", tok_out))
+    c = cost_of(d.tier, tin, tout)
+    applier = d.options.get("apply_with")
+    apply_usd = cost_of(Tier(applier), tin, tok_out) if applier else 0.0
+    return {"usd": c + apply_usd, "tok_in": tin, "out_tok": tout, "apply_usd": apply_usd}
+
+
 def rework_cost(task: str, tok_in: int, tok_out: int,
                 fails: int, *, strategy: str = "escalate",
                 turn_growth_tok: int = 0,
@@ -586,10 +612,10 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
     strategy="escalate" : 사다리대로 재시도 → 범위 → 모델 순으로 한 축씩 (권장)
     strategy="topfirst" : 처음부터 최상위 모델 (비싸지만 실패가 적다는 가정)
 
-    turn_growth_tok: 턴마다 컨텍스트에 눌러앉는 입력 증가분.
+    turn_growth_tok: 직전 출력·사용자 발화 등을 모두 포함한 턴당 총 입력 증가분.
         리워크가 길어지면 직전 턴의 출력과 사용자 발화가 다음 턴 입력에
-        그대로 다시 실린다. 실측 페르소나 A의 입력은 79,130토큰까지
-        불어났고 **이것이 리워크 비용의 지배항**이었다. 0이면 종전처럼
+        그대로 다시 실린다. 페르소나 시나리오 A의 입력은 79,130토큰까지
+        불어났고 이는 출력·사고와 별개인 입력 성분이다. 추가로 출력을 더하면 이중 계상이다. 0이면 종전처럼
         입력 고정으로 계산한다(하위 호환). 리셋이 걸린 칸에서는 누적이
         0으로 끊긴다 — 리셋의 값어치가 바로 여기서 나온다.
 
@@ -607,22 +633,13 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
     resets = 0
     carried = 0          # 지금까지 컨텍스트에 눌러앉은 누적 입력
     for i in range(fails + 1):
-        # 재시도는 범위가 넓어질수록 입력이 커진다(파일→모듈).
-        mult = {"unit": 1.0, "file": 1.6, "module": 2.4, "respec": 1.2}[d.scope]
-        tin = int(tok_in * mult)
-        if d.reset:                      # 새 세션 = 이월 문서 재장전
-            tin += RESET_PRIME_TOK
+        if d.step == "respec":
+            break  # human/spec hand-off, not an unmetered model execution
+        if d.reset:
+            carried = 0
             resets += 1
-            carried = 0                  # 누적 컨텍스트가 여기서 끊긴다
-        tin += carried
-        # 리워크 턴은 파일을 다시 쓰지 않는다 — 진단 + 패치만 받는다.
-        # 비용의 8할이 출력이라 이 상한이 사다리의 가장 큰 레버다.
-        tout = min(tok_out, d.options.get("max_out_tok", tok_out))
-        c = cost_of(d.tier, tin, tout)
-        # 상위 티어는 진단만 내고 적용은 한 단계 아래가 한다.
-        applier = d.options.get("apply_with")
-        if applier:
-            c += cost_of(Tier(applier), tin, tok_out)
+        priced = decision_cost(d, tok_in, tok_out, carried_tok=carried)
+        tin, tout, c = priced["tok_in"], priced["out_tok"], priced["usd"]
         total += c
         turns += 1
         trail.append({"attempt": d.attempt, "step": d.step,
@@ -630,7 +647,7 @@ def rework_cost(task: str, tok_in: int, tok_out: int,
                       "reset": d.reset, "out_tok": tout,
                       "tok_in": tin, "carried": carried, "usd": c})
         # 이번 턴의 출력 + 사용자 발화가 다음 턴 입력으로 눌러앉는다.
-        carried += turn_growth_tok + tout if turn_growth_tok else 0
+        carried += turn_growth_tok  # total growth already includes prior output
         if i == fails:
             break
         if strategy == "escalate":

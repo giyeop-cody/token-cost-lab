@@ -1,0 +1,108 @@
+{
+  "evidence_type": "cost_scenario",
+  "scenario": "current",
+  "note": "API policy A/B 아님. legacy는 최소길이 미달 캐싱·한국어 사고 1.44 가정을 재현할 뿐.",
+  "price_model": "Claude Sonnet 4.6",
+  "price_input": 3.0,
+  "price_output": 15.0,
+  "ko_thinking_multiplier": 1.0,
+  "effort_low_multiplier": 0.35,
+  "expanded_html_multiplier": 2.9,
+  "memo_tok": "1,721",
+  "ratio": "19.0",
+  "year_gap": "18,943",
+  "A": {
+    "name": "A 김낭비 (원칙 0개)",
+    "rows": [
+      {
+        "turn": 1,
+        "in": 270,
+        "cached": 0,
+        "out": 3672,
+        "think": 2600,
+        "cost": 0.09489
+      },
+      {
+        "turn": 2,
+        "in": 3959,
+        "cached": 0,
+        "out": 5890,
+        "think": 2600,
+        "cost": 0.14219625
+      },
+      {
+        "turn": 3,
+        "in": 9866,
+        "cached": 0,
+        "out": 5890,
+        "think": 1900,
+        "cost": 0.1538475
+      },
+      {
+        "turn": 4,
+        "in": 15772,
+        "cached": 0,
+        "out": 5890,
+        "think": 1900,
+        "cost": 0.175995
+      },
+      {
+        "turn": 5,
+        "in": 21676,
+        "cached": 0,
+        "out": 5890,
+        "think": 1900,
+        "cost": 0.198135
+      },
+      {
+        "turn": 6,
+        "in": 27587,
+        "cached": 0,
+        "out": 2621,
+        "think": 2600,
+        "cost": 0.18176625
+      }
+    ],
+    "turns": 6,
+    "in": 79130.0,
+    "out": 29853.0,
+    "think": 13500.0,
+    "cost": 0.94683,
+    "sys": 264
+  },
+  "B": {
+    "name": "B 박절약 (원칙 전부)",
+    "rows": [
+      {
+        "turn": 1,
+        "in": 528,
+        "cached": 0,
+        "out": 1721,
+        "think": 910,
+        "cost": 0.041049
+      },
+      {
+        "turn": 2,
+        "in": 2310,
+        "cached": 0,
+        "out": 25,
+        "think": 105,
+        "cost": 0.00888
+      }
+    ],
+    "turns": 2,
+    "in": 2838.0,
+    "out": 1746.0,
+    "think": 1014.9999999999999,
+    "cost": 0.049929,
+    "sys": 82
+  },
+  "a_in": "79,130",
+  "a_out": "29,853",
+  "a_th": "13,500",
+  "a_cost": "0.9468",
+  "b_in": "2,838",
+  "b_out": "1,746",
+  "b_th": "1,015",
+  "b_cost": "0.0499"
+}

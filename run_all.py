@@ -42,14 +42,15 @@ def main():
     ap.add_argument("--model", default="sonnet")
     ap.add_argument("--only", help="특정 실험만 (예: 03)")
     ap.add_argument("--live", action="store_true",
-                    help="exp08 을 실제 Gemini API 로 호출한다 (과금 발생, "
+                    help="exp08/10/11을 실제 API로 호출한다 (과금 발생, "
                          "GEMINI_API_KEY 필요)")
     args = ap.parse_args()
 
-    failed = []
+    failed, skipped, selected = [], [], 0
     for fname, label, takes_model in ORDER:
         if args.only and args.only not in fname:
             continue
+        selected += 1
         cmd = [sys.executable, os.path.join(EXP, fname)]
         if takes_model:
             cmd += ["--model", args.model]
@@ -60,6 +61,7 @@ def main():
                 if not (os.environ.get("GEMINI_API_KEY")
                         or os.environ.get("GOOGLE_API_KEY")):
                     print("\n  [건너뜀] exp08 --live 에는 GEMINI_API_KEY 가 필요합니다.\n")
+                    skipped.append(label)
                     continue
             else:
                 cmd += ["--dry-run"]
@@ -67,6 +69,7 @@ def main():
             if args.live:
                 if not any(os.environ.get(k) for k in LIVE_KEYS):
                     print("\n  [건너뜀] exp10 --live 에는 벤더 키(최소 1개)가 필요합니다.\n")
+                    skipped.append(label)
                     continue
                 cmd += ["--vendor", "all"]
             else:
@@ -74,27 +77,36 @@ def main():
         if fname.startswith("exp11") and args.live:
             if os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
                 cmd += ["--live"]
+            else:
+                print("[미검증] exp11 live 키 없음 — 시뮬레이션만 실행")
+                skipped.append(label + " live")
         r = subprocess.run(cmd)
         if r.returncode != 0:
             failed.append(label)
 
     print()
     print("=" * 88)
+    if not selected:
+        print("선택된 실험 없음")
+        return 2
     if failed:
         print("  실패한 실험:", ", ".join(failed))
-        sys.exit(1)
-    print("  모든 실험 완료.")
+        return 1
+    if skipped:
+        print("  미검증/생략:", ", ".join(skipped))
+        return 2
+    print("  선택한 실행 모드 완료. 기본 모드는 API 효과 검증이 아닙니다.")
     print("  숫자를 그대로 믿지 말고, 자기 팀 usage 로그로 파라미터를 바꿔 다시 돌리세요.")
     print("  예:  python experiments/exp02_output_to_input.py --model opus --devs 25")
     print()
-    print("  실제 과금 값을 보고 싶다면 (API 키 필요):")
+    print("  새 API usage와 단가 환산을 보고 싶다면 (API 키 필요):")
     print("    export GEMINI_API_KEY=\"...\"")
     print("    python experiments/exp08_gemini_live.py --count-only   # 과금 없음")
     print("    python experiments/exp08_gemini_live.py --thinking     # 사고 토큰 관측")
     print("    python experiments/exp10_thinking_cross_vendor.py      # 3벤더 사고 토큰 대조")
-    print("    python experiments/exp11_tool_output_bloat.py --live   # 툴 출력 재과금 실측")
+    print("    python experiments/exp11_tool_output_bloat.py --live   # 3요청의 usage 관측")
     print("=" * 88)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

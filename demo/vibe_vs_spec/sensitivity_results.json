@@ -1,48 +1,170 @@
 {
-  "breakeven_ratio": 1.0024,
-  "asymptote_pct": -9.62,
+  "evidence_type": "price_sensitivity_of_estimated_usage",
+  "price_snapshot": "2026-09-20",
+  "breakeven_ratio_at_cache_factor_0_1": 1.0023529411764707,
+  "delta_tokens": {
+    "uncached_input": 666,
+    "cached_input": 156,
+    "reasoning_plus_output": -680
+  },
+  "asymptote_pct_at_fixed_cache_factor": -9.618104667609618,
   "models": {
-    "GPT-5 (2026-08)": {
+    "opus": {
+      "model": "Claude Opus 4.6",
+      "ratio": 5.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.179336,
+      "spec_usd": 0.165744,
+      "delta_pct": -7.579069456216258,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.18074,
+      "no_cache_spec_usd": 0.16785,
+      "no_cache_delta_pct": -7.131791523735764
+    },
+    "sonnet": {
+      "model": "Claude Sonnet 4.6",
+      "ratio": 5.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.1076016,
+      "spec_usd": 0.09944639999999999,
+      "delta_pct": -7.579069456216281,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.108444,
+      "no_cache_spec_usd": 0.10071,
+      "no_cache_delta_pct": -7.131791523735753
+    },
+    "gpt5": {
+      "model": "GPT-5",
       "ratio": 8.0,
-      "vibe_usd": 0.07135,
-      "spec_usd": 0.0654,
-      "delta_pct": -8.3
+      "cache_factor": 0.1,
+      "vibe_usd": 0.0713465,
+      "spec_usd": 0.0653985,
+      "delta_pct": -8.336778959023917,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.0716975,
+      "no_cache_spec_usd": 0.065925,
+      "no_cache_delta_pct": -8.051187279891215
     },
-    "GPT-5.x (2026-09)": {
+    "gemini-pro": {
+      "model": "Gemini 3.1 Pro Preview (≤200k)",
       "ratio": 6.0,
-      "vibe_usd": 0.21469,
-      "spec_usd": 0.19769,
-      "delta_pct": -7.9
+      "cache_factor": 0.1,
+      "vibe_usd": 0.08587439999999999,
+      "spec_usd": 0.07907760000000001,
+      "delta_pct": -7.9148151253458305,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.086436,
+      "no_cache_spec_usd": 0.07992,
+      "no_cache_delta_pct": -7.538525614327352
     },
-    "Claude Sonnet 4.6": {
-      "ratio": 5.0,
-      "vibe_usd": 0.1076,
-      "spec_usd": 0.09945,
-      "delta_pct": -7.6
+    "gemini-25": {
+      "model": "Gemini 2.5 Pro (≤200k)",
+      "ratio": 8.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.0713465,
+      "spec_usd": 0.0653985,
+      "delta_pct": -8.336778959023917,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.0716975,
+      "no_cache_spec_usd": 0.065925,
+      "no_cache_delta_pct": -8.051187279891215
     },
-    "Claude Opus 4.7": {
-      "ratio": 5.0,
-      "vibe_usd": 0.17934,
-      "spec_usd": 0.16574,
-      "delta_pct": -7.6
+    "deepseek": {
+      "model": "DeepSeek V4.1 Flash (peak)",
+      "ratio": 4.0,
+      "cache_factor": 0.02,
+      "vibe_usd": 0.008631671999999998,
+      "spec_usd": 0.008016408000000001,
+      "delta_pct": -7.127981693465612,
+      "breakeven_ratio": 0.984,
+      "no_cache_vibe_usd": 0.0087234,
+      "no_cache_spec_usd": 0.008154,
+      "no_cache_delta_pct": -6.527271476717789
     },
-    "Claude Haiku 4.5": {
-      "ratio": 5.0,
-      "vibe_usd": 0.03587,
-      "spec_usd": 0.03315,
-      "delta_pct": -7.6
+    "deepseek-offpeak": {
+      "model": "DeepSeek V4.1 Flash (off-peak)",
+      "ratio": 4.0,
+      "cache_factor": 0.02,
+      "vibe_usd": 0.004315835999999999,
+      "spec_usd": 0.0040082040000000005,
+      "delta_pct": -7.127981693465612,
+      "breakeven_ratio": 0.984,
+      "no_cache_vibe_usd": 0.0043617,
+      "no_cache_spec_usd": 0.004077,
+      "no_cache_delta_pct": -6.527271476717789
     },
-    "Gemini 3.1 Pro": {
+    "flash-lite": {
+      "model": "Gemini 3.1 Flash-Lite",
       "ratio": 6.0,
-      "vibe_usd": 0.08587,
-      "spec_usd": 0.07908,
-      "delta_pct": -7.9
+      "cache_factor": 0.1,
+      "vibe_usd": 0.010734299999999999,
+      "spec_usd": 0.009884700000000001,
+      "delta_pct": -7.9148151253458305,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.0108045,
+      "no_cache_spec_usd": 0.00999,
+      "no_cache_delta_pct": -7.538525614327352
     },
-    "DeepSeek-chat": {
-      "ratio": 4.1,
-      "vibe_usd": 0.00792,
-      "spec_usd": 0.00735,
-      "delta_pct": -7.1
+    "gemini-35f": {
+      "model": "Gemini 3.5 Flash",
+      "ratio": 6.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.0644058,
+      "spec_usd": 0.0593082,
+      "delta_pct": -7.914815125345854,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.064827,
+      "no_cache_spec_usd": 0.05994,
+      "no_cache_delta_pct": -7.538525614327362
+    },
+    "gemini-36f": {
+      "model": "Gemini 3.6 Flash",
+      "ratio": 5.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.0269004,
+      "spec_usd": 0.024861599999999998,
+      "delta_pct": -7.579069456216281,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.027111,
+      "no_cache_spec_usd": 0.0251775,
+      "no_cache_delta_pct": -7.131791523735753
+    },
+    "gemini-37f": {
+      "model": "Gemini 3.7 Flash",
+      "ratio": 5.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.0269004,
+      "spec_usd": 0.024861599999999998,
+      "delta_pct": -7.579069456216281,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.027111,
+      "no_cache_spec_usd": 0.0251775,
+      "no_cache_delta_pct": -7.131791523735753
+    },
+    "gemini-38f": {
+      "model": "Gemini 3.8 Flash",
+      "ratio": 5.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.0269004,
+      "spec_usd": 0.024861599999999998,
+      "delta_pct": -7.579069456216281,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.027111,
+      "no_cache_spec_usd": 0.0251775,
+      "no_cache_delta_pct": -7.131791523735753
+    },
+    "haiku": {
+      "model": "Claude Haiku 4.5",
+      "ratio": 5.0,
+      "cache_factor": 0.1,
+      "vibe_usd": 0.035867199999999995,
+      "spec_usd": 0.033148800000000006,
+      "delta_pct": -7.579069456216237,
+      "breakeven_ratio": 1.0023529411764707,
+      "no_cache_vibe_usd": 0.036148,
+      "no_cache_spec_usd": 0.03357,
+      "no_cache_delta_pct": -7.1317915237357425
     }
-  }
+  },
+  "limitation": "token counts frozen across models; native tokenization, cache eligibility, quality, spec-writing, retries and long-context premiums not verified. No-cache alternative charges all estimated input at the fresh rate."
 }

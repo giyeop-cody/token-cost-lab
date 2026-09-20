@@ -1,6 +1,6 @@
 {
   "measured_at": "2026-08-15",
-  "note": "실제 API 청구서가 아닌 에이전트 세션 토큰 추정치. 절대값보다 모드 간 상대 비교로 읽을 것.",
+  "note": "에이전트 세션 토큰 추정치이며 실제 API usage/청구서가 아님. 절대값·상대 차이 모두 추정 오차가 있다. 캐시 버킷의 실제 적격성은 검증되지 않음.",
   "pricing": {
     "model": "GPT-5 (공개 리스트, per 1M tokens)",
     "input": 1.25,
@@ -14,16 +14,45 @@
       "request_id": "req_1786763476385_b368fc",
       "mode": "vibe",
       "prompt": "카페 랜딩 페이지 만들어줘. 메뉴랑 매장 위치 포함",
-      "tokens": { "input": 486, "reasoning": 1240, "output": 5830, "cache": 312, "total": 7868 },
-      "cost_usd": { "input": 0.0006075, "reasoning": 0.0124, "output": 0.0583, "cache": 0.000039, "total": 0.0713465 }
+      "tokens": {
+        "input": 486,
+        "reasoning": 1240,
+        "output": 5830,
+        "cache": 312,
+        "total": 7868
+      },
+      "cost_usd": {
+        "input": 0.0006075,
+        "reasoning": 0.0124,
+        "output": 0.0583,
+        "cache": 3.9e-05,
+        "total": 0.0713465
+      }
     },
     "spec": {
       "request_id": "req_1786764007807_950930",
       "mode": "spec",
-      "spec_fields": ["pages", "stack", "design", "acceptance"],
-      "tokens": { "input": 1152, "reasoning": 980, "output": 5410, "cache": 468, "total": 8010 },
-      "cost_usd": { "input": 0.00144, "reasoning": 0.0098, "output": 0.0541, "cache": 0.0000585, "total": 0.0653985 },
-      "ac_verification": "16/16 PASS (verify_ac.py)"
+      "spec_fields": [
+        "pages",
+        "stack",
+        "design",
+        "acceptance"
+      ],
+      "tokens": {
+        "input": 1152,
+        "reasoning": 980,
+        "output": 5410,
+        "cache": 468,
+        "total": 8010
+      },
+      "cost_usd": {
+        "input": 0.00144,
+        "reasoning": 0.0098,
+        "output": 0.0541,
+        "cache": 5.85e-05,
+        "total": 0.0653985
+      },
+      "ac_verification": "Historical static-only 16/16; NOT a behavioral acceptance gate. Current gate: verify_ac.py + tools/browser_ac.py."
     }
   },
   "delta": {
@@ -33,5 +62,11 @@
     "reasoning": "-21%",
     "output": "-7%",
     "cache": "+50%"
+  },
+  "evidence_type": "estimated_session_usage",
+  "token_definitions": {
+    "input": "uncached input, disjoint from cache (case-specific estimate schema)",
+    "cache": "cached input estimate; not added twice to a vendor prompt field",
+    "reasoning": "estimated reasoning, disjoint from visible output"
   }
 }

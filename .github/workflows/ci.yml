@@ -1,0 +1,46 @@
+name: Evidence and regression checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install free reproduction dependencies
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python -m playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-impress fonts-nanum
+      - name: Verify committed evidence and artifacts before overwriting anything
+        run: |
+          python tools/verify_deck.py --with-pdf
+          python -m pytest -q --junitxml=results/ci-tests.xml
+      - name: Reproduce from immutable evidence (no paid API calls)
+        run: python tools/reproduce_audit.py --with-pdf
+      - name: Run default free experiments and verify regenerated artifacts
+        run: |
+          python tools/check_audit.py
+          python tools/verify_deck.py --with-pdf --json results/ci-deck-checks.json
+      - name: Upload check logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-verification
+          path: |
+            results/ci-tests.xml
+            results/ci-deck-checks.json
+            results/audit_metrics.json
+            results/verification.json
+            results/audit_checks/

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """케이스 검증 — AC는 통과했는데 의도와 어긋난 항목이 실제로 있는가.
-입력: demo/vibe_vs_spec 실산출물 2개(가정값 없음)."""
+입력: demo/vibe_vs_spec 실산출물 2개(발화는 저장본, 정책 비용·성과는 가정)."""
+print("[증거 범위] 저장 발화/산출물의 재생 + 정책 비용 시나리오. 실제 정책 A/B의 품질·성공률·절감 실측 아님.")
+
 import re, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,7 +26,11 @@ lost = [x for x in tv if x not in ts]
 
 print("="*78)
 print("케이스: 카페 온도 랜딩 (req_1786763476385 → req_1786764007807)")
-print("AC 자동검증 결과: SPEC 16/16 PASS   ← 게이트는 초록불")
+sys.path.insert(0, str(ROOT))
+from demo.vibe_vs_spec.verify_ac import run as verify_ac
+if verify_ac(ROOT / "demo/vibe_vs_spec/artifacts/index_spec.html") != 0:
+    raise SystemExit("현재 AC 검증 실패 — PASS로 소개하지 않음")
+print("현재 정적/브라우저 AC를 실행했다. 아래는 검증 범위 밖의 가상 반려다.")
 print("="*78)
 print(f"\n그런데 사용자가 보는 화면에서 사라진 문구: {len(lost)}건\n")
 for x in lost:

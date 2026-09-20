@@ -4,16 +4,16 @@
 stats_test.py — 라이브 벤치 결과에 통계 검정을 붙인다.
 
 "평균이 다르다"는 것만으로는 근거가 약하다. 표본이 작으면 우연히 갈릴 수 있고,
-실제로 이 프로젝트에서는 N=5와 N=100의 결론이 부호까지 뒤집힌 적이 있다.
+과거 예비 서술에는 결론 변화가 있으나 N=5/N=100 원자료는 현재 미포함이다.
 그래서 다음을 계산한다.
 
   · 부트스트랩 95% 신뢰구간 (분포 가정 없음, 표준라이브러리만 사용)
-  · Welch t 검정 근사 p값 (등분산 가정 없음)
+  · Welch–Satterthwaite t 검정 p값 (등분산 가정 없음)
   · Cliff's delta (비모수 효과크기 — 두 분포가 실제로 얼마나 겹치는가)
-  · 글자수 정규화 비용 ($/1,000자) — 분량을 통제한 진짜 비교
+  · 글자수 정규화 비용 ($/1,000자) — 문자 단위 지표 (언어 간 의미량을 통제하지 않음)
 
 사용:
-    python tools/stats_test.py results/live_lang.jsonl
+    python tools/stats_test.py results/live_lang_thinking.jsonl
     python tools/stats_test.py results/live_lang_thinking.jsonl --label 사고켬
 """
 import argparse
@@ -22,11 +22,15 @@ import math
 import random
 import statistics as st
 
-IN_R, OUT_R = 1.25 / 1e6, 10.0 / 1e6
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scipy.stats import t as t_dist
+from lab.pricing import log_cost
 
 
-def cost(r):
-    return r["prompt"] * IN_R + (r["thoughts"] + r["cands"]) * OUT_R
+def cost(r, basis="actual"):
+    return log_cost(r, basis)
 
 
 def boot_ci(vals, iters=20000, alpha=0.05, seed=42):
@@ -43,7 +47,7 @@ def boot_ci(vals, iters=20000, alpha=0.05, seed=42):
 
 
 def boot_ratio_ci(a, b, iters=20000, alpha=0.05, seed=42):
-    """비율(mean_a / mean_b)의 신뢰구간 — 1.0을 포함하면 유의하지 않다."""
+    """비율(mean_a / mean_b)의 percentile bootstrap 구간. Welch 검정과 별개다."""
     rnd = random.Random(seed)
     na, nb = len(a), len(b)
     out = []
@@ -56,32 +60,27 @@ def boot_ratio_ci(a, b, iters=20000, alpha=0.05, seed=42):
     return out[int(len(out) * alpha / 2)], out[int(len(out) * (1 - alpha / 2))]
 
 
-def _norm_cdf(z):
-    return 0.5 * (1 + math.erf(z / math.sqrt(2)))
-
-
 def fmt_p(p):
-    """정규근사에서 p가 언더플로로 0.0이 되는 경우를 정직하게 표기한다.
-    'p = 0'은 수학적으로 틀린 말이다 — 계산 한계임을 밝힌다."""
-    if p != p:
-        return "nan"
-    if p <= 0.0:
-        return "< 1e-16 (정규근사 한계)"
-    return f"{p:.2e}"
+    if not math.isfinite(p):
+        return "nan (not estimable)"
+    return f"{p:.2e}" if p > 0 else "below floating-point resolution"
+
+
+def welch_details(a, b):
+    """Two-sided Welch test; unequal variances, estimated (not infinite) df."""
+    if len(a) < 2 or len(b) < 2:
+        return (float("nan"),) * 3
+    sa, sb = st.variance(a) / len(a), st.variance(b) / len(b)
+    if sa + sb == 0:
+        return (float("nan"),) * 3  # do not invent significance for constants
+    t = (st.mean(a) - st.mean(b)) / math.sqrt(sa + sb)
+    df = (sa + sb) ** 2 / (sa ** 2 / (len(a) - 1) + sb ** 2 / (len(b) - 1))
+    p = 2 * t_dist.sf(abs(t), df)  # survival function avoids 1-CDF cancellation
+    return t, float(p), df
 
 
 def welch(a, b):
-    """Welch t 검정. 자유도가 크므로 정규근사로 p값을 낸다."""
-    na, nb = len(a), len(b)
-    if na < 2 or nb < 2:
-        return float("nan"), float("nan")
-    va, vb = st.variance(a), st.variance(b)
-    se = math.sqrt(va / na + vb / nb)
-    if se == 0:
-        return float("nan"), float("nan")
-    t = (st.mean(a) - st.mean(b)) / se
-    p = 2 * (1 - _norm_cdf(abs(t)))
-    return t, p
+    return welch_details(a, b)[:2]
 
 
 def cliffs_delta(a, b):
@@ -104,17 +103,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path")
     ap.add_argument("--label", default="")
+    ap.add_argument("--price-basis", choices=["actual", "legacy"], default="actual")
     args = ap.parse_args()
 
     rows = [json.loads(l) for l in open(args.path, encoding="utf-8")]
-    ok = [r for r in rows if "error" not in r and r.get("finish") in ("STOP", "")]
+    ok = [r for r in rows if "error" not in r and r.get("finish") == "STOP"]
 
     hdr = f"통계 검정 — {args.path}"
     if args.label:
         hdr += f"  [{args.label}]"
     print("=" * 84)
     print(f"  {hdr}")
-    print(f"  표본 {len(rows)}건 중 유효 {len(ok)}건")
+    print(f"  표본 {len(rows)}건 중 STOP {len(ok)}건; 제외 {len(rows)-len(ok)}건")
+    print(f"  단가 기준: {args.price_basis} (actual=모델별 Standard 2026-09-20; legacy=발표 환산)")
+    print("  반복 호출의 조건부 비교; 과제 다양성·언어별 품질·추론 깊이는 검증하지 않음")
     print("=" * 84)
 
     for task in sorted({r["task"] for r in ok}):
@@ -124,31 +126,31 @@ def main():
             continue
         print(f"\n── 과제: {task}  (EN n={len(en)} · KO n={len(ko)}) " + "─" * 34)
 
-        ce, ck = [cost(r) for r in en], [cost(r) for r in ko]
+        ce, ck = [cost(r, args.price_basis) for r in en], [cost(r, args.price_basis) for r in ko]
         me, mk = st.mean(ce), st.mean(ck)
         lo, hi = boot_ratio_ci(ck, ce)
-        t, p = welch(ck, ce)
+        t, p, df = welch_details(ck, ce)
         d, mag = cliffs_delta(ck, ce)
 
         print(f"  [A] 호출당 비용")
         print(f"      EN ${me:.6f}  ·  KO ${mk:.6f}  ·  비율 {mk/me:.3f}×")
         print(f"      비율 95% CI  [{lo:.3f}, {hi:.3f}]"
               f"   {'← 1.0 포함: 유의하지 않음' if lo <= 1.0 <= hi else '← 유의함'}")
-        print(f"      Welch p = {fmt_p(p)}   ·   Cliff's δ = {d:+.3f} ({mag})")
+        print(f"      Welch t={t:.3f}, df={df:.3f}, p = {fmt_p(p)}   ·   Cliff's δ = {d:+.3f} ({mag})")
 
-        # 분량 정규화 — 진짜 비교
-        ne = [cost(r) / r["chars"] * 1000 for r in en if r.get("chars")]
-        nk = [cost(r) / r["chars"] * 1000 for r in ko if r.get("chars")]
+        # 문자 단위 기술통계 — 의미량·품질의 정규화가 아님
+        ne = [cost(r, args.price_basis) / r["chars"] * 1000 for r in en if r.get("chars")]
+        nk = [cost(r, args.price_basis) / r["chars"] * 1000 for r in ko if r.get("chars")]
         if ne and nk:
             mne, mnk = st.mean(ne), st.mean(nk)
             nlo, nhi = boot_ratio_ci(nk, ne)
-            nt, np_ = welch(nk, ne)
+            nt, np_, ndf = welch_details(nk, ne)
             nd, nmag = cliffs_delta(nk, ne)
-            print(f"  [B] 분량 정규화 ($/1,000자) ← 결론은 이쪽")
+            print(f"  [B] 문자 단위 비용 ($/1,000자) — 동일 의미량 비교 아님")
             print(f"      EN ${mne:.5f}  ·  KO ${mnk:.5f}  ·  비율 {mnk/mne:.2f}×")
             print(f"      비율 95% CI  [{nlo:.2f}, {nhi:.2f}]"
                   f"   {'← 1.0 포함: 유의하지 않음' if nlo <= 1.0 <= nhi else '← 유의함'}")
-            print(f"      Welch p = {fmt_p(np_)}   ·   Cliff's δ = {nd:+.3f} ({nmag})")
+            print(f"      Welch t={nt:.3f}, df={ndf:.3f}, p = {fmt_p(np_)}   ·   Cliff's δ = {nd:+.3f} ({nmag})")
             print(f"      실제 쓴 글자: EN {st.mean(r['chars'] for r in en):.0f}자"
                   f"  ·  KO {st.mean(r['chars'] for r in ko):.0f}자"
                   f"  (KO/EN {st.mean(r['chars'] for r in ko)/st.mean(r['chars'] for r in en):.2f}×)")
@@ -167,7 +169,7 @@ def main():
 
     print("\n" + "=" * 84)
     print("  해석 규칙: 비율의 95% 신뢰구간이 1.0을 포함하면 '차이 없음'을 배제할 수 없다.")
-    print("  발표에서 인용할 값은 [B] 분량 정규화 비율이다.")
+    print("  [A]와 [B]는 다른 질문의 답이다. 한 문제 반복의 유의성은 언어 일반 우위가 아니다.")
     print("=" * 84)
 
 

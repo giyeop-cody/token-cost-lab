@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """A+B 결합 실행기 검증."""
 import sys
-sys.path.insert(0, "/home/user/tcl/agent_setup")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from orchestrator import Orchestrator, _max_tier
 from router import Tier
 from ladder_b import IntentTracker, INTENT_LADDER, LEAN_LADDER
@@ -106,3 +107,5 @@ ck(r8["tier"] is Tier.MID, f"repeat+taste → mid 유지 (실제 {r8['tier']})")
 
 print("=" * 60)
 print(f"  {n}건 중 {G if not f else R}{n-f} PASS{N} / {f} FAIL")
+
+raise SystemExit(1 if f else 0)

@@ -1,0 +1,26 @@
+{
+  "baseline_commit": "ef4cde1dfa37645288939dd348d7caa8c7aceb67",
+  "note": "Immutable published usage projections; not original invoices. Corpus attribution in flores200/README.md.",
+  "files": {
+    "results/live_lang_thinking.jsonl": {
+      "sha256": "882b3910b9799660f85fbf99c8e4aeeda5449e754b9cf4a62d1ffd5faa654b05",
+      "rows": 80,
+      "kind": "saved_api_usage_projection"
+    },
+    "results/thinking_sweep.jsonl": {
+      "sha256": "fc93d16b7e7986be6aab0e29da04b227c154af543eacf8f6ba4baab1ca7a0ac0",
+      "rows": 30,
+      "kind": "saved_api_usage_projection"
+    },
+    "data/flores200/eng_Latn.devtest": {
+      "sha256": "612e9fbe87997617c0fa8fa8929654a4f49b728d96738112c2b86ef6a1d78d88",
+      "rows": 1012,
+      "kind": "aligned_corpus_CC-BY-SA-4.0"
+    },
+    "data/flores200/kor_Hang.devtest": {
+      "sha256": "540972696230a56e888f1fbd04b7000135c436351f5e467f99ce67fdccd8df0f",
+      "rows": 1012,
+      "kind": "aligned_corpus_CC-BY-SA-4.0"
+    }
+  }
+}

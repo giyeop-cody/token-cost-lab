@@ -30,6 +30,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab import pricing, report  # noqa: E402
 
+EVIDENCE = "시나리오: 토큰·턴·효과 가정의 비용 계산. 실제 정책 A/B나 품질 동등 절감 실측 아님."
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -38,6 +40,7 @@ def main():
     ap.add_argument("--tasks-per-day", type=int, default=8)
     ap.add_argument("--workdays", type=int, default=22)
     args = ap.parse_args()
+    print(EVIDENCE)
 
     m = pricing.get(args.model)
 
@@ -99,8 +102,8 @@ def main():
     report.section("E. 언어 선택이 thinking 비용에 미치는 영향")
     print("  실험 01에서 측정한 배수를 thinking 토큰에 그대로 적용한다.")
     rows = []
-    for ratio, label in [(1.00, "영어 사고"), (1.44, "한국어 사고 (o200k 실측)"),
-                         (1.88, "한국어 사고 (Claude 토크나이저, 외부 실측)")]:
+    for ratio, label in [(1.00, "영어 사고"), (1.44, "사고량 1.44× 가정 (인코딩과 hidden 사고 동일시 금지)"),
+                         (1.88, "사고량 1.88× 감도 가정 (Claude hidden 사고 측정 아님)")]:
         for th in (4_000, 8_000, 16_000):
             pass
         c8 = int(8_000 * ratio) * m.out / 1e6

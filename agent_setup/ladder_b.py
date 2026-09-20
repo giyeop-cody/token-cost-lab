@@ -40,7 +40,7 @@ from router import (
     Decision,
     Tier,
     _tier_up,
-    cost_of,
+    cost_of, SCOPE_MULT,
     looks_rejected,
     looks_symptom,
 )
@@ -351,7 +351,7 @@ class IntentTracker:
 
 # router.rework_cost와 동일한 규칙을 쓴다. 범위가 넓어지면 입력이
 # 커지는 것은 두 사다리에 똑같이 적용돼야 비교가 성립한다.
-SCOPE_MULT = {"unit": 1.0, "file": 1.6, "module": 2.4, "respec": 1.2}
+# Shared with router; respec is a human handoff, not a model call.
 
 
 def rung_cost(tier: Tier, tok_in: int, *, reset: bool, scope: str = "unit",
@@ -364,6 +364,8 @@ def rung_cost(tier: Tier, tok_in: int, *, reset: bool, scope: str = "unit",
     carried_tok: 이 칸에 도달하기까지 컨텍스트에 눌러앉은 누적 입력.
         리셋 칸에서는 무시된다(누적이 끊기므로). 0이면 종전 계산과 같다.
     """
+    if scope == "respec":
+        return 0.0
     tin = int(tok_in * SCOPE_MULT[scope])
     if reset:
         tin += RESET_PRIME_TOK      # 새 세션 — 누적 컨텍스트는 버려진다

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-"""축소 사다리(3칸) vs 기존(7칸) — 실로그와 누적 반영 비용으로 검증."""
+"""축소 사다리(3칸) vs 기존(7칸) — 저장 발화와 누적 반영 비용으로 검증."""
+print("[증거 범위] 저장 발화/산출물의 재생 + 정책 비용 시나리오. 실제 정책 A/B의 품질·성공률·절감 실측 아님.")
+
 import sys, re, json
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT/"agent_setup"))
 from ladder_b import IntentTracker, INTENT_LADDER, LEAN_LADDER, rung_cost, _content_words
-from router import Tier, rework_cost
+from router import Tier, rework_cost, route, decision_cost, FIRST_OUT_TOK
 
-GROWTH = 4700          # analysis/calibrate_growth.py 역산값 (실측 오차 5.8%)
+GROWTH = 4700          # 동일 페르소나 시나리오 내부 맞춤값. 독립 측정/예측 검증 아님
 BASE   = 1419          # 최초 프롬프트 (B 입력누계/2턴)
 
 t = (ROOT/"demo/transcripts/persona_A_wasteful.md").read_text(encoding="utf-8")
@@ -20,15 +22,22 @@ def replay(ladder, name):
     rows, carried, total = [], 0, 0.0
     for i, u in enumerate(A, 1):
         d = tr.observe(u, artifact_terms=ART)
+        if d["action"] == "respec":
+            rows.append((i, "respec", "—", "respec", 0.0, "미해결 중단; 이후 실행/사람 비용 제외"))
+            break
         if d["action"] == "proceed":
-            rows.append((i, d["step"], d["tier"].name, d["scope"], 0.0, "—"))
-            continue
-        c = rung_cost(d["tier"], BASE, reset=d["reset"], scope=d["scope"],
-                      carried_tok=carried)
+            # Charge first/new intent. A new intent starts fresh context, as in Orchestrator.
+            carried = 0
+            dec = route(u)
+            c = decision_cost(dec, BASE, FIRST_OUT_TOK)["usd"]
+            tier, scope = dec.tier, dec.scope
+        else:
+            c = rung_cost(d["tier"], BASE, reset=d.get("reset", False), scope=d["scope"], carried_tok=carried)
+            tier, scope = d["tier"], d["scope"]
         total += c
-        carried = 0 if d["reset"] else carried + GROWTH
-        rows.append((i, d["step"], d["tier"].name, d["scope"], c,
-                     "리셋" if d["reset"] else f"누적{carried:,}"))
+        carried = (0 if d.get("reset", False) else carried) + GROWTH
+        rows.append((i, d["step"], tier.name, scope, c,
+                     "리셋 후 증가" if d.get("reset", False) else f"누적{carried:,}"))
     print(f"\n[{name}]")
     print(f"  {'턴':<3}{'칸':<11}{'티어':<7}{'범위':<8}{'비용':>9}   비고")
     for r in rows:
@@ -38,11 +47,12 @@ def replay(ladder, name):
     return total
 
 print("="*78)
-print("1. 실로그 6턴 재생 — 7칸 vs 3칸")
+print("1. 저장 발화 6턴 재생 — 7칸 vs 3칸")
 print("="*78)
 full = replay(INTENT_LADDER, "기존 7칸 INTENT_LADDER")
 lean = replay(LEAN_LADDER,   "축소 3칸 LEAN_LADDER")
-print(f"\n  >>> 축소가 ${full-lean:.4f} 저렴 ({full/lean:.2f}배)"
+print("\n  respec은 성공이 아니다. 아래 차이는 정책 지출 모형이며 완료 작업당 절감률이 아니다.")
+print(f"\n  >>> 축소가 ${full-lean:.4f} 낮음 ({full/lean:.2f}배 비용비)"
       if lean < full else f"\n  >>> 축소가 ${lean-full:.4f} 더 비쌈")
 
 print("\n" + "="*78)
@@ -93,4 +103,4 @@ print(f"      사람을 부르는 비용(가정 ${HUMAN:.2f})을 더하면 "
       f"${lean_fail+HUMAN:.4f} > ${full_solve:.4f} 로 **역전**")
 print(f"\n  >>> 결론: tier-up을 완전히 삭제하면 안 된다.")
 print(f"      의도불일치 분류가 'reasoning'으로 판정한 경우에만 남기는")
-print(f"      **조건부 tier-up**이 옳다. 5종 중 1종이므로 상시 칸에서는 뺀다.")
+print(f"      **조건부 tier-up** 경로의 예시다. 종류의 개수는 발생 확률이 아니다.")

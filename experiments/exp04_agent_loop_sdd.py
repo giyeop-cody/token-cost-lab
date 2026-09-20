@@ -25,10 +25,10 @@
     https://www.anthropic.com/engineering/multi-agent-research-system
     (에이전트는 챗 대비 약 4배, 멀티에이전트는 약 15배 토큰 소모)
 
-반증 (SDD가 항상 이득은 아니다):
+외부 반례의 범위 (SDD 대 무스펙으로 혼동하지 않음):
   Spec-Kit vs OpenSpec 토큰 벤치마크 — Spec-Kit이 +97~109% 토큰.
   ETH Zurich — LLM 생성 컨텍스트 파일은 성공률을 낮추면서 비용 +20%.
-  => "스펙을 써라"가 아니라 "짧고 결정만 담은 스펙을 써라".
+  => 필요한 결정을 간결히 쓰고, 비용과 품질을 함께 측정하자는 조건부 권장.
   전체 목록: ../SOURCES.md
 """
 
@@ -39,37 +39,52 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab import pricing, report  # noqa: E402
 
+EVIDENCE = "시나리오: 토큰·턴·효과 가정의 비용 계산. 실제 정책 A/B나 품질 동등 절감 실측 아님."
 
-def naive_loop(m, turns, base, per_turn_in, per_turn_out, cached=False):
-    """매 턴 전체 이력을 재전송하는 루프의 누적 비용."""
-    total = 0.0
-    tokens_in = 0
-    history = base
-    for _ in range(turns):
+
+def loop_call_cost(m, history, output, base, cached, warm):
+    eligible = cached and pricing.cache_eligible(m, base)
+    if not eligible:
+        return pricing.cost(m, history, output)
+    if warm:
+        return pricing.cost(m, history, output, cached_tok=base)
+    return pricing.cost(m, history, output) + base*m.inp*(m.cache_write-1)/1e6
+
+
+def naive_loop(m, turns, base, per_turn_in, per_turn_out, cached=False, warm_cache=False):
+    """Independent session. Cold cache by default; warm_cache=True is legacy scenario."""
+    total, tokens_in, history = 0.0, 0, base
+    for t in range(turns):
         tokens_in += history
-        cached_part = base if cached else 0
-        total += pricing.cost(m, history, per_turn_out, cached_tok=cached_part)
+        total += loop_call_cost(m, history, per_turn_out, base, cached, warm_cache or t > 0)
         history += per_turn_in + per_turn_out
     return total, tokens_in
 
 
 def compacted_loop(m, turns, base, per_turn_in, per_turn_out,
-                   every=10, summary=1_500, cached=True):
-    """N턴마다 이력을 요약으로 접는 루프."""
-    total = 0.0
-    tokens_in = 0
-    history = base
+                   every=10, summary=1_500, cached=True, warm_cache=False):
+    total, tokens_in, history = 0.0, 0, base
     for t in range(1, turns + 1):
         tokens_in += history
-        total += pricing.cost(m, history, per_turn_out,
-                              cached_tok=base if cached else 0)
+        total += loop_call_cost(m, history, per_turn_out, base, cached, warm_cache or t > 1)
         history += per_turn_in + per_turn_out
-        if t % every == 0:
-            # 컴팩션 콜 자체도 비용이다 (입력=현재 이력, 출력=요약)
-            total += pricing.cost(m, history, summary,
-                                  cached_tok=base if cached else 0)
+        if t % every == 0 and t < turns:
+            total += loop_call_cost(m, history, summary, base, cached, True)
+            tokens_in += history
             history = base + summary
     return total, tokens_in
+
+
+def sdd_scenarios(m, base=8000, turn_in=2000, turn_out=800, warm_cache=False):
+    rows = []
+    for name, cycles, turns, spec in (("vibe", 5, 8, 0), ("shallow", 3, 8, 1500), ("sdd", 2, 6, 4000)):
+        execution = cycles * naive_loop(m, turns, base+spec, turn_in, turn_out,
+                                        cached=True, warm_cache=warm_cache)[0]
+        preparation = pricing.cost(m, 3000, spec) if spec else 0
+        rows.append(dict(name=name, cycles=cycles, turns=cycles*turns, spec_tokens=spec,
+                         execution_usd=execution, spec_preparation_usd=preparation,
+                         total_usd=execution+preparation, warm_cache=warm_cache))
+    return rows
 
 
 def main():
@@ -81,7 +96,9 @@ def main():
     ap.add_argument("--turn-in", type=int, default=2_000,
                     help="턴당 새로 들어오는 입력 (툴 결과·파일 내용 등)")
     ap.add_argument("--turn-out", type=int, default=800)
+    ap.add_argument("--warm-cache", action="store_true", help="legacy prewarmed-prefix assumption; warm-up cost excluded")
     args = ap.parse_args()
+    print(EVIDENCE)
 
     m = pricing.get(args.model)
     N, B, TI, TO = args.turns, args.base, args.turn_in, args.turn_out
@@ -105,30 +122,19 @@ def main():
     print("     '한 번 더 물어보지 뭐'가 싼 행동이 아닌 이유.")
 
     report.section("B. 재작업 사이클이 만드는 총비용 차이")
-    print("  업계 보고: 스펙 없이 시작한 기능은 평균 4~6회 재작업 사이클을 돈다.")
-    print("  스펙을 먼저 쓰면 재작업이 60~80% 줄어든다는 보고가 있다.")
-    scen = [
-        ("스펙 없이 시작 (vibe)", 5, 8, 0),
-        ("얕은 지시 + 규약 파일", 3, 8, 1_500),
-        ("스펙 먼저 (SDD)", 2, 6, 4_000),
-    ]
+    print("  턴 수 40→12는 측정 결과가 아니라 입력 가정이다. 별도 스펙 작성 토큰 비용 포함.")
+    print(f"  사이클별 초기 캐시: {'예열됨 (예열 비용 제외, 과거 약 71%)' if args.warm_cache else 'cold, 첫 쓰기 비용 포함'}")
     rows = []
-    base_cost = None
-    for name, cycles, turns_per_cycle, spec_tok in scen:
-        total = 0.0
-        for _ in range(cycles):
-            c, _ = naive_loop(m, turns_per_cycle, B + spec_tok, TI, TO, cached=True)
-            total += c
-        # 스펙 작성 비용도 정직하게 더한다 (사람이 웹 챗에서 정리 + 모델 출력)
-        total += pricing.cost(m, 3_000, spec_tok) if spec_tok else 0
-        base_cost = base_cost or total
-        rows.append([name, cycles, f"{cycles*turns_per_cycle}",
-                     f"{spec_tok:,}", pricing.usd(total, 2),
-                     "기준" if total == base_cost else f"{(total/base_cost-1)*100:+.0f}%"])
+    scenarios = sdd_scenarios(m, B, TI, TO, warm_cache=args.warm_cache)
+    base_cost = scenarios[0]["total_usd"]
+    for row in scenarios:
+        total = row["total_usd"]
+        rows.append([row["name"], row["cycles"], row["turns"], f"{row['spec_tokens']:,}",
+                     pricing.usd(total, 2), f"{(total/base_cost-1)*100:+.1f}%"])
     report.table(["접근", "재작업 사이클", "총 턴", "스펙tok", "기능당 비용", "차이"],
                  rows, ["l", "r", "r", "r", "r", "r"])
-    print("  ⚠️ 스펙 작성 자체의 비용도 위 계산에 포함했다. 그래도 SDD가 싸다.")
-    print("     이유는 단가가 아니라 '턴 수'가 줄기 때문이다 (A절의 2차 함수).")
+    print("  ⚠️ 스펙 작성 토큰 비용은 포함. 실제 턴 감소·품질 동등성·사람 시간은 미검증.")
+    print("     이 가정에서의 절감은 주로 줄어든 턴 수 때문이다. 인과 검증은 별도 실험이 필요하다.")
 
     report.section("C. 컨텍스트 관리 기법을 얹으면")
     plain, _ = naive_loop(m, N, B, TI, TO, cached=False)
@@ -147,7 +153,7 @@ def main():
     report.table([f"{N}턴 세션 전략", "총비용", "절감", "비고"], rows,
                  ["l", "r", "r", "l"])
     print("  → 컴팩션 주기에는 최적점이 있다. 무조건 자주 접는다고 싸지지 않는다.")
-    print("     외부 보고: 10~15 툴콜마다 압축 시 SWE-bench에서 토큰 22.7% 절감(정확도 유지).")
+    print("     주기별 손익은 요약 비용과 품질·재작업 변화를 함께 측정해야 한다.")
 
     report.section("D. YAGNI — 안 쓸 기능의 값")
     print("  '나중에 필요할 것 같아서' 만든 코드는 생성 비용 + 매 턴 재전송 비용을 물린다.")
@@ -155,7 +161,7 @@ def main():
     for extra_files, label in [(0, "필요한 것만"), (3, "추상화 레이어 3개 추가"),
                                (6, "플러그인 시스템까지")]:
         extra_tok = extra_files * 1_200
-        gen = pricing.cost(m, B, extra_tok)                    # 생성 비용
+        gen = pricing.cost(m, 0, extra_tok)                    # 생성 비용
         carry = pricing.cost(m, extra_tok * N, 0, cached_tok=0)  # 이후 턴마다 재전송
         rows.append([label, f"{extra_tok:,}", pricing.usd(gen, 3),
                      pricing.usd(carry, 3), pricing.usd(gen + carry, 3)])
@@ -165,14 +171,14 @@ def main():
 
     report.verdict(
         "②·④ 스펙을 먼저 쓰고 범위를 줄이면 토큰이 절약된다",
-        "참 — 단, 근거는 '단가'가 아니라 '턴 수'",
+        "조건부 시나리오 — 실제 턴 감소는 미측정",
         "에이전트 비용은 턴 수의 2차 함수다. 턴 10→20이면 비용은 "
-        f"{c20/c10:.1f}배. 스펙은 재작업 사이클을 줄여 이 곡선의 위쪽을 잘라낸다.",
+        f"{c20/c10:.1f}배. 스펙이 실제 재작업 사이클을 줄인다면 이 누적을 줄일 수 있다.",
     )
     print("\n  ⚠️ 반대 증거도 있다:")
     print("     · ETH Zurich 연구 — LLM이 생성한 컨텍스트 파일은 성공률을 살짝 떨어뜨리면서")
-    print("       추론 비용을 20% 이상 올렸다. 개발자가 쓴 파일도 개선폭은 평균 4%p 수준.")
-    print("     · 한 벤치마크에서 Spec-Kit은 OpenSpec 대비 토큰을 최대 2배 썼다.")
+    print("       전체 에이전트 비용을 늘린 조건이 있다 (+20%/+23%, v1). 개발자 파일도 비용은 늘 수 있다.")
+    print("     · 외부 블로그 두 사례: Spec-Kit은 OpenSpec 대비 +97~109%. 둘 다 SDD이며 본 저장소의 재현 아님.")
     print("     → 결론: '스펙을 쓰라'가 아니라 '짧고 결정만 담은 스펙을 쓰라'.")
     print("       설명(description)이 아니라 결정(decision)을 적을 것.")
 

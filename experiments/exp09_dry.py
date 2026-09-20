@@ -12,7 +12,7 @@
 결론 미리:
   A·C·D 는 그대로 참. B·E 는 **방향은 맞지만 처방이 틀리다.**
   코드에서 DRY는 "중복을 제거하라"지만, 토큰 경제에서 제거할 수 없는 반복은
-  **제거보다 고정(캐싱)이 싸다.** 적은 반복이 아니라 '변주'다.
+  **제거(압축)와 고정(캐싱)을 병용할 수 있다.** 적은 반복이 아니라 '변주'다.
 
 실행:
   python experiments/exp09_dry.py
@@ -37,6 +37,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab import pricing, report  # noqa: E402
+
+EVIDENCE = "시나리오: 토큰·턴·효과 가정의 비용 계산. 실제 정책 A/B나 품질 동등 절감 실측 아님."
 
 
 def sec_a(m, calls):
@@ -75,7 +77,7 @@ def sec_b(m):
     calls = 100
     # 전제: 프리픽스 12,000토큰이 100% 고정이고 100% 적중하는 상한 조건.
     # 실험 03(-62%)은 가변부가 섞인 현실 조건이라 수치가 낮다. 둘은 모순이 아니라
-    # 같은 축의 상한과 실측이다.
+    # 서로 다른 가정 시나리오다. 실측 절감률이 아니다.
 
     # ① 그냥 매번 보낸다
     naive = pricing.cost(m, prefix * calls, 0)
@@ -85,12 +87,16 @@ def sec_b(m):
 
     # ③ 반복을 그대로 두되 완전히 동일하게 고정 → 캐시
     #    첫 호출은 쓰기(1.25x), 이후 99회는 읽기(0.1x)
-    write = prefix * m.inp * m.cache_write / 1e6
-    reads = prefix * m.inp * m.cache_read * (calls - 1) / 1e6
+    eligible = pricing.cache_eligible(m, prefix)
+    write = prefix * m.inp * (m.cache_write if eligible else 1.0) / 1e6
+    reads = prefix * m.inp * (m.cache_read if eligible else 1.0) * (calls - 1) / 1e6
     cached = write + reads
 
     # ④ 반복은 있는데 앞에 타임스탬프가 붙어 매번 미스 (최악)
-    broken = prefix * m.inp * m.cache_write * calls / 1e6
+    broken = prefix * m.inp * (m.cache_write if eligible else 1.0) * calls / 1e6
+    compressed = prefix // 2
+    slim_cache_ok = pricing.cache_eligible(m, compressed)
+    slim_cached = compressed * m.inp * (m.cache_write + (calls-1)*m.cache_read) / 1e6 if slim_cache_ok else slim
 
     rows = [
         ["① 매번 그대로 전송", f"{prefix * calls:,}", pricing.usd(naive), "기준"],
@@ -98,13 +104,14 @@ def sec_b(m):
          f"{(1 - slim / naive) * 100:.0f}%"],
         ["③ 그대로 두고 캐싱", f"{prefix * calls:,}", pricing.usd(cached),
          f"{(1 - cached / naive) * 100:.0f}%"],
-        ["④ 앞에 동적값 → 매번 미스", f"{prefix * calls:,}",
+        ["④ 압축 + 고정 + 캐싱", f"{compressed * calls:,}", pricing.usd(slim_cached), f"{(1-slim_cached/naive)*100:.0f}%"],
+        ["⑤ 앞에 동적값 → 매번 미스", f"{prefix * calls:,}",
          pricing.usd(broken), f"{(1 - broken / naive) * 100:+.0f}%"],
     ]
     report.table(["전략", "입력 토큰", "비용", "절감"], rows, ["l", "r", "r", "r"])
 
     print()
-    print("  ★ 반복을 '절반으로 줄인' ②보다, 반복을 '그대로 둔' ③이 더 싸다.")
+    print("  ★ 압축과 캐싱은 함께 적용할 수 있다. 압축 비용·품질 손실·TTL은 이 계산 밖이다.")
     print(f"     ② {pricing.usd(slim)}  vs  ③ {pricing.usd(cached)}"
           f"  →  {slim / cached:.1f}배 차이")
     print()
@@ -225,6 +232,7 @@ def main():
     ap.add_argument("--model", default=pricing.DEFAULT)
     ap.add_argument("--calls", type=int, default=1760, help="월 호출 수 (A절 환산용)")
     args = ap.parse_args()
+    print(EVIDENCE)
     m = pricing.get(args.model)
 
     report.title("실험 09 — DRY를 토큰 경제로 번역하면")
@@ -243,7 +251,7 @@ def main():
         ["#", "DRY 항목", "판정", "근거"],
         [["A", "같은 코드 재작성 최소화", "참", "전체 재출력 대비 -94%"],
          ["B", "반복되는 컨텍스트 최소화", "조건부",
-          f"제거(-50%)보다 고정+캐싱(-{(1 - cached / naive) * 100:.0f}%)이 싸다"],
+          f"압축+캐싱 병용 가능; 원문 캐싱만도 -{(1 - cached / naive) * 100:.0f}% (기본 시나리오)"],
          ["C", "반복되는 리워크 최소화", "참", f"6사이클은 1사이클의 {six / one:.1f}배"],
          ["D", "같은 로직은 한 군데서", "참", "복붙 3곳 = 수정 비용 3배"],
          ["E", "같은 프롬프트는 최소화", "조건부",
@@ -257,7 +265,7 @@ def main():
         "코드·로직·리워크의 중복은 '제거'가 답이다(A·C·D). "
         "그러나 시스템 프롬프트처럼 제거할 수 없는 반복은 '고정'이 답이다(B·E). "
         "토큰 경제에서 비싼 것은 반복이 아니라 변주다. "
-        "똑같이 반복되면 캐시가 90%를 깎아주지만, 한 글자만 달라져도 전액이다.",
+        "똑같이 반복되면 캐시가 90%를 깎아주지만, 변경 지점 이전의 캐시 가능한 공통 프리픽스는 남을 수 있다.",
     )
 
 

@@ -1,0 +1,47 @@
+PASS  AC1 메뉴 카드 정확히 6개  (cards=6)
+PASS  AC1 카드마다 태그 존재(6개)  (tags=6)
+PASS  AC2 오시는길 5개 항목  (items=5)
+PASS  AC3 820px 미디어쿼리
+PASS  AC3 데스크톱 메뉴 숨김
+PASS  AC3 overflow-x 차단
+PASS  AC4 앵커 3종 href+id 매칭
+PASS  AC4 smooth scroll
+PASS  AC5 영업시간 명시
+PASS  STACK JS 금지
+PASS  STACK 외부 리소스 금지
+PASS  STACK 시맨틱 태그
+PASS  DESIGN 팔레트 6색
+PASS  DESIGN radius/패딩 토큰
+PASS  DESIGN h1 clamp(34~52)
+PASS  DESIGN 호버 translateY(-6px)
+
+정적 문자열/구조 검사 16/16 (동작 보증 아님)
+PASS  렌더링 메뉴 6개 각각 이름·설명·가격·태그 [{'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}]
+PASS  390px .menu-grid 그리드 columns=1
+PASS  390px .loc-in 그리드 columns=1
+PASS  390px .strip 그리드 columns=1
+PASS  390px .hero 그리드 columns=1
+PASS  390px 데스크톱 메뉴 표시 조건 none
+PASS  390px 가로 스크롤 없음 {'scroll': 390, 'client': 390}
+PASS  820px .menu-grid 그리드 columns=1
+PASS  820px .loc-in 그리드 columns=1
+PASS  820px .strip 그리드 columns=1
+PASS  820px .hero 그리드 columns=1
+PASS  820px 데스크톱 메뉴 표시 조건 none
+PASS  820px 가로 스크롤 없음 {'scroll': 820, 'client': 820}
+PASS  821px .menu-grid 그리드 columns=3
+PASS  821px .loc-in 그리드 columns=2
+PASS  821px .strip 그리드 columns=3
+PASS  821px .hero 그리드 columns=2
+PASS  821px 데스크톱 메뉴 표시 조건 flex
+PASS  821px 가로 스크롤 없음 {'scroll': 821, 'client': 821}
+PASS  1280px .menu-grid 그리드 columns=3
+PASS  1280px .loc-in 그리드 columns=2
+PASS  1280px .strip 그리드 columns=3
+PASS  1280px .hero 그리드 columns=2
+PASS  1280px 데스크톱 메뉴 표시 조건 flex
+PASS  1280px 가로 스크롤 없음 {'scroll': 1280, 'client': 1280}
+PASS  앵커 #menu 실제 이동
+PASS  앵커 #location 실제 이동
+PASS  앵커 #hours 실제 이동
+PASS  브라우저 JavaScript 오류 0건 []

@@ -153,7 +153,7 @@ def bigstat(sl,x,y,w,val,label,color=ACC,vsz=44):
 def note(sl, t, y=6.85):
     text(sl,0.75,y,11.8,0.35,[{'t':t,'sz':11,'c':MUTED}])
 
-_HERE = os.path.dirname(os.path.abspath(__file__))    # presentation/build/
+_HERE = os.path.dirname(os.path.abspath(__file__))    # presentation/deckgen/
 _PRES = os.path.dirname(_HERE)                        # presentation/
 _REPO = os.path.dirname(_PRES)                        # 저장소 루트
 QR_PATH = os.path.join(_REPO, 'demo', 'qr_repo.png')

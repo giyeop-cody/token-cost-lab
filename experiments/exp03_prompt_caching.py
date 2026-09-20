@@ -19,7 +19,7 @@
 출처:
   Anthropic — Prompt caching
     https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
-    (읽기 0.1x, 쓰기 1.25x(5분)/2x(1시간), 최소 1,024 토큰)
+    (읽기 0.1x, 쓰기 1.25x(5분)/2x(1시간), 최소 길이는 모델별 상이 (Haiku 4.5: 4,096))
   OpenAI — Prompt caching
     https://platform.openai.com/docs/guides/prompt-caching
     (자동 프리픽스 감지, 쓰기 비용 없음)
@@ -37,10 +37,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab import pricing, report  # noqa: E402
 
+EVIDENCE = "시나리오: 토큰·턴·효과 가정의 비용 계산. 실제 정책 A/B나 품질 동등 절감 실측 아님."
+
 
 def session_cost(m, static, dyn, out, calls, hit_rate=1.0, cached=True):
     """캐시 사용 시 세션 총비용. 첫 콜은 write, 이후는 hit_rate 확률로 read."""
-    if not cached:
+    if calls < 1 or min(static, dyn, out) < 0 or not 0 <= hit_rate <= 1:
+        raise ValueError("invalid cache scenario parameters")
+    if not cached or not pricing.cache_eligible(m, static):
         return calls * pricing.cost(m, static + dyn, out)
     write = (static * m.inp * m.cache_write + dyn * m.inp + out * m.out) / 1e6
     read = (static * m.inp * m.cache_read + dyn * m.inp + out * m.out) / 1e6
@@ -57,12 +61,14 @@ def main():
     ap.add_argument("--out", type=int, default=1_500, help="출력 토큰")
     ap.add_argument("--calls", type=int, default=100)
     args = ap.parse_args()
+    print(EVIDENCE)
 
     m = pricing.get(args.model)
     S, D, O, N = args.static, args.dyn, args.out, args.calls
 
     report.title("실험 03 — 프롬프트 캐싱")
     report.kv("모델", m.name)
+    print(f"  시나리오: 캐시 최소 {m.cache_min_tokens}; 알려지지 않은 최소치는 할인 미적용. 저장료 제외.")
     report.kv("고정 프리픽스", f"{S:,} tok", "(시스템 프롬프트 + 툴 정의 + 레퍼런스)")
     report.kv("가변 입력 / 출력", f"{D:,} tok / {O:,} tok")
     report.kv("세션 콜 수", f"{N:,}")
@@ -72,9 +78,9 @@ def main():
     report.table(
         ["벤더", "읽기 단가", "쓰기 프리미엄", "특징"],
         [["Anthropic", "0.10x", "1.25x", "명시적 cache_control, TTL 5분/1시간"],
-         ["OpenAI", "0.50x", "없음", "1,024토큰 이상 프리픽스 자동 적용"],
-         ["Google", "0.25x", "있음", "암묵적 + 명시적 컨텍스트 캐시"],
-         ["DeepSeek", "0.10x", "없음", "디스크 기반 자동 캐시"]],
+         ["OpenAI GPT-5", "0.10x (모델별 상이)", "없음", "1,024토큰 이상 프리픽스 자동 적용"],
+         ["Google", "모델별 (등록값 0.10x)", "저장료 별도", "암묵적 + 명시적 컨텍스트 캐시"],
+         ["DeepSeek V4.1 Flash", "0.02x", "없음", "자동 캐시; peak/off-peak 별도"]],
     )
 
     report.section("B. 캐시 유무 세션 비용")
@@ -90,11 +96,12 @@ def main():
         c = session_cost(m, S, D, O, N, hit_rate=hr)
         rows.append([f"{hr*100:.0f}%", pricing.usd(c, 2), f"{(1-c/no_c)*100:+.0f}%"])
     report.table(["히트율", "세션 비용", "절감"], rows, ["r", "r", "r"])
-    print("  → 실무 히트율은 안정된 프롬프트 워크로드에서 80~95% 수준으로 보고된다.")
-    print("     (한 오픈소스 팀 사례: 히트율 7% → 84% 개선으로 지출 59~70% 감소)")
+    print("  → 위 히트율은 민감도 가정이다. 실제 비율은 자기 usage 로그로 측정한다.")
 
     report.section("D. 손익분기 — 쓰기 프리미엄은 몇 콜 만에 회수되나")
-    if m.cache_write <= 1.0:
+    if not pricing.cache_eligible(m, S):
+        print("  최소 길이 미달 또는 기준 미확인: 할인 가정하지 않음")
+    elif m.cache_write <= 1.0:
         print("  이 벤더는 쓰기 프리미엄이 없다. 첫 재사용부터 바로 이득.")
     else:
         premium = S * m.inp * (m.cache_write - 1) / 1e6
@@ -118,7 +125,7 @@ def main():
     for i, t in enumerate([
         "시스템 프롬프트·툴 정의·코딩 규약·레퍼런스 문서를 맨 앞 고정 블록으로 모은다",
         "타임스탬프·요청ID·사용자 입력 등 변하는 값은 반드시 맨 뒤로 보낸다",
-        "고정 블록이 최소 1,024토큰(벤더별 상이)을 넘는지 확인한다",
+        "고정 블록이 해당 모델의 최소 토큰 조건을 넘는지 확인한다 (Haiku 4.5: 4,096)",
         "툴 정의를 자주 바꾸지 않는다 (툴 1개당 스키마 100~1,000토큰)",
         "응답의 cache_read_input_tokens / cache_creation_input_tokens 를 대시보드로 본다",
         "히트율이 50% 아래면 프롬프트 앞부분에 변동 요소가 있는지 의심한다",
@@ -127,10 +134,10 @@ def main():
 
     report.verdict(
         "프롬프트 캐싱은 실제로 큰 절감을 준다",
-        "참 — 단, 프롬프트 구조를 지켜야만",
+        "조건부 시나리오 — 실제 히트율/TTL/품질은 별도 측정",
         f"{m.name} · 프리픽스 {S:,}tok · {N}콜 기준 "
         f"{(1-yes_c/no_c)*100:.0f}% 절감. "
-        "다만 동적 값이 앞에 오면 절감은 0이 되고 오히려 손해다.",
+        "앞선 동적값이 해당 프리픽스를 깨뜨리면 미스 비용이 생길 수 있다. 캐시 지점·범위를 함께 본다.",
     )
 
 

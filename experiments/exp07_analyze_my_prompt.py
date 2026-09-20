@@ -36,6 +36,8 @@ from collections import Counter
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab import pricing, report  # noqa: E402
 
+EVIDENCE = "시나리오: 토큰·턴·효과 가정의 비용 계산. 실제 정책 A/B나 품질 동등 절감 실측 아님."
+
 DEMO = """당신은 우리 회사의 시니어 백엔드 엔지니어를 돕는 코딩 어시스턴트입니다.
 현재 시각은 2026-08-14 09:31:07 이며, 요청 ID는 req_8f3a21c9 입니다.
 사용자: kim@example.com (세션 a91f-2c88)
@@ -78,6 +80,7 @@ def main():
     ap.add_argument("--model", default="sonnet", choices=list(pricing.MODELS))
     ap.add_argument("--calls", type=int, default=1_000, help="이 프롬프트의 월 호출 수")
     args = ap.parse_args()
+    print(EVIDENCE)
 
     if args.demo or not args.path:
         text, src = DEMO, "내장 데모 프롬프트 (--demo)"
@@ -105,16 +108,18 @@ def main():
     report.section("1. 규모와 비용")
     report.kv("글자 수 / 토큰 수", f"{len(text):,}자 / {toks:,} tok")
     base = toks * m.inp / 1e6 * N
-    cached = toks * m.inp * m.cache_read / 1e6 * N
+    eligible = pricing.cache_eligible(m, toks)
+    cached = ((toks * m.inp * (m.cache_write + (N - 1) * m.cache_read) / 1e6)
+              if eligible else base)
     report.kv("월 입력 비용 (캐시 없음)", pricing.usd(base, 2))
     report.kv("월 입력 비용 (캐시 적중)", pricing.usd(cached, 2),
               f"절감 {pricing.usd(base-cached,2)}")
 
     report.section("2. 캐시 프리픽스 적격성")
-    if toks >= 1024:
-        print(f"  ✅ {toks:,} tok — 최소 요건(약 1,024 tok)을 넘는다. 캐시 대상으로 적합.")
+    if eligible:
+        print(f"  ✅ {toks:,} tok — 모델 최소 {m.cache_min_tokens} tok 기준 후보. 실제 벤더 count/usage로 확인.")
     else:
-        print(f"  ⚠️ {toks:,} tok — 1,024 tok 미만이라 캐시가 적용되지 않을 수 있다.")
+        print(f"  ⚠️ {toks:,} tok — 모델 최소 {m.cache_min_tokens} tok 미달/미확인. 캐시 할인 미적용.")
         print("     여러 고정 블록(툴 정의·규약·레퍼런스)을 하나로 합쳐 앞에 두는 것을 검토하라.")
 
     report.section("3. 캐시 파괴 요소 — 앞쪽의 동적 값")
@@ -174,16 +179,16 @@ def main():
         print(f"  🟡 연속 빈 줄 {blank_runs}곳, 끝 공백 {trailing}줄 — 사소하지만 매 콜 실린다.")
     long_paras = [p for p in text.split("\n\n") if len(enc.encode(p)) > 200]
     if long_paras:
-        print(f"  🟡 200 tok 초과 문단 {len(long_paras)}개 — 불릿/표로 바꾸면 보통 20~40% 줄어든다.")
+        print(f"  🟡 200 tok 초과 문단 {len(long_paras)}개 — 불릿/표 압축 후보. 감소량·품질은 재인코딩과 작업 평가로 확인한다.")
 
     report.section("6. 권장 조치 순서")
     todo = []
     if any(f[3] for f in found):
         todo.append("동적 값(시각·ID·이메일)을 프롬프트 맨 뒤로 이동 → 캐시 히트율 확보")
-    if toks >= 1024:
+    if eligible:
         todo.append("이 블록에 캐시 표시(cache_control)를 붙이고 히트율을 대시보드로 확인")
     else:
-        todo.append("고정 블록들을 하나로 합쳐 1,024 tok 이상으로 만들기")
+        todo.append("모델별 최소 길이 확인; 할인만을 위한 무의미한 패딩은 하지 않기")
     if dup:
         todo.append("중복 줄 제거")
     if long_paras:
