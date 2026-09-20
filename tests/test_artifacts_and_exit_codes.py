@@ -22,6 +22,42 @@ def test_published_pptx_and_pdf_full_text(name,evidence):
     assert all(c["ok"] for c in checks), [c for c in checks if not c["ok"]]
 
 
+def test_case_deck_restored_figures_are_byte_identical_to_sources():
+    """케이스 덱에 다시 넣은 스크린샷이 원본 PNG와 바이트 동일한지 검사.
+
+    덱을 다시 만들면서 그림을 재인코딩·대체하면 잡힌다. (그림 없이 텍스트만 남은 상태도 잡힌다.)
+    """
+    import hashlib
+    import zipfile
+    wanted = {f"demo/vibe_vs_spec/shots/{n}.png" for n in
+              ("vibe_top", "spec_top", "spec_mobile", "vibe_spec_full_2up")}
+    sources = {hashlib.sha256((ROOT / w).read_bytes()).hexdigest() for w in wanted}
+    for w in wanted:
+        assert (ROOT / w).is_file(), w
+    with zipfile.ZipFile(ROOT / "presentation/case_vibe_vs_spec/vibe_vs_spec.pptx") as z:
+        embedded = {hashlib.sha256(z.read(m)).hexdigest()
+                    for m in z.namelist() if m.startswith("ppt/media/")}
+    missing = sources - embedded
+    assert not missing, f"케이스 덱에 원본 그대로 박히지 않은 그림 {len(missing)}개"
+
+
+def test_case_deck_fact_tables_match_usage_and_price_sources(evidence):
+    """케이스 덱의 토큰·단가 표 값이 원자료 산술과 일치하는지 검사."""
+    usage = json.loads((ROOT / "demo/vibe_vs_spec/usage.json").read_text(encoding="utf-8"))["runs"]
+    vibe, spec = usage["vibe"]["tokens"], usage["spec"]["tokens"]
+    deck = {s["title"]: s for s in specifications(evidence)["case_vibe_vs_spec/vibe_vs_spec"]}
+    facts = {row[0]: row[1] for s in deck.values() for row in s["facts"]}
+    assert facts["비캐시 입력"] == f"{vibe['input']:,} → {spec['input']:,}  (증가 {spec['input']-vibe['input']})"
+    assert facts["추론+보이는 출력"] == (f"{vibe['reasoning']+vibe['output']:,} → "
+                                        f"{spec['reasoning']+spec['output']:,}  "
+                                        f"(감소 {vibe['reasoning']+vibe['output']-spec['reasoning']-spec['output']})")
+    assert facts["합계"] == f"{vibe['total']:,} → {spec['total']:,}  (증가 1.8%)"
+    gpt = deck["세 단가로 같은 추정치를 환산"]["facts"][0][1]
+    want = usage["vibe"]["cost_usd"]["total"], usage["spec"]["cost_usd"]["total"]
+    assert f"${want[0]:.7f} → ${want[1]:.7f}" in gpt, gpt
+    assert deck["단가비가 손익을 결정한다"]["facts"][1][1] == "r = 1.0024"
+
+
 def test_240_to_999_mutation_fails_actual_deck_and_cli(tmp_path,evidence):
     prs=Presentation(ROOT/"presentation/token_cost.pptx")
     edits=0

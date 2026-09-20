@@ -14,8 +14,10 @@ sys.path.insert(0, str(ROOT))
 from lab.evidence import build
 
 
-def slide(title, hero, lines, scope, source):
-    return dict(title=title, hero=hero, lines=lines, scope=scope, source=source)
+def slide(title, hero, lines, scope, source, images=None, facts=None):
+    """images: [(저장소 상대 경로, 캡션)] / facts: [(항목, 값)] — 둘 다 덱에 그대로 그려진다."""
+    return dict(title=title, hero=hero, lines=lines, scope=scope, source=source,
+                images=images or [], facts=facts or [])
 
 
 def specifications(e):
@@ -74,24 +76,56 @@ def specifications(e):
     ]
     agent = [agent_intro] + [A[i] for i in (1,11,23)] + agent_extra + [A[i] for i in (24,25,26,15,16,17,18,27,28)]
     assert len(agent) == 18
+    shots = "demo/vibe_vs_spec/shots"
     case_deck = [
       slide("Vibe vs Spec", "같은 목표 페이지, 추정 usage 비교", ["카페 랜딩 · 생성 산출물 2개 · 표본 1쌍", "실제 청구 usage나 무작위 배정된 SDD 실험이 아니다."], "CASE / 정정판", "demo/vibe_vs_spec/README.md"),
       A[19],
-      slide("입력이 늘고 비싼 출력이 줄었다", "+666 / -680 / +156", ["입력 +666, 추론+출력 -680, 캐시 +156 (추정값 고정)", "이 케이스에서 input과 cache는 서로 겹치지 않는 버킷으로 정의했다.", "벤더 usage 필드 이름과 동일하다고 가정하면 이중 계상할 수 있다."], "추정치 재계산", "demo/vibe_vs_spec/usage.json"),
-      slide("단가비가 손익을 결정한다", "r > (666 + 156h) / 680", ["r = 출력/입력 단가, h = 캐시 읽기/입력 단가", "h=0.1이면 손익분기 r=1.0024. 모든 가격 체계에서의 보편 법칙은 아니다.", "다른 모델 단가에 고정 토큰을 대입한 감도 분석이지 다른 모델의 실호출이 아니다."], "단가 민감도", "demo/vibe_vs_spec/sensitivity.py"),
+      slide("두 산출물의 첫 화면", "같은 목표, 다른 생성 과정", ["두 장 모두 실제 생성 HTML을 Chromium 1280px에서 캡처한 화면이다.", "보이는 화면이 비슷하다는 것이 품질 동등성의 증거는 아니다."], "산출물 스크린샷", f"{shots}/vibe_top.png · {shots}/spec_top.png",
+            images=[(f"{shots}/vibe_top.png", "위: Vibe 산출물 첫 화면 (1280px)"),
+                    (f"{shots}/spec_top.png", "아래: Spec 산출물 첫 화면 (1280px)")]),
+      slide("모바일 390px에서도 같은 1열", "정적 문자열이 아니라 실제 렌더링", ["문자열 검사만으로는 2열로 바뀌어도 통과한다.", "아래 그림은 현재 Spec 산출물을 390px에서 캡처한 것이다."], "반응형 스크린샷", f"{shots}/spec_mobile.png",
+            images=[(f"{shots}/spec_mobile.png", "Spec 산출물 · 390×844 캡처")]),
+      slide("전체 페이지 길이 비교", "세로로 긴 한 페이지, 두 산출물", ["원본 캡처 1,280×3,400 두 장을 같은 높이로 축소해 나란히 붙였다.", "스크롤 길이가 비슷하다는 사실은 비용·품질 동등성 판정이 아니다."], "전체 페이지 축소 비교", f"{shots}/vibe_full.png · {shots}/spec_full.png · demo/vibe_vs_spec/make_fullpage_2up.py",
+            images=[(f"{shots}/vibe_spec_full_2up.png", "왼쪽 Vibe 전체 페이지 · 오른쪽 Spec 전체 페이지 (축소)")]),
+      slide("입력이 늘고 비싼 출력이 줄었다", "+666 / -680 / +156", ["이 케이스에서 input과 cache는 서로 겹치지 않는 버킷으로 정의했다.", "벤더 usage 필드 이름과 동일하다고 가정하면 이중 계상할 수 있다."], "추정치 재계산", "demo/vibe_vs_spec/usage.json",
+            facts=[("비캐시 입력", "486 → 1,152  (증가 666)"), ("추론+보이는 출력", "7,070 → 6,390  (감소 680)"),
+                   ("캐시 입력(추정)", "312 → 468  (증가 156)"), ("합계", "7,868 → 8,010  (증가 1.8%)")]),
+      slide("세 단가로 같은 추정치를 환산", "8.3% / 7.6% / 8.1% 비용 감소", ["토큰은 그대로 두고 단가와 캐시 가정만 바꾼 산술이다.", "다른 모델을 실행한 실측이 아니며, 캐시 적격성은 미확인이다."], "단가별 비용 재계산", "demo/vibe_vs_spec/cost_comparison.md · verify_case.py",
+            facts=[("GPT-5 · 캐시 $0.125/M", "$0.0713465 → $0.0653985  (8.3% 감소)"),
+                   ("Claude Sonnet 4.6 · 캐시 0.1×", "$0.1076016 → $0.0994464  (7.6% 감소)"),
+                   ("GPT-5 · 캐시 전부 미적용", "$0.0716975 → $0.0659250  (8.1% 감소)")]),
+      slide("단가비가 손익을 결정한다", "r > (666 + 156h) / 680", ["r = 출력/입력 단가, h = 캐시 읽기/입력 단가.", "모든 가격 체계에서의 보편 법칙이 아니라 고정 토큰 이동의 감도 분석이다."], "단가 민감도", "demo/vibe_vs_spec/sensitivity.py",
+            facts=[("손익분기 조건", "r > (666 + 156h) / 680"), ("h = 0.1이면", "r = 1.0024"),
+                   ("r → ∞ 수렴", "약 9.62% 감소에 수렴"), ("실제 청구서", "미확인 (usage 추정치 산술)")]),
       slide("품질 동등성 대신 실제 AC 범위를 공개", "정적 16항목 + 브라우저 29항목", ["390/820/821/1280px 그리드·메뉴 표시·가로 스크롤 검사", "각 카드의 내용과 세 앵커의 실제 스크롤 이동 검사", "디자인 선호도·모든 사용자 의도·두 생성 과정의 품질 동등성은 검증하지 않는다."], "현재 산출물의 실행 검사", "demo/vibe_vs_spec/verify_ac.py · tools/browser_ac.py"),
-      slide("실패하는 반례도 넣는다", "모바일 2열 변조 → FAIL", ["CSS에 미디어쿼리 문자열이 있다는 것만으로 1열 전환이 보장되지 않는다.", "실제 렌더링된 gridTemplateColumns를 확인한다.", "브라우저가 없으면 PASS가 아니라 UNVERIFIED(exit 2)."], "변조 회귀", "tests/test_browser_ac.py"),
-      A[20], A[18],
+      slide("실패하는 반례도 넣는다", "모바일 2열 변조 → FAIL", ["CSS에 미디어쿼리 문자열이 있다는 것만으로 1열 전환이 보장되지 않는다.", "실제 렌더링된 gridTemplateColumns를 확인한다.", "브라우저가 없으면 PASS가 아니라 UNVERIFIED(exit 2)."], "변조 회귀", A[18]["source"]),
+      A[20],
       slide("다음 실험: 스펙이 재작업을 줄이는가", "사전등록된 품질·비용 비교", ["백지 스펙 작성 비용부터 포함하고 다수 과제를 무작위 배정한다.", "같은 AC·모델·출력 예산·가격·캐시 조건으로 성공률과 총비용을 기록한다.", "진행하지 않은 실험의 절감률은 결과로 채우지 않는다."], "후속 계획 / 미실행", "demo/vibe_vs_spec/EXPERIMENT_A_PROTOCOL.md"),
     ]
+    assert len(case_deck) == 12
     return {"token_cost": A, "token_cost_main": [A[i] for i in main_indices],
             "token_cost_bonus": bonus, "token_cost_agent": agent,
             "case_vibe_vs_spec/vibe_vs_spec": case_deck}
 
 
+def notes_text(spec):
+    """발표자 노트 — 렌더러와 검증기가 같은 함수를 쓴다(이중 구현 금지)."""
+    return "\n".join([spec["scope"], *spec["lines"], *[f"{a}: {b}" for a, b in spec["facts"]],
+                       *[f"그림: {c} ({a})" for a, c in spec["images"]], "근거: " + spec["source"]])
+
+
 def expected_texts(spec, index):
     return [f"TOKEN COST LAB  /  {index:02d}", spec["scope"], spec["title"], spec["hero"],
-            *spec["lines"], spec["source"], "2026-09-20  ·  근거와 조건을 함께 인용"]
+            *spec["lines"], *[cell for row in spec["facts"] for cell in row],
+            *[caption for _, caption in spec["images"]],
+            spec["source"], "2026-09-20  ·  근거와 조건을 함께 인용"]
+
+
+def fit(box_w, box_h, img_w, img_h):
+    """주어진 상자에 들어가도록 비율을 유지해 (w, h, x_offset, y_offset)를 돌려준다."""
+    scale = min(box_w / img_w, box_h / img_h)
+    w, h = img_w * scale, img_h * scale
+    return w, h, (box_w - w) / 2, (box_h - h) / 2
 
 
 def render(specs, path):
@@ -131,11 +165,52 @@ def render(specs, path):
         text(texts[1], "scope", 6.3,.3,6.3,.3,11,"36D399")
         text(texts[2], "title", .7,.9,11.9,.9,29,bold=True)
         text(texts[3], "hero", .7,1.95,11.9,.85,29,"36D399",True)
+        narrow = bool(spec["images"] or spec["facts"])
         for j, line in enumerate(spec["lines"]):
-            text(line, f"body-{j}", .85,3.13+j*.70,11.65,.67,17.5)
+            text(line, f"body-{j}", .85,3.13+j*.70,7.0 if narrow else 11.65,.67,17.5)
+        if spec["facts"]:
+            top = 3.13 + len(spec["lines"]) * .70 + .10
+            height = .46 * len(spec["facts"])
+            shape = sl.shapes.add_table(len(spec["facts"]), 2, Inches(.85), Inches(top),
+                                        Inches(11.65), Inches(height))
+            table = shape.table
+            table.first_row = False
+            table.horz_banding = False
+            table.columns[0].width = Inches(4.30)
+            table.columns[1].width = Inches(7.35)
+            for r, (label, value) in enumerate(spec["facts"]):
+                for c, content in enumerate((label, value)):
+                    cell = table.cell(r, c)
+                    cell.margin_left = cell.margin_right = Inches(.10)
+                    cell.fill.solid()
+                    cell.fill.fore_color.rgb = RGBColor.from_string("111A24" if r % 2 == 0 else "18222E")
+                    tf = cell.text_frame
+                    tf.word_wrap = True
+                    run = tf.paragraphs[0].add_run()
+                    run.text = content
+                    run.font.name = "NanumGothic"
+                    run.font.size = Pt(14 if c else 12.5)
+                    run.font.bold = bool(c)
+                    run.font.color.rgb = RGBColor.from_string("ECF1F6" if c else "93A4B5")
+                    for tag in ("a:latin", "a:ea", "a:cs"):
+                        e = run._r.get_or_add_rPr().find(qn(tag))
+                        if e is None:
+                            e = run._r.makeelement(qn(tag), {}); run._r.get_or_add_rPr().append(e)
+                        e.set("typeface", "NanumGothic")
+        if spec["images"]:
+            from PIL import Image
+            box_w, top, bottom = 4.6, 2.30, 6.45
+            slot = (bottom - top) / len(spec["images"])
+            for k, (relative, caption) in enumerate(spec["images"]):
+                with Image.open(ROOT / relative) as im:
+                    w, h, dx, dy = fit(box_w, slot - .32, *im.size)
+                sl.shapes.add_picture(str(ROOT / relative), Inches(8.05 + dx),
+                                      Inches(top + k * slot + dy), Inches(w), Inches(h))
+                text(caption, f"image-caption-{k}", 8.05, top + k * slot + slot - .30, box_w, .28,
+                     9.5, "93A4B5")
         text(spec["source"], "source", .7,6.65,12,.30,10,"93A4B5")
         text(texts[-1], "footer", .7,7.02,12,.28,10,"93A4B5")
-        sl.notes_slide.notes_text_frame.text = "\n".join([spec["scope"], *spec["lines"], "근거: " + spec["source"]])
+        sl.notes_slide.notes_text_frame.text = notes_text(spec)
     path.parent.mkdir(parents=True, exist_ok=True)
     prs.save(path)
 
@@ -144,7 +219,12 @@ def script_text(specs):
     content = f"# {specs[0]['title']} — 정정판 대본\n\n{len(specs)}장 · 2026-09-20 · 생성 원천: `presentation/deckgen/build_verified.py`와 원자료.\n\n"
     for i, spec in enumerate(specs, 1):
         content += f"## {i}. {spec['title']}\n\n**{spec['hero']}** · {spec['scope']}\n\n"
-        content += "\n".join("- " + t for t in spec["lines"]) + f"\n\n근거: `{spec['source']}`\n\n"
+        content += "\n".join("- " + t for t in spec["lines"]) + "\n\n"
+        if spec["facts"]:
+            content += "\n".join(f"| {a} | {b} |" for a, b in spec["facts"]) + "\n\n"
+        if spec["images"]:
+            content += "\n".join(f"![{c}](../{a})" for a, c in spec["images"]) + "\n\n"
+        content += f"근거: `{spec['source']}`\n\n"
     return content.rstrip() + "\n"
 
 

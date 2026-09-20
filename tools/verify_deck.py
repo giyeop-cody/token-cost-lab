@@ -16,7 +16,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from lab.evidence import build
-from presentation.deckgen.build_verified import expected_texts, specifications, script_text
+from presentation.deckgen.build_verified import (expected_texts, notes_text, script_text,
+                                                specifications)
 
 
 def same_value(a, b):
@@ -59,7 +60,7 @@ def verify_pptx(path, specs):
         if actual != expected:
             mismatch = f"actual text differs from regenerated evidence specification (slide {i})"
         add(f"slide {i} all text/figures/qualifiers", actual == expected, mismatch)
-        expected_notes = "\n".join([spec["scope"], *spec["lines"], "근거: " + spec["source"]])
+        expected_notes = notes_text(spec)
         add(f"slide {i} speaker notes", sl.notes_slide.notes_text_frame.text == expected_notes)
         for sh in sl.shapes:
             if getattr(sh, "has_text_frame", False) and sh.text:

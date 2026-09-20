@@ -9,7 +9,7 @@
 | 본편 22장 | [PPTX](token_cost_main.pptx) · [PDF](token_cost_main.pdf) | [대본](script_main.md) |
 | 보너스 10장 | [PPTX](token_cost_bonus.pptx) · [PDF](token_cost_bonus.pdf) | [대본](script_bonus.md) |
 | 에이전트 18장 | [PPTX](token_cost_agent.pptx) · [PDF](token_cost_agent.pdf) | [대본](script_agent.md) |
-| 카페 케이스 9장 | [PPTX](case_vibe_vs_spec/vibe_vs_spec.pptx) · [PDF](case_vibe_vs_spec/vibe_vs_spec.pdf) | [대본](case_vibe_vs_spec/script_case.md) |
+| 카페 케이스 12장 | [PPTX](case_vibe_vs_spec/vibe_vs_spec.pptx) · [PDF](case_vibe_vs_spec/vibe_vs_spec.pdf) | [대본](case_vibe_vs_spec/script_case.md) |
 
 ## 수정·검증
 

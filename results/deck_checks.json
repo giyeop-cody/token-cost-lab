@@ -5068,7 +5068,7 @@
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide count",
       "ok": true,
-      "detail": "9 vs 9"
+      "detail": "12 vs 12"
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 1 all text/figures/qualifiers",
@@ -5221,7 +5221,12 @@
       "detail": ""
     },
     {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 3 audit:body-2 within slide",
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 3 audit:image-caption-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 3 audit:image-caption-1 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5276,7 +5281,7 @@
       "detail": ""
     },
     {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 4 audit:body-2 within slide",
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 4 audit:image-caption-0 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5331,7 +5336,7 @@
       "detail": ""
     },
     {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 5 audit:body-2 within slide",
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 5 audit:image-caption-0 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5386,11 +5391,6 @@
       "detail": ""
     },
     {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 6 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 6 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -5441,11 +5441,6 @@
       "detail": ""
     },
     {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 7 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 7 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -5492,16 +5487,6 @@
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 8 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 8 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 8 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5571,6 +5556,171 @@
       "detail": ""
     },
     {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 11 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 12 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "case_vibe_vs_spec/vibe_vs_spec: speaker script",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/case_vibe_vs_spec/script_case.md"
@@ -5583,7 +5733,7 @@
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page count",
       "ok": true,
-      "detail": "9"
+      "detail": "12"
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 1 all text",
@@ -5627,6 +5777,21 @@
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 9 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 10 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 11 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 12 all text",
       "ok": true,
       "detail": ""
     }

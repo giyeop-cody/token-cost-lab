@@ -102,6 +102,7 @@ SciPy `ttest_ind(equal_var=False)`와 독립 대조하는 회귀 테스트를 �
 | 캐시 최소 길이 공통 1K | 모델별 조건을 pricing에 모음. 미확인은 할인 가정 금지 | Haiku 4.5: 4,095/4,096 경계 |
 | 경로 27개가 비 UTF-8 | ASCII 경로로 정규화, 파일·참조·기본 검증 경로 수정 | `docs/path_migration.json`, 경로 UTF-8 검사 |
 | CI 파일이 없는데 README에는 있음 | 실제 GitHub Actions 추가; 무과금 재계산·회귀·브라우저·덱 검사 | `.github/workflows/ci.yml` |
+| 케이스 덱에서 스크린샷·표가 사라짐 | 생성기 단일 원천으로 재구성하며 그림·표를 그리지 않았다. 슬라이드 3장(첫 화면·모바일 390px·전체 페이지 축소)과 표 3개(토큰·단가·손익분기)를 생성기에 넣고, 원본 PNG를 **바이트 동일**하게 삽입 | `test_case_deck_restored_figures_are_byte_identical_to_sources` · `test_case_deck_fact_tables_match_usage_and_price_sources` · PDF 그림 배치 검사(3·4·5쪽) |
 
 Browser/mock 검증은 **소프트웨어 실동작/계약 테스트**다. 모델 품질이나 API 청구의 새 실측으로 세지 않는다.
 모든 오류가 없음을 수학적으로 보장한 것이 아니라, 지적된 실패 유형을 재현 가능한 검사로 막은 것이다.
