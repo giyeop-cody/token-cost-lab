@@ -2,7 +2,7 @@
 
 **LLM 토큰 비용을 줄이는 원칙을, 관측과 가정을 구분해서 재현하는 실험 모음.**
 
-[English](README_EN.md) · [실측·저장 로그](LIVE_RESULTS.md) · [상세 정정 보고서](docs/CORRECTIONS.md) · [격리 주장 재확인](docs/REASSERTED.md) · [발표 자료](presentation/README.md) · [출처](SOURCES.md)
+[English](README_EN.md) · [실측·저장 로그](LIVE_RESULTS.md) · [상세 정정 보고서](docs/CORRECTIONS.md) · [격리 주장 재확인](docs/REASSERTED.md) · [사라진 주장 정리](docs/RETIRED.md) · [발표 자료](presentation/README.md) · [출처](SOURCES.md)
 
 ## 주장은 유지합니다
 

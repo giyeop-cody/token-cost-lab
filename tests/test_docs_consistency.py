@@ -77,6 +77,29 @@ def test_reasserted_doc_matches_generator(evidence):
         assert heading in on_disk, heading
 
 
+def test_retired_claim_tokens_do_not_reappear():
+    """docs/RETIRED.md §E의 금지 표기가 현행 주장 표면에 다시 나타나지 않는지 검사.
+
+    근거 없이 부활한 옛 수치(검증 건수, 라우팅 절감률, 미측정 비중 등)를 잡는다.
+    목록의 단일 출처는 문서다. 값을 되살리려면 새 근거와 함께 문서를 고쳐야 한다.
+    """
+    doc = (ROOT / "docs/RETIRED.md").read_text(encoding="utf-8")
+    block = re.search(r"```text\n(.*?)```", doc, re.S)
+    assert block, "RETIRED.md에서 금지 표기 코드블록을 찾지 못함"
+    tokens = block.group(1).split()
+    assert len(tokens) >= 30, tokens
+    skip = {"docs/RETIRED.md", "docs/CORRECTIONS.md", "docs/REASSERTED.md"}
+    bad = []
+    for rel, path in documents():
+        if path.suffix in {".txt", ".html"} or rel.startswith(("results/", "tests/", "data/")) or rel in skip:
+            continue
+        text = path.read_text(encoding="utf-8")
+        for t in tokens:
+            if t in text:
+                bad.append(f"{rel}: {t}")
+    assert not bad, bad
+
+
 def test_no_replacement_characters_or_stray_cjk():
     """손으로 쓴 문서·코드의 인코딩 깨짐/한자 혼입 검사.
 

@@ -181,6 +181,7 @@ def corrections_report(e):
 
 자세한 표와 재현 명령은 [LIVE_RESULTS.md](../LIVE_RESULTS.md)에 있다.
 격리·폐기했던 주장을 원자료로 되돌려 다시 쓸 수 있는지 판정한 표는 [REASSERTED.md](REASSERTED.md)에 있다.
+정정 과정에서 문구가 사라진 주장의 목록과 재주장 조건은 [RETIRED.md](RETIRED.md)에 있다.
 
 ## 2. 왜 Welch의 p값을 고쳐야 하나
 
