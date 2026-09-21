@@ -1,15 +1,17 @@
-# 발표 자료 — 2026-09-20 정정판
+# 발표 자료 — 발표체 재작성판 (2026-09-21)
 
-핵심 원칙은 유지하고 **실측 / 로그 재계산 / 외부 연구 / 시나리오 / 소프트웨어 테스트**를 구분한 자료입니다.
-현재 `main`에는 코드와 발표 산출물이 함께 있습니다. 과거의 별도 presentation 브랜치 안내는 폐기했습니다.
+**슬라이드에는 메시지와 숫자만** 둡니다. 검증 범위·한계·반례·질문 대비는 **발표자 노트**로 내려
+같은 대본(`script*.md`)으로도 읽을 수 있게 했습니다. 각 덱은 **약 30분 발표 분량**(장당 1분 안팎)으로
+구성했습니다. 핵심 원칙은 유지하고 실측 / 로그 재계산 / 외부 연구 / 시나리오 / 소프트웨어 테스트를
+발표자 노트에서 구분합니다. 현재 `main`에는 코드와 발표 산출물이 함께 있습니다.
 
 | 덱 | PPTX / PDF | 대본 |
 |---|---|---|
-| 통합 29장 | [PPTX](token_cost.pptx) · [PDF](token_cost.pdf) | [대본](script.md) |
-| 본편 22장 | [PPTX](token_cost_main.pptx) · [PDF](token_cost_main.pdf) | [대본](script_main.md) |
-| 보너스 10장 | [PPTX](token_cost_bonus.pptx) · [PDF](token_cost_bonus.pdf) | [대본](script_bonus.md) |
-| 에이전트 18장 | [PPTX](token_cost_agent.pptx) · [PDF](token_cost_agent.pdf) | [대본](script_agent.md) |
-| 카페 케이스 12장 | [PPTX](case_vibe_vs_spec/vibe_vs_spec.pptx) · [PDF](case_vibe_vs_spec/vibe_vs_spec.pdf) | [대본](case_vibe_vs_spec/script_case.md) |
+| 통합 29장 (약 30분) | [PPTX](token_cost.pptx) · [PDF](token_cost.pdf) | [대본](script.md) |
+| 본편 22장 (약 30분) | [PPTX](token_cost_main.pptx) · [PDF](token_cost_main.pdf) | [대본](script_main.md) |
+| 보너스 10장 (약 30분) | [PPTX](token_cost_bonus.pptx) · [PDF](token_cost_bonus.pdf) | [대본](script_bonus.md) |
+| 에이전트 18장 (약 30분) | [PPTX](token_cost_agent.pptx) · [PDF](token_cost_agent.pdf) | [대본](script_agent.md) |
+| 카페 케이스 13장 | [PPTX](case_vibe_vs_spec/vibe_vs_spec.pptx) · [PDF](case_vibe_vs_spec/vibe_vs_spec.pdf) | [대본](case_vibe_vs_spec/script_case.md) |
 
 ## 수정·검증
 

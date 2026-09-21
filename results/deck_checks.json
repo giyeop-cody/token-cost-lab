@@ -116,11 +116,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 2 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 2 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -176,11 +171,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 3 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 3 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -232,11 +222,6 @@
     },
     {
       "name": "token_cost: slide 4 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 4 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -351,11 +336,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 6 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 6 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -407,11 +387,6 @@
     },
     {
       "name": "token_cost: slide 7 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 7 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -471,11 +446,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 8 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 8 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -527,11 +497,6 @@
     },
     {
       "name": "token_cost: slide 9 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 9 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -591,11 +556,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 10 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 10 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -651,11 +611,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 11 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 11 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -707,11 +662,6 @@
     },
     {
       "name": "token_cost: slide 12 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 12 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -1046,11 +996,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 18 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 18 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -1106,11 +1051,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 19 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 19 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -1162,11 +1102,6 @@
     },
     {
       "name": "token_cost: slide 20 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 20 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -1336,11 +1271,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 23 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 23 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -1451,11 +1381,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 25 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 25 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -1507,11 +1432,6 @@
     },
     {
       "name": "token_cost: slide 26 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 26 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -1571,11 +1491,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 27 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 27 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -1627,11 +1542,6 @@
     },
     {
       "name": "token_cost: slide 28 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 28 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -1971,11 +1881,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 2 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 2 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2031,11 +1936,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 3 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 3 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2087,11 +1987,6 @@
     },
     {
       "name": "token_cost_main: slide 4 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 4 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2206,11 +2101,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 6 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 6 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2262,11 +2152,6 @@
     },
     {
       "name": "token_cost_main: slide 7 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 7 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2326,11 +2211,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 8 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 8 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2382,11 +2262,6 @@
     },
     {
       "name": "token_cost_main: slide 9 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 9 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2446,11 +2321,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 10 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 10 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2506,11 +2376,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 11 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 11 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2562,11 +2427,6 @@
     },
     {
       "name": "token_cost_main: slide 12 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 12 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2791,11 +2651,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 16 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 16 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2847,11 +2702,6 @@
     },
     {
       "name": "token_cost_main: slide 17 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 17 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3021,11 +2871,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 20 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 20 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -3077,11 +2922,6 @@
     },
     {
       "name": "token_cost_main: slide 21 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 21 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3326,6 +3166,11 @@
       "detail": ""
     },
     {
+      "name": "token_cost_bonus: slide 1 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_bonus: slide 1 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -3377,11 +3222,6 @@
     },
     {
       "name": "token_cost_bonus: slide 2 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_bonus: slide 2 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3606,11 +3446,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 6 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_bonus: slide 6 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -3721,11 +3556,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 8 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_bonus: slide 8 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -3781,11 +3611,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 9 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_bonus: slide 9 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -3837,11 +3662,6 @@
     },
     {
       "name": "token_cost_bonus: slide 10 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_bonus: slide 10 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3971,6 +3791,11 @@
       "detail": ""
     },
     {
+      "name": "token_cost_agent: slide 1 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_agent: slide 1 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -4026,11 +3851,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 2 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_agent: slide 2 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -4082,11 +3902,6 @@
     },
     {
       "name": "token_cost_agent: slide 3 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_agent: slide 3 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -4476,11 +4291,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 10 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_agent: slide 10 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -4536,11 +4346,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 11 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_agent: slide 11 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -4592,11 +4397,6 @@
     },
     {
       "name": "token_cost_agent: slide 12 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_agent: slide 12 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -4766,11 +4566,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 15 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_agent: slide 15 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -4826,11 +4621,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 16 audit:body-3 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_agent: slide 16 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -4882,11 +4672,6 @@
     },
     {
       "name": "token_cost_agent: slide 17 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_agent: slide 17 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5068,7 +4853,7 @@
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide count",
       "ok": true,
-      "detail": "12 vs 12"
+      "detail": "13 vs 13"
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 1 all text/figures/qualifiers",
@@ -5107,6 +4892,11 @@
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 1 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 1 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5162,11 +4952,6 @@
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 2 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 2 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5541,11 +5326,6 @@
       "detail": ""
     },
     {
-      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 9 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 9 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -5597,6 +5377,11 @@
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 10 audit:body-3 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5721,6 +5506,61 @@
       "detail": ""
     },
     {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: slide 13 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "case_vibe_vs_spec/vibe_vs_spec: speaker script",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/case_vibe_vs_spec/script_case.md"
@@ -5733,7 +5573,7 @@
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page count",
       "ok": true,
-      "detail": "12"
+      "detail": "13"
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 1 all text",
@@ -5792,6 +5632,11 @@
     },
     {
       "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 12 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "case_vibe_vs_spec/vibe_vs_spec: PDF page 13 all text",
       "ok": true,
       "detail": ""
     }

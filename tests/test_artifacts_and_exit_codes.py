@@ -194,3 +194,41 @@ def test_inspector_output_cannot_hide_nonzero_status(tmp_path):
                      env=dict(os.environ,PATH=str(bin_dir)),text=True,capture_output=True,timeout=30)
     assert p.returncode == 1,p.stdout+p.stderr
     assert "PASS  Inspector" not in p.stdout
+
+
+AUDIT_ONLY_TOKENS = ("반례", "미측정", "철회", "격리", "비일치", "정정 이력", "감사", "한계")
+
+
+def test_deck_slides_keep_messages_and_notes_carry_scope(evidence):
+    """발표체 규칙을 고정한다: 슬라이드는 메시지·숫자, 검증 범위·한계는 발표자 노트.
+
+    2026-09-21 지적(“발표 자료를 만드는 거지, 실험 결과와 방향성 반례를 적는 것이 아님”)에 따라
+    슬라이드 본문에서 한계·반례 진술을 걷어냈다. 다시 슬라이드로 올라오면 이 검사가 잡는다.
+    """
+    from presentation.deckgen.build_verified import notes_text
+    decks = specifications(evidence)
+    assert set(decks) == set(DECKS)
+    for name, specs in decks.items():
+        for idx, spec in enumerate(specs, 1):
+            face = "\n".join([spec["title"], spec["hero"], *spec["lines"],
+                              *[cell for row in spec["facts"] for cell in row],
+                              *[caption for _, caption in spec["images"]]])
+            for token in AUDIT_ONLY_TOKENS:
+                assert token not in face, f"{name} {idx}장 슬라이드에 검증 서술: {token}"
+            assert len(spec["script"]) >= 2, f"{name} {idx}장 발표 멘트 부족"
+            notes = notes_text(spec)
+            assert notes.startswith(spec["script"][0]), f"{name} {idx}장 노트 첫 문단"
+            assert f"증거 범위: {spec['scope']}" in notes, f"{name} {idx}장 증거 범위 누락"
+            assert f"근거: {spec['source']}" in notes, f"{name} {idx}장 근거 누락"
+
+
+def test_deck_scripts_declare_target_duration_and_per_slide_talk():
+    """대본(.md)은 30분 목표 분량과 장별 멘트를 담는다(덱과 같은 원천에서 생성)."""
+    from presentation.deckgen.build_verified import script_text
+    decks = specifications(json.loads((ROOT / "results/audit_metrics.json").read_text(encoding="utf-8")))
+    for name, specs in decks.items():
+        text = script_text(specs)
+        assert f"{len(specs)}장 · 약 30분" in text, name
+        assert text.count("\n\n**멘트**\n\n") == len(specs), name
+        for spec in specs:
+            assert spec["script"][0] in text, (name, spec["title"])
