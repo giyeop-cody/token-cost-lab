@@ -8,11 +8,11 @@
   "log_normalization": "trailing whitespace only",
   "all_executed_checks_passed": true,
   "pytest": {
-    "tests": 113,
+    "tests": 117,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
-    "passed": 113
+    "passed": 117
   },
   "commands": [
     {
@@ -25,7 +25,7 @@
         "--junitxml=results/pytest.xml"
       ],
       "exit_code": 0,
-      "seconds": 21.293,
+      "seconds": 17.76,
       "log": "results/audit_checks/pytest.txt"
     },
     {
@@ -35,7 +35,7 @@
         "run_all.py"
       ],
       "exit_code": 0,
-      "seconds": 2.388,
+      "seconds": 1.889,
       "log": "results/audit_checks/free-experiments.txt"
     },
     {
@@ -48,7 +48,7 @@
         "results/browser_memo.json"
       ],
       "exit_code": 0,
-      "seconds": 1.158,
+      "seconds": 0.982,
       "log": "results/audit_checks/memo-browser.txt"
     },
     {
@@ -61,7 +61,7 @@
         "results/browser_cafe.json"
       ],
       "exit_code": 0,
-      "seconds": 1.681,
+      "seconds": 1.246,
       "log": "results/audit_checks/cafe-browser.txt"
     },
     {
@@ -71,7 +71,7 @@
         "demo/vibe_vs_spec/verify_ac.py"
       ],
       "exit_code": 0,
-      "seconds": 1.411,
+      "seconds": 1.212,
       "log": "results/audit_checks/cafe-full-ac.txt"
     },
     {
@@ -81,7 +81,7 @@
         "analysis/calibrate_growth.py"
       ],
       "exit_code": 0,
-      "seconds": 0.049,
+      "seconds": 0.039,
       "log": "results/audit_checks/analysis-calibrate_growth.txt"
     },
     {
@@ -91,7 +91,7 @@
         "analysis/lean_vs_full.py"
       ],
       "exit_code": 0,
-      "seconds": 0.058,
+      "seconds": 0.051,
       "log": "results/audit_checks/analysis-lean_vs_full.txt"
     },
     {
@@ -101,7 +101,7 @@
         "analysis/replay_logs.py"
       ],
       "exit_code": 0,
-      "seconds": 0.059,
+      "seconds": 0.05,
       "log": "results/audit_checks/analysis-replay_logs.txt"
     },
     {
@@ -111,7 +111,7 @@
         "analysis/ab_efficacy.py"
       ],
       "exit_code": 0,
-      "seconds": 1.065,
+      "seconds": 0.945,
       "log": "results/audit_checks/analysis-ab_efficacy.txt"
     },
     {
@@ -121,7 +121,7 @@
         "analysis/ab_value.py"
       ],
       "exit_code": 0,
-      "seconds": 0.052,
+      "seconds": 0.048,
       "log": "results/audit_checks/analysis-ab_value.txt"
     },
     {
@@ -131,7 +131,7 @@
         "analysis/case_ac_gap.py"
       ],
       "exit_code": 0,
-      "seconds": 1.374,
+      "seconds": 1.174,
       "log": "results/audit_checks/analysis-case_ac_gap.txt"
     },
     {
@@ -141,7 +141,7 @@
         "analysis/ladder_keep_or_kill.py"
       ],
       "exit_code": 0,
-      "seconds": 0.052,
+      "seconds": 0.051,
       "log": "results/audit_checks/analysis-ladder_keep_or_kill.txt"
     },
     {
@@ -154,7 +154,7 @@
         "results/deck_checks.json"
       ],
       "exit_code": 0,
-      "seconds": 4.612,
+      "seconds": 3.573,
       "log": "results/audit_checks/all-decks.txt"
     },
     {
@@ -165,26 +165,26 @@
         "--with-pdf"
       ],
       "exit_code": 0,
-      "seconds": 4.089,
+      "seconds": 3.492,
       "log": "results/audit_checks/case-deck.txt"
     }
   ],
   "artifact_sha256": {
-    "presentation/token_cost.pptx": "c29e4ecb03c9df0a161f1f445c16bed6df861db38984680a74b96d5e270c6240",
-    "presentation/token_cost_agent.pptx": "8f60c9065165a43d870737e78ffc261e6b28dd1a3676370512db56b9f297620c",
-    "presentation/token_cost_bonus.pptx": "397e9d6b1ce040273aafeabd0f9f650584e5099ea793039c1254175194f9d901",
-    "presentation/token_cost_main.pptx": "7148649d63751e447794f1c7fd03e416bf7ff8e30a836bb219ccb182c86a0228",
-    "presentation/token_cost.pdf": "d0f29e80cdf48bc81926b6afaa75490196906664580227c6535529eb495b481e",
-    "presentation/token_cost_agent.pdf": "26f953f894dc8093b50ea20ea67b0d6e78ae4af6239db4db3353197c116d3bdd",
-    "presentation/token_cost_bonus.pdf": "4730ba3d2f9a4a5482dd7dab079e0253a1478908bea00570275f8636058b7767",
-    "presentation/token_cost_main.pdf": "3c98ade9991de523daff6850c72fc3431838a173b002e9d39960d1aed0fba76f",
-    "presentation/case_vibe_vs_spec/vibe_vs_spec.pptx": "669a4985f3646fd022a035f31484e223aa67883f8720889c677a123a3acf12b0",
-    "presentation/case_vibe_vs_spec/vibe_vs_spec.pdf": "a4ee839a743d4c23c56b81f2363f3c55ebdf5ec45a03e8b6f5c37c35be7c39bb",
+    "presentation/token_cost.pptx": "3466528c499411d71e16cfb9cdbd41f303026f589bb35bd9117dd0978606efd3",
+    "presentation/token_cost_agent.pptx": "0610450e47cd1acc182175306d23949f69beb8f5aacf7fa03c572dd515b5cd83",
+    "presentation/token_cost_bonus.pptx": "5030f2ae4aaa972ec9a8548f17a66d136224a79ef4701b02275319a1966a589f",
+    "presentation/token_cost_main.pptx": "beb035a0505bd879ec2dea6a767df61c19561daf504fab1295989813496dd82f",
+    "presentation/token_cost.pdf": "b0f47c261d6660870dd5339fc17920a8c6e2ef467cbeb2aa413a1d67e4c1ebe6",
+    "presentation/token_cost_agent.pdf": "9093b104eb2c7a05b2f37494a81da387e6467366577b5fedf52d326ec1a27851",
+    "presentation/token_cost_bonus.pdf": "922eba657c301c57391222f1e0ddcacebeef5793de3c57381ccdf9725cea6ff7",
+    "presentation/token_cost_main.pdf": "8029c8b230cf89def7a5c74c15ebca695a8630be1afe8c91a67e8fbda6584f59",
+    "presentation/case_vibe_vs_spec/vibe_vs_spec.pptx": "31ebc884cb7659ef7fa614da096b701691eaf7043233827da8626f9ee2d45ffc",
+    "presentation/case_vibe_vs_spec/vibe_vs_spec.pdf": "cb0de6e941b5bbee6d5c511ad6b0500125598a13a4873ffba3b1e24390177a95",
     "results/audit_metrics.json": "d3cc794214d632f9bc63f85583e9d961d2d9ab7e4821f1ed90a0fb691e212126",
     "LIVE_RESULTS.md": "8bc4af57c6b20188c0391e5115c73a9be6e241537011a82575337f2707e19712",
-    "docs/CORRECTIONS.md": "518789b710ae41917e5e6521dfabae325e2e007ce415487e5e2de632f1b7d9ae",
-    "docs/REASSERTED.md": "9328a5262d8e20fff87622e382ac5709f8aefb8926b62421d4aaeccca174fa13",
-    "docs/RETIRED.md": "691c4dea98e51374712d29e558ff21cc64440511aeb1a5635f6a0e266dea8c15"
+    "docs/CORRECTIONS.md": "31aa16841372b5be58963818fff053b13325064e6873b9106c73f365cf27f086",
+    "docs/REASSERTED.md": "b76e99cb775239bb460cf8077915f0de01eb82861be581972321907c8c24dfa1",
+    "docs/RETIRED.md": "a688f643c435eeb6cdbc2e316aa9318157b438f523bc3e075ed70914fc9c5b92"
   },
   "not_run": [
     "new paid vendor API requests",

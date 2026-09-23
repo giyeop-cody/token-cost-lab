@@ -1,6 +1,6 @@
 # 카페 케이스 발표 — 정정판
 
-[PPTX 13장](vibe_vs_spec.pptx) · [PDF 13쪽](vibe_vs_spec.pdf) · [대본](script_case.md) (약 30분)
+[PPTX 15장](vibe_vs_spec.pptx) · [PDF 15쪽](vibe_vs_spec.pdf) · [대본](script_case.md) (약 30분)
 
 근거는 [케이스 설명](../../demo/vibe_vs_spec/README.md)의 **세션 토큰 추정치**입니다.
 실제 청구 실측·재작업 감소의 인과 실험으로 소개하지 않습니다.

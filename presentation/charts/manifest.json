@@ -1,0 +1,241 @@
+{
+  "generated_by": "presentation/deckgen/make_charts.py",
+  "figure": {
+    "figsize": [
+      12.6,
+      3.5
+    ],
+    "dpi": 200,
+    "font": "NanumGothic",
+    "matplotlib": "3.10.9",
+    "background": "#0E141B",
+    "accent": "#36D399"
+  },
+  "note": "계열값은 pricing·evidence·저장 자료에서 계산한다. 슬라이드에는 이 파일만 삽입하며, 테스트가 manifest의 계열값과 파일 해시를 다시 대조한다.",
+  "charts": {
+    "prices": {
+      "file": "prices.png",
+      "sha256": "caa87e1bceb50d84c4f18b344a4f91c5f9ca6e6c69c5ba65384de34aca62a61a",
+      "unit": "USD / 1M tokens",
+      "caption_ko": "단가 스냅샷 (USD / 100만 토큰)",
+      "labels": [
+        "Opus 4.6",
+        "Sonnet 4.6",
+        "GPT-5",
+        "Gemini 3.1 Pro",
+        "Flash-Lite",
+        "DeepSeek (peak)"
+      ],
+      "axis_labels": [
+        "Opus",
+        "Sonnet",
+        "GPT-5",
+        "Gemini Pro",
+        "Flash-Lite",
+        "DeepSeek"
+      ],
+      "input": [
+        5.0,
+        3.0,
+        1.25,
+        2.0,
+        0.25,
+        0.3
+      ],
+      "output": [
+        25.0,
+        15.0,
+        10.0,
+        12.0,
+        1.5,
+        1.2
+      ],
+      "output_to_input": [
+        5.0,
+        5.0,
+        8.0,
+        6.0,
+        6.0,
+        4.0
+      ],
+      "cache_read_multiple": [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.02
+      ]
+    },
+    "tokenizer": {
+      "file": "tokenizer.png",
+      "sha256": "009a46fcf0741077be8a35c429a63872890bb480bf7f6f0f7133b78b4b2ebf21",
+      "unit": "tokens",
+      "caption_ko": "토크나이저 실측 (토큰)",
+      "flores_pairs": 1012,
+      "ko_en_ratio": {
+        "o200k_base": 1.4723,
+        "cl100k_base": 2.3669
+      },
+      "tokens_per_char": {
+        "en": 0.2037,
+        "ko": 0.5258
+      },
+      "tokens_per_char_corpus": "data/sentence_pairs.json (o200k_base)"
+    },
+    "cache": {
+      "file": "cache.png",
+      "sha256": "3f5cf0c287d5f354f315b73f75662eadd4dcd7df0a450826a77a607cafabe9e4",
+      "unit": "USD / 100 calls",
+      "caption_ko": "100콜 비용 (USD)",
+      "labels": [
+        "캐시 없음",
+        "캐시 100% 적중",
+        "미스 배치(0% 적중)"
+      ],
+      "values": [
+        8.55,
+        3.219,
+        10.05
+      ]
+    },
+    "turns": {
+      "file": "turns.png",
+      "sha256": "6cf58ed797d1b004fd3672d057f1ca8b78d0733887c36333d82d321514eacbc5",
+      "unit": "USD / session",
+      "caption_ko": "세션 비용 (USD)",
+      "model": "Claude Sonnet 4.6",
+      "base_tokens": 8000,
+      "turn_input": 2000,
+      "turn_output": 800,
+      "turns": {
+        "5": {
+          "cost_usd": 0.264,
+          "cumulative_input_tokens": 68000
+        },
+        "10": {
+          "cost_usd": 0.738,
+          "cumulative_input_tokens": 206000
+        },
+        "20": {
+          "cost_usd": 2.316,
+          "cumulative_input_tokens": 692000
+        },
+        "30": {
+          "cost_usd": 4.734,
+          "cumulative_input_tokens": 1458000
+        },
+        "50": {
+          "cost_usd": 12.09,
+          "cumulative_input_tokens": 3830000
+        }
+      },
+      "compaction_20_turns": {
+        "10": 1.2255,
+        "5": 0.9288
+      }
+    },
+    "stack": {
+      "file": "stack.png",
+      "sha256": "85f253e92413c44f26757f5dc8e3e57f5866759d9b4381b89befdf0b4ce3ce34",
+      "unit": "% of baseline",
+      "caption_ko": "남은 비율 (%)",
+      "layers": [
+        {
+          "lever": "시맨틱 캐싱",
+          "cut_pct": 30.0,
+          "remaining_before_pct": 100.0,
+          "remaining_after_pct": 70.0
+        },
+        {
+          "lever": "모델 라우팅",
+          "cut_pct": 40.0,
+          "remaining_before_pct": 70.0,
+          "remaining_after_pct": 42.0
+        },
+        {
+          "lever": "프롬프트 캐싱",
+          "cut_pct": 50.0,
+          "remaining_before_pct": 42.0,
+          "remaining_after_pct": 21.0
+        },
+        {
+          "lever": "verbosity·effort",
+          "cut_pct": 25.0,
+          "remaining_before_pct": 21.0,
+          "remaining_after_pct": 15.75
+        },
+        {
+          "lever": "배치",
+          "cut_pct": 10.0,
+          "remaining_before_pct": 15.75,
+          "remaining_after_pct": 14.175
+        }
+      ],
+      "remaining_pct": 14.175
+    },
+    "thinking": {
+      "file": "thinking.png",
+      "sha256": "3c025c5b4e4eb4e35d2aead9c09ccc23b0663c8761ac085989f3e62ebd47f56a",
+      "unit": "USD / call (actual price basis)",
+      "caption_ko": "호출당 비용 (USD)",
+      "by_budget": {
+        "미지정(기본)": 2.8e-05,
+        "명시적 0": 2.8499999999999998e-05,
+        "512": 0.00024025,
+        "2048": 0.0017000000000000001,
+        "자동 (-1)": 0.00558525
+      }
+    },
+    "case_tokens": {
+      "file": "case_tokens.png",
+      "sha256": "cde6bf71fa0c5721386c1050397f6e2c6f26874772c70fb1d8a9e7c3df293abc",
+      "unit": "tokens",
+      "caption_ko": "토큰 수 (추정)",
+      "modes": {
+        "vibe": {
+          "uncached_input": 486,
+          "reasoning_plus_output": 7070,
+          "cached": 312
+        },
+        "spec": {
+          "uncached_input": 1152,
+          "reasoning_plus_output": 6390,
+          "cached": 468
+        }
+      }
+    },
+    "case_bases": {
+      "file": "case_bases.png",
+      "sha256": "fcfe2c394cff4cd6819bf1aabe473996f7d6f02dbd9a30806200f1b0f7a4c82d",
+      "unit": "USD",
+      "caption_ko": "추정 비용 (USD)",
+      "bases": {
+        "gpt5": {
+          "name": "GPT-5",
+          "vibe_usd": 0.0713465,
+          "spec_usd": 0.0653985,
+          "delta_pct": -8.336778959023917
+        },
+        "sonnet": {
+          "name": "Claude Sonnet 4.6",
+          "vibe_usd": 0.1076016,
+          "spec_usd": 0.09944639999999999,
+          "delta_pct": -7.579069456216281
+        },
+        "opus": {
+          "name": "Claude Opus 4.6",
+          "vibe_usd": 0.179336,
+          "spec_usd": 0.165744,
+          "delta_pct": -7.579069456216258
+        },
+        "gpt5_no_cache": {
+          "name": "GPT-5 (캐시 미적용)",
+          "vibe_usd": 0.0716975,
+          "spec_usd": 0.065925,
+          "delta_pct": -8.051187279891215
+        }
+      }
+    }
+  }
+}

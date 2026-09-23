@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -232,3 +233,86 @@ def test_deck_scripts_declare_target_duration_and_per_slide_talk():
         assert text.count("\n\n**멘트**\n\n") == len(specs), name
         for spec in specs:
             assert spec["script"][0] in text, (name, spec["title"])
+
+
+CHART_DECKS = {"token_cost", "token_cost_main", "token_cost_bonus", "token_cost_agent",
+               "case_vibe_vs_spec/vibe_vs_spec"}
+
+
+def _chart_manifest():
+    return json.loads((ROOT / "presentation/charts/manifest.json").read_text(encoding="utf-8"))
+
+
+def test_deck_charts_are_byte_identical_to_generated_files(evidence):
+    """슬라이드에 삽입된 그래프가 charts/*.png와 바이트 동일한지 검사.
+
+    그래프를 손으로 편집·재인코딩하거나 다른 이미지로 바꾸면 잡힌다.
+    """
+    import zipfile
+    specs = specifications(evidence)
+    wanted, media = {}, {}
+    for name, deck in specs.items():
+        for spec in deck:
+            if spec.get("chart"):
+                relative = Path(spec["chart"]["file"])
+                wanted[name + ":" + relative.name] = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+        with zipfile.ZipFile(ROOT / "presentation" / (name + ".pptx")) as z:
+            media[name] = {hashlib.sha256(z.read(m)).hexdigest() for m in z.namelist()
+                           if m.startswith("ppt/media/")}
+    assert wanted, "차트 슬라이드가 하나도 없음"
+    for key, digest in wanted.items():
+        deck = key.split(":")[0]
+        assert digest in media[deck], f"{key} 이미지가 {deck}.pptx 안에 바이트 동일하게 없음"
+
+
+def test_deck_chart_values_match_recomputed_series(evidence):
+    """차트 계열값이 원자료에서 다시 계산한 값과 같은지 검사(수기 편집·드리프트 방지)."""
+    from lab import pricing
+    manifest = _chart_manifest()["charts"]
+    e = evidence
+    cache = e["scenarios"]["cache"]
+    assert manifest["cache"]["values"] == [cache["no_cache_usd"], cache["cache_usd"], cache["all_miss_usd"]]
+    assert manifest["stack"]["remaining_pct"] == pytest.approx(14.175, abs=5e-4)
+    sweep = {r["label"]: r["cost_per_call"]["actual"] for r in e["thinking_sweep"]["rows"]}
+    assert manifest["thinking"]["by_budget"] == pytest.approx(sweep)
+    assert manifest["prices"]["input"] == [pricing.MODELS[k].inp for k in
+                                           ("opus", "sonnet", "gpt5", "gemini-pro", "flash-lite", "deepseek")]
+    assert manifest["prices"]["output"] == [pricing.MODELS[k].out for k in
+                                            ("opus", "sonnet", "gpt5", "gemini-pro", "flash-lite", "deepseek")]
+    for key, value in manifest["tokenizer"]["ko_en_ratio"].items():
+        assert value == pytest.approx(round(e["flores"]["tokenizers"][key]["ko_en_ratio"], 4))
+    usage = json.loads((ROOT / "demo/vibe_vs_spec/usage.json").read_text(encoding="utf-8"))["runs"]
+    for mode in ("vibe", "spec"):
+        assert manifest["case_tokens"]["modes"][mode]["uncached_input"] == usage[mode]["tokens"]["input"]
+        assert manifest["case_tokens"]["modes"][mode]["reasoning_plus_output"] == (
+            usage[mode]["tokens"]["reasoning"] + usage[mode]["tokens"]["output"])
+    assert manifest["turns"]["turns"]["50"]["cost_usd"] == pytest.approx(12.09, abs=5e-3)
+    assert manifest["turns"]["turns"]["20"]["cost_usd"] == pytest.approx(2.32, abs=5e-3)
+
+
+def test_deck_chart_manifest_hashes_match_files():
+    """manifest의 해시가 실제 PNG와 일치하는지(차트를 다시 만들고 manifest를 안 고친 경우)."""
+    manifest = _chart_manifest()["charts"]
+    for name, entry in manifest.items():
+        path = ROOT / "presentation/charts" / entry["file"]
+        assert path.is_file(), name
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"], name
+
+
+def test_chart_slides_still_carry_talk_and_notes(evidence):
+    """차트 슬라이드도 발표체 규칙(멘트·노트·캡션)을 지키는지 검사."""
+    from presentation.deckgen.build_verified import notes_text
+    decks = specifications(evidence)
+    chart_slides = 0
+    for name, deck in decks.items():
+        for index, spec in enumerate(deck, 1):
+            if not spec.get("chart"):
+                continue
+            chart_slides += 1
+            assert len(spec["script"]) >= 2, (name, index)
+            assert spec["chart"]["caption"].startswith("그래프 · "), (name, index)
+            face = "\n".join([spec["title"], spec["hero"], *spec["lines"]])
+            for token in AUDIT_ONLY_TOKENS:
+                assert token not in face, f"{name} {index}장 차트 슬라이드에 검증 서술: {token}"
+            assert notes_text(spec).endswith(f"증거 범위: {spec['scope']}"), (name, index)
+    assert chart_slides >= 8, chart_slides

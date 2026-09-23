@@ -16,6 +16,7 @@ from lab.evidence import save, verify_sources
 from tools.render_reports import write_reports
 from tools.render_demo import render_demo
 from presentation.deckgen.build_verified import build_all
+from presentation.deckgen.make_charts import build_all as build_charts
 
 
 def run(args, log=None):
@@ -44,6 +45,7 @@ def main():
     e=save()
     write_reports(e)
     (ROOT/'demo/compare.html').write_text(render_demo(),encoding='utf-8')
+    build_charts()          # 덱이 차트를 삽입하므로 먼저 생성한다(계열값·해시 manifest 동반)
     build_all(evidence=e)
     if args.with_pdf:
         run(['presentation/deckgen/make_pdf.py','--check'])

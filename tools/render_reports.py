@@ -268,6 +268,7 @@ SciPy `ttest_ind(equal_var=False)`와 독립 대조하는 회귀 테스트를 �
 | CI 파일이 없는데 README에는 있음 | 실제 GitHub Actions 추가; 무과금 재계산·회귀·브라우저·덱 검사 | `.github/workflows/ci.yml` |
 | 케이스 덱에서 스크린샷·표가 사라짐 | 생성기 단일 원천으로 재구성하며 그림·표를 그리지 않았다. 슬라이드 3장(첫 화면·모바일 390px·전체 페이지 축소)과 표 3개(토큰·단가·손익분기)를 생성기에 넣고, 원본 PNG를 **바이트 동일**하게 삽입 | `test_case_deck_restored_figures_are_byte_identical_to_sources` · `test_case_deck_fact_tables_match_usage_and_price_sources` · PDF 그림 배치 검사(3·4·5쪽) |
 | 발표 자료가 감사 보고서처럼 읽힘 | 슬라이드 5종을 발표체로 다시 썼다. 슬라이드에는 **메시지와 숫자만** 남기고 검증 범위·한계·반례·질문 대비는 **발표자 노트**로 내렸다. 케이스 덱은 12→13장, 노트는 대본(`script*.md`)으로도 배포 | `verify_deck.py --with-pdf`가 슬라이드 본문·표·그림 캡션·발표자 노트·대본 일치를 모두 대조 |
+| 발표 자료에 그래프가 없어 숫자 비교가 안 됨 | 단가·사용량·캐시·턴·레버 적층·사고 예산·케이스 토큰/단가를 **그래프 8종**으로 그려 덱에 전폭 삽입(덱당 2~5장, 총 19장). 계열값·해시는 `presentation/charts/manifest.json`에 기록 | `test_deck_charts_are_byte_identical_to_generated_files` · `test_deck_chart_values_match_recomputed_series` · `test_deck_chart_manifest_hashes_match_files` |
 
 Browser/mock 검증은 **소프트웨어 실동작/계약 테스트**다. 모델 품질이나 API 청구의 새 실측으로 세지 않는다.
 모든 오류가 없음을 수학적으로 보장한 것이 아니라, 지적된 실패 유형을 재현 가능한 검사로 막은 것이다.
@@ -356,7 +357,8 @@ def reassertion_report(e):
 | 13 | 같은 내용이면 한국어 출력 토큰이 **{fl['o200k_base']['ko_en_ratio']:.4f}배**(o200k) · **{fl['cl100k_base']['ko_en_ratio']:.4f}배**(cl100k) | FLORES-200 1,012쌍 실측 | 로컬 토크나이저 실측 | `python tools/parallel_tokenizer_bench.py` |
 | 14 | 사고 예산을 미지정하면 같은 답에 **{auto['actual']:.2f}배**(공식 단가) · **{auto['legacy']:.2f}배**(기존 환산) 지출 | $0.000028 → $0.00558525 | 저장 API 로그 재계산 | `python tools/thinking_sweep.py --summarize results/thinking_sweep.jsonl` |
 | 15 | 사고가 난 호출에서 사고 토큰이 출력 토큰의 **{ts*100:.2f}%** | 사고 127–3,704토큰 범위 | 저장 API 로그 재계산 | 위와 동일 |
-| 16 | 덱 5종은 **약 30분 목표 분량**이며, 검증 범위·한계는 발표자 노트에 있다 | 통합 29 · 본편 22 · 보너스 10 · 에이전트 18 · 케이스 13장 | 재생성 대본·노트 | `python presentation/deckgen/build_verified.py` · `python tools/verify_deck.py --with-pdf` |
+| 16 | 덱 5종은 **약 30분 목표 분량**이며, 검증 범위·한계는 발표자 노트에 있다 | 통합 36 · 본편 27 · 보너스 14 · 에이전트 22 · 케이스 15장 | 재생성 대본·노트 | `python presentation/deckgen/build_verified.py` · `python tools/verify_deck.py --with-pdf` |
+| 17 | 단가와 사용량 비교를 그래프로 보여 줄 수 있다 — 그래프 8종, 계열값·해시 기록 | 예: 캐시 3분기 $8.550/$3.219/$10.050 · 레버 적층 잔여 14.18% · 사고 예산 5분기 | 생성기 + manifest | `python presentation/deckgen/make_charts.py` |
 
 1·2·3은 정책 **지출 모형**이다. 완료 작업당 절감률도, 품질 동등성도 아니다.
 4~12는 토큰·단가·턴 가정 위의 계산이다. 13~15만 이 저장소가 직접 만든 실측·로그 재계산이다.
@@ -392,6 +394,7 @@ def reassertion_report(e):
 > 품질 동등성과 완료 작업당 절감률은 검증하지 않았다.”
 
 이 문형은 **발표자 노트**에 둔다. 슬라이드는 주장과 숫자까지만 말하고, 조건·한계는 노트에서 구두로 밝힌다.
+막대·축의 값은 **그래프 이미지 안**에 있고, 슬라이드 본문에는 같은 값을 한 번만 굵게 쓴다(중복 표기 방지).
 
 숫자는 이 문서의 값(스크립트 재현값)을 쓰고, 발표 자료의 수치와 다르면 발표 자료를 다시 생성한다.
 '''

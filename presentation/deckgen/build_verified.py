@@ -7,6 +7,7 @@
 """
 from pathlib import Path
 import argparse
+import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,6 +19,29 @@ def slide(title, hero, lines, scope, source, script, images=None, facts=None):
     """script: 발표 멘트(문단 리스트). 검증 범위·한계·질문 대비를 여기에 적는다."""
     return dict(title=title, hero=hero, lines=lines, scope=scope, source=source, script=script,
                 images=images or [], facts=facts or [])
+
+
+CHARTS = ROOT / "presentation/charts"
+
+
+def chart_manifest():
+    """차트 생성기가 남긴 계열값·해시. 차트 파일과 슬라이드의 단일 대조 기준이다."""
+    path = CHARTS / "manifest.json"
+    if not path.is_file():
+        raise SystemExit("UNVERIFIED: presentation/charts/manifest.json 없음 — "
+                         "python presentation/deckgen/make_charts.py 를 먼저 실행하세요.")
+    return json.loads(path.read_text(encoding="utf-8"))["charts"]
+
+
+def chart(filename, title, hero, lines, scope, source, script, facts=None):
+    """차트 슬라이드: 메시지는 위(제목·강조·한 줄), 그래프는 아래 전폭."""
+    entry = next((v for v in chart_manifest().values() if v["file"] == filename), None)
+    if entry is None:
+        raise SystemExit(f"UNVERIFIED: {filename} 이 charts/manifest.json에 없습니다")
+    spec = slide(title, hero, lines, scope, source, script, facts=facts)
+    caption = f"그래프 · {entry['caption_ko']} · {filename}"
+    spec["chart"] = {"file": str(CHARTS.relative_to(ROOT) / filename), "caption": caption}
+    return spec
 
 
 def specifications(e):
@@ -36,6 +60,72 @@ def specifications(e):
     logs = "tools/stats_test.py · storage logs"
     sweep_src = "results/thinking_sweep.jsonl (30 rows)"
     shots = "demo/vibe_vs_spec/shots"
+
+    # ── 차트 슬라이드 (presentation/charts/*.png, make_charts.py가 생성) ──
+    prices_chart = chart(
+        "prices.png", "같은 토큰, 다른 단가", "출력은 입력의 4~8배",
+        ["비싼 쪽(출력)을 줄이는 습관이 먼저다",
+         "캐시 읽기는 입력의 0.1배 — 캐시가 있는 이유"],
+        "가격표 스냅샷 (2026-09-20)", "lab/pricing.py MODELS",
+        ["공개 리스트 단가이며 계약·무료 티어·세금·도구 비용은 별도다.",
+         "출력÷입력 배수는 모델별로 4~8배다. 같은 배수를 모든 모델에 적용하지 않는다.",
+         "Gemini 3.8/3.6 Flash의 인트로 단가는 2026-12-31까지이며 이후 2배가 된다 — 표에 넣은 값의 기준일을 밝힌다."])
+    tokenizer_chart = chart(
+        "tokenizer.png", "한국어는 같은 내용에 토큰을 더 쓴다", "1.4723배 · 2.3669배",
+        ["FLORES-200 대응 번역 1,012쌍을 전수 인코딩",
+         "글자 수로 자르면 한국어가 먼저 잘린다"],
+        "로컬 토크나이저 실측", corpus,
+        ["배수는 토큰 합계의 비율이다. 대응 번역문이므로 '같은 내용' 전제가 성립한다.",
+         "이 배수를 그대로 비용으로 환산하지 않는다. 비용은 생성 길이와 사고량이 함께 결정한다.",
+         "토큰/글자는 인코딩 비율이지 내용·의미의 비율이 아니다."])
+    cache_chart = chart(
+        "cache.png", "캐시는 조건이 맞을 때만 이득", "$8.55 → $3.219 (-62%)",
+        ["프리픽스를 매번 바꾸면 $10.05 (+17.5%)",
+         "고정 블록을 앞으로 모아 적중률을 올린다"],
+        "비용 시나리오 (100콜)", "experiments/exp03_prompt_caching.py",
+        ["고정 20,000 + 가변 1,000 + 출력 1,500, Sonnet 단가, 100콜 조건의 계산이다.",
+         "히트율은 가정값이다. 실제 값은 자기 usage의 cache_read 필드로 측정한다.",
+         "저장료·TTL·최소 길이는 모델별로 다르다. 미확인 기준은 할인 가정을 하지 않는다."])
+    turns_chart = chart(
+        "turns.png", "긴 세션일수록 가파르다", "5턴 $0.26 → 50턴 $12.09",
+        ["20턴에 컴팩션을 걸면 $0.93 (60% 절감)",
+         "안 쓰는 코드도 매 턴 다시 실려 과금된다"],
+        "비용 시나리오", "experiments/exp04_agent_loop_sdd.py",
+        ["고정 8,000토큰 프리픽스, 턴당 입력 2,000·출력 800, Sonnet 단가의 계산이다.",
+         "컴팩션 주기는 요약 비용과 품질·재작업을 함께 측정해 정한다.",
+         "실제 세션 비용은 도구 출력과 파일 재전송으로 더 커진다."])
+    stack_chart = chart(
+        "stack.png", "다섯 레버를 겹치면", "잔여 14.18%",
+        ["시맨틱 캐시 → 라우팅 → 캐싱 → effort → 배치",
+         "각 레버가 자기 조건을 만족할 때의 순차 산술"],
+        "순차 시나리오", "experiments/exp06_other_levers.py",
+        ["각 레버의 절감률을 순서대로 곱한 값이다. 실제 도입에서는 서로 겹치는 부분이 생긴다.",
+         "검증된 상한도 아니다. 자기 데이터로 A/B를 돌려 확정해야 한다.",
+         "레버별 적용 조건(히트율·라우팅 임계값·배치 가능성)이 다르다."])
+    thinking_chart = chart(
+        "thinking.png", "사고 예산을 적지 않으면 기본값이 정한다", "미지정 대비 199.47배",
+        ["미지정 $0.000028 vs 자동 $0.00558525 (호출당)",
+         "예산을 명시하는 순간 청구서가 예측 가능해진다"],
+        "저장 API 로그 재계산", sweep_src,
+        ["비교는 자동(-1) 대 미지정이다. 명시적 0과 섞으면 결론이 달라진다.",
+         "±$0.05 허용오차 통과는 미지정 6/6 · 명시적 0은 5/6이며 동등성 증명이 아니다.",
+         "구모델의 thinkingBudget 로그는 역사적 관측으로 보존한다."])
+    case_tokens_chart = chart(
+        "case_tokens.png", "무엇이 비용을 움직였나", "합계 7,868 → 8,010 (+1.8%)",
+        ["비캐시 입력 ↑ · 추론+출력 ↓",
+         "합계는 거의 그대로, 구조만 바뀌었다"],
+        "추정치 재계산", "demo/vibe_vs_spec/usage.json",
+        ["세션 추정치이며 실제 청구 usage가 아니다. 표본 1쌍이다.",
+         "추론 토큰은 출력 요율로 과금된다는 가정을 쓴다.",
+         "표의 버킷 정의(비캐시 입력·출력·캐시)는 벤더 usage 필드와 이름이 같다고 가정하면 이중 계상할 수 있다."])
+    case_bases_chart = chart(
+        "case_bases.png", "단가가 바뀌어도 방향은 같다", "감소 8.3% · 7.6% · 8.1%",
+        ["같은 추정 usage를 세 단가로 환산",
+         "출력 단가가 높을수록 격차가 커진다"],
+        "단가별 비용 재계산", "presentation/case_vibe_vs_spec/cost_comparison.md",
+        ["다른 모델을 실행한 실측이 아니라 같은 추정 토큰의 산술이다.",
+         "캐시 적격성은 확인하지 않았고, 캐시 미적용 환산이 가장 보수적인 8.1%다.",
+         "실제 청구서 대조는 하지 않았다."])
 
     A = [
       slide("시키지도 않은 시공비 청구서", "같은 결과물, 다른 청구서",
@@ -62,6 +152,7 @@ def specifications(e):
             ["입력은 한 번에 병렬 처리되고 출력은 한 토큰씩 생성되기 때문에 단가가 다르다.",
              "캐시 읽기 단가는 입력의 0.1배 수준(모델별로 다름)이다. 이 비대칭이 오늘 전략의 근거다.",
              "가격은 공개 리스트 기준이며 계약·무료 티어·세금·도구 비용은 별도다. 실제 청구서로 검증해야 한다."]),
+      prices_chart,
       slide("원칙 1 · 영어로 생각하고, 필요한 언어로 답한다",
             f"같은 내용에 {tok['o200k_base']['ko_en_ratio']:.4f}배 · 구형 {tok['cl100k_base']['ko_en_ratio']:.4f}배",
             [f"FLORES-200 대응 번역 {f['n_pairs']:,}쌍을 전수 인코딩해 토큰 합계를 비교",
@@ -80,6 +171,7 @@ def specifications(e):
             ["RAG 청킹을 글자 수 기준으로 잡으면 한국어 청크만 조용히 잘리거나 한도를 넘는다.",
              "토큰/글자 비율은 인코딩 비율이지 내용·의미의 비율이 아니다. 글자 수를 의미량으로 읽으면 틀린다.",
              "실무 규칙: 청크 상한은 토크나이저로 세고, 글자 수 기준값에 안전계수를 두지 말고 토큰으로 통일한다."]),
+      tokenizer_chart,
       slide("원칙 2 · 설명을 최소화한다", "342 → 58 토큰 (83% 감소)",
             ["월 1,760건 기준 $9.03 → $1.53",
              "'코드를 읽으면 아는 문장'만 지운다 — 코드는 그대로",
@@ -113,6 +205,7 @@ def specifications(e):
             ["에이전트 비용은 턴 수의 2차 함수다. '한 번 더 물어보기'가 싼 행동이 아니다.",
              "추상화 레이어 3개를 미리 만든 경우 20턴 세션에서 추가 재전송 비용 $0.270이 붙는다(가정).",
              "턴을 줄이는 가장 확실한 수단은 요구사항을 먼저 확정하는 것이다."]),
+      turns_chart,
       slide("캐싱 · 오늘 바로 켤 수 있는 레버",
             f"${scen['cache']['no_cache_usd']:.2f} → ${scen['cache']['cache_usd']:.2f} ({scen['cache']['saving_pct']:.1f}% 절감)",
             ["쓰기 프리미엄은 두 번째 호출에서 회수된다",
@@ -130,6 +223,7 @@ def specifications(e):
             ["캐시는 프리픽스를 단위로 매칭한다. 앞부분이 한 글자만 달라도 전액을 다시 낸다.",
              "히트율 0%에서는 쓰기 프리미엄만 계속 물어 캐시 없음($8.55)보다 비싸진다($10.05).",
              "반대로 히트율이 40%만 넘어도 이미 이득이다. 그래서 '켜고, 적중률을 본다'가 순서다."]),
+      cache_chart,
       slide("압축과 캐싱은 대체재가 아니다",
             f"${scen['compression_cache']['cached']:.4f} → ${scen['compression_cache']['both']:.4f} (94% 절감)",
             [f"그냥 캐싱 ${scen['compression_cache']['cached']:.4f} vs 절반 요약 ${scen['compression_cache']['compressed']:.4f}",
@@ -200,6 +294,7 @@ def specifications(e):
              "'12배' 같은 큰 수치는 대조군을 최상위 모델로 잡았을 때만 나온다 — 그 조건을 말하지 않으면 과장이 된다.",
              "1턴·2턴처럼 짧은 리워크에서도 이득이 나는지가 도입 판단의 핵심이다.",
              "이 값은 정책 지출 모형의 재생값이다. respec 경로는 실행을 하지 않으므로 지출이 늘지 않는다."]),
+      stack_chart,
       slide("안 보이는 사고 토큰",
             f"{ratios['actual']['auto_unspecified']:.2f}배 (기존 환산 {ratios['legacy']['auto_unspecified']:.2f}배)",
             ["같은 문제를 조건당 6회 실행한 저장 로그 30행",
@@ -226,6 +321,7 @@ def specifications(e):
              "캐시 적격성은 확인하지 않았다. 전부 신규 입력으로 환산한 값도 함께 공개한다.",
              "Spec 산출물은 Vibe 결과를 역산한 것이다. 백지 스펙 작성 비용과 재작업 감소는 통제하지 않았다.",
              "표본 1쌍의 사례이며 일반화하지 않는다."]),
+      case_tokens_chart,
       slide("사례 · 무엇을 확인했나", "정적 16 + 브라우저 29항목",
             ["390 · 820 · 821 · 1280px 실제 렌더링 검사",
              "카드 내용 · 앵커 이동 · 가로 스크롤 · JS 오류 0건",
@@ -235,6 +331,7 @@ def specifications(e):
              "변조 반례(모바일을 2열로 바꾼 HTML)를 넣어 검사가 실제로 실패하는지도 확인했다.",
              "브라우저가 없으면 PASS가 아니라 UNVERIFIED로 종료한다. 검사 항목 수는 실행 로그에 있다.",
              "디자인 선호와 품질 동등성은 검증 대상이 아니다."]),
+      case_bases_chart,
       slide("적용 우선순위", "1~3번은 오늘 오후에 켤 수 있다",
             ["낮은 난이도: 캐싱 · verbosity/effort · 배치",
              "중간: 스펙 먼저 · 컴팩션",
@@ -284,13 +381,14 @@ def specifications(e):
              "절감률은 자기 데이터에서 나온 값이어야 한다. 이 자료의 숫자는 출발점이다.",
              "발표 자료의 근거·한계·정정 이력은 저장소 문서에 그대로 남아 있다."]),
     ]
-    assert len(A) == 29
+    assert len(A) == 36
 
-    main_indices = [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 21, 22, 23, 28]
+    # 본편: 원칙 5개 + 핵심 차트 + 카페 사례 + 적용 절차 (심화 레버 일부는 보너스로)
+    main_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 19, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
     token_cost_main = [A[i] for i in main_indices]
-    assert len(token_cost_main) == 22
+    assert len(token_cost_main) == 27
 
-    bonus = [A[9], A[10], A[11], A[12], A[13], A[14], A[15], A[17], A[26], A[28]]
+    bonus = [A[11], A[12], A[13], A[14], A[15], A[16], A[17], A[18], A[19], A[23], A[24], A[25], A[33], A[35]]
     bonus[0] = slide("견적서의 나머지 항목", "원칙 5개로 다 못 줄인 비용은 어디 있나",
                      ["캐싱 · 압축 · 컴팩션 · 서브에이전트 · 라우팅 · 배치",
                       "각 레버의 조건과 함정을 한 장씩 본다",
@@ -299,7 +397,7 @@ def specifications(e):
                      ["본편에서 다 못 다룬 레버를 심화한다. 각 레버는 '켜는 조건'과 '깨지는 조건'이 한 쌍이다.",
                       "심화 세션이므로 숫자의 가정(모델 단가·토큰 수)을 슬라이드마다 확인한다.",
                       "마지막에 우선순위와 보안 주의로 정리한다."])
-    assert len(bonus) == 10
+    assert len(bonus) == 14
 
     agent_intro = slide("작은 모델이 지휘한다", "라우팅 · 사다리 · 상태 분리 · 예산",
                         ["모든 요청에 최상위 모델을 쓰지 않는다",
@@ -400,10 +498,10 @@ def specifications(e):
              "효과는 자기 로그에서 확인한다. 이 저장소의 값은 출발점이다.",
              "질문·재현 결과는 저장소 이슈로 남기면 다음 사람이 같은 실수를 반복하지 않는다."]),
     ]
-    agent = [agent_intro, A[2], A[13], A[14], agent_extra[0], agent_extra[1], agent_extra[2],
-             agent_extra[3], A[18], agent_extra[4], agent_extra[5], agent_extra[6], agent_extra[7],
-             A[9], A[12], agent_extra[8], agent_extra[9], agent_extra[10]]
-    assert len(agent) == 18
+    agent = [agent_intro, A[2], A[3], A[16], A[17], agent_extra[0], agent_extra[1], agent_extra[2],
+             agent_extra[3], A[21], agent_extra[4], agent_extra[5], agent_extra[6], agent_extra[7],
+             A[10], A[11], A[12], A[14], A[23], agent_extra[8], agent_extra[9], agent_extra[10]]
+    assert len(agent) == 22
 
     case_deck = [
       slide("같은 목표, 두 가지 과정", "카페 랜딩 한 페이지",
@@ -414,7 +512,7 @@ def specifications(e):
             ["같은 목표를 두 방식으로 만들어 무엇이 달라졌는지 보는 사례다.",
              "결과물 2개·표본 1쌍이고 청구 usage는 세션 추정치다. 그래서 일반화하지 않는다.",
              "품질 동등성 실험이 아니라는 점을 시작에서 밝힌다."]),
-      A[21],
+      A[26],
       slide("두 산출물의 첫 화면", "같은 목표, 다른 생성 과정",
             ["두 장 모두 실제 생성 HTML을 Chromium 1280px에서 캡처",
              "다른 점은 토큰 구조와 검사 결과에 있다"],
@@ -441,6 +539,7 @@ def specifications(e):
              "실제 렌더링된 그리드 열 수를 브라우저에서 확인한다.",
              "브라우저가 없으면 검사는 UNVERIFIED로 끝난다."],
             images=[(f"{shots}/spec_mobile.png", "Spec 산출물 · 390×844 캡처")]),
+      A[27],
       slide("입력이 늘고 비싼 출력이 줄었다", "증가 666 · 감소 680 · 증가 156",
             ["이 케이스에서 input과 cache는 서로 겹치지 않는 버킷으로 정의",
              "합계는 7,868 → 8,010 (증가 1.8%)"],
@@ -462,6 +561,7 @@ def specifications(e):
             facts=[("GPT-5 · 캐시 $0.125/M", "$0.0713465 → $0.0653985  (8.3% 감소)"),
                    ("Claude Sonnet 4.6 · 캐시 0.1×", "$0.1076016 → $0.0994464  (7.6% 감소)"),
                    ("GPT-5 · 캐시 전부 미적용", "$0.0716975 → $0.0659250  (8.1% 감소)")]),
+      A[29],
       slide("단가비가 손익을 결정한다", "r > (666 + 156h) / 680",
             ["r = 출력/입력 단가, h = 캐시 읽기/입력 단가",
              "출력 단가가 조금만 높아도 스펙 쪽이 유리해진다"],
@@ -513,7 +613,7 @@ def specifications(e):
              "그 이동이 곧 품질 보장은 아니다. 함께 측정해야 한다.",
              "다음 단계는 사전 등록된 A/B다."]),
     ]
-    assert len(case_deck) == 13
+    assert len(case_deck) == 15
 
     return {"token_cost": A, "token_cost_main": token_cost_main, "token_cost_bonus": bonus,
             "token_cost_agent": agent, "case_vibe_vs_spec/vibe_vs_spec": case_deck}
@@ -529,7 +629,7 @@ def notes_text(spec):
 def expected_texts(spec, index):
     return [f"TOKEN COST LAB  /  {index:02d}", spec["scope"], spec["title"], spec["hero"],
             *spec["lines"], *[cell for row in spec["facts"] for cell in row],
-            *[caption for _, caption in spec["images"]],
+            *([spec["chart"]["caption"]] if spec.get("chart") else [caption for _, caption in spec["images"]]),
             spec["source"], "2026-09-20  ·  근거와 조건을 함께 인용"]
 
 
@@ -573,14 +673,18 @@ def render(specs, path):
                     e = r._r.makeelement(qn(tag), {}); r._r.get_or_add_rPr().append(e)
                 e.set("typeface", "NanumGothic")
         texts = expected_texts(spec, i)
+        is_chart = bool(spec.get("chart"))
         text(texts[0], "index", .7,.3,5,.3,11,"93A4B5")
         text(texts[1], "scope", 6.3,.3,6.3,.3,11,"36D399")
-        text(texts[2], "title", .7,.9,11.9,.9,29,bold=True)
+        text(texts[2], "title", .7,.62 if is_chart else .9,11.9,.9,29,bold=True)
         narrow = bool(spec["images"] or spec["facts"])
         hero_size = 24 if len(spec["hero"]) > 34 else 29
-        text(texts[3], "hero", .7,1.95,11.9 if not narrow else 7.2,.85,hero_size,"36D399",True)
+        hero_y = 1.38 if is_chart else 1.95
+        text(texts[3], "hero", .7,hero_y,11.9 if not narrow else 7.2,.85,hero_size,"36D399",True)
         for j, line in enumerate(spec["lines"]):
-            text(line, f"body-{j}", .85,3.13+j*.70,7.0 if narrow else 11.65,.67,17.5)
+            y = (2.22 + j*.56) if is_chart else (3.13 + j*.70)
+            width = 11.65 if (is_chart or not narrow) else 7.0
+            text(line, f"body-{j}", .85, y, width, .67, 17.5)
         if spec["facts"]:
             top = 3.13 + len(spec["lines"]) * .70 + .10
             height = .46 * len(spec["facts"])
@@ -621,8 +725,20 @@ def render(specs, path):
                                       Inches(top + k * slot + dy), Inches(w), Inches(h))
                 text(caption, f"image-caption-{k}", 8.05, top + k * slot + slot - .30, box_w, .28,
                      9.5, "93A4B5")
-        text(spec["source"], "source", .7,6.65,12,.30,10,"93A4B5")
-        text(texts[-1], "footer", .7,7.02,12,.28,10,"93A4B5")
+        if is_chart:
+            # 그래프는 전폭. 메시지 블록 아래, 캡션은 그림 바로 밑.
+            from PIL import Image
+            box_w, top, bottom = 11.65, 3.34, 6.68
+            with Image.open(ROOT / spec["chart"]["file"]) as im:
+                w, h, dx, dy = fit(box_w, bottom - top, *im.size)
+            sl.shapes.add_picture(str(ROOT / spec["chart"]["file"]), Inches(.85 + dx),
+                                  Inches(top + dy), Inches(w), Inches(h))
+            text(spec["chart"]["caption"], "chart-caption", .85, bottom + .03, box_w, .26, 9.5, "93A4B5")
+            text(spec["source"], "source", .85,6.98,12,.30,10,"93A4B5")
+            text(texts[-1], "footer", .85,7.20,12,.28,10,"93A4B5")
+        else:
+            text(spec["source"], "source", .7,6.65,12,.30,10,"93A4B5")
+            text(texts[-1], "footer", .7,7.02,12,.28,10,"93A4B5")
         sl.notes_slide.notes_text_frame.text = notes_text(spec)
     path.parent.mkdir(parents=True, exist_ok=True)
     prs.save(path)
