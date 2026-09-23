@@ -12,7 +12,11 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from lab import pricing
 from lab.evidence import build
+
+# 단가 표·차트의 모델 순서(비싼 순). 값은 pricing.MODELS에서 직접 읽는다.
+PRICE_TABLE_ROWS = ("opus", "sonnet", "gpt5", "gemini-pro", "flash-lite", "deepseek")
 
 
 def slide(title, hero, lines, scope, source, script, images=None, facts=None):
@@ -126,6 +130,60 @@ def specifications(e):
         ["다른 모델을 실행한 실측이 아니라 같은 추정 토큰의 산술이다.",
          "캐시 적격성은 확인하지 않았고, 캐시 미적용 환산이 가장 보수적인 8.1%다.",
          "실제 청구서 대조는 하지 않았다."])
+
+    monthly_chart = chart(
+        "monthly.png", "월 청구서로 보면", "-66% (월 1,760건)",
+        ["같은 업무량, 두 워크플로 — 입력 2,000/출력 12,000 vs 입력 6,000/출력 3,000",
+         "단가가 다른 모델에서도 방향은 같다"],
+        "가정 시나리오 (월 1,760건)", "experiments/exp02_output_to_input.py",
+        ["청구서가 아니라 단가표와 토큰 가정으로 계산한 월 금액이다.",
+         "출력이 비싼 모델일수록 격차가 크다(Opus·Sonnet -66%, GPT-5 -69%).",
+         "실제 지출은 재시도·도구 사용·사람 시간이 더해진다."])
+    cache_hit_chart = chart(
+        "cache_hit.png", "적중률 22%면 본전", "캐시 없음 $8.550",
+        ["적중률이 오를수록 단조 감소한다",
+         "미스가 섞이면 쓰기 프리미엄을 계속 문다"],
+        "비용 시나리오 (100콜)", "experiments/exp03_prompt_caching.py",
+        ["고정 20,000 + 가변 1,000 + 출력 1,500, Sonnet 단가, 100콜 조건의 계산이다.",
+         "적중률은 관측값이 아니라 가정 축이다. 자기 usage의 cache_read로 실측해야 한다.",
+         "캐시 저장료·TTL·최소 길이는 별도 조건이며, 미확인 모델은 할인을 가정하지 않는다."])
+    usage_mix_chart = chart(
+        "usage_mix.png", "세션 토큰의 4분의 3은 이력 재전송", "고정 프리픽스 22.6% · 이력 75.1%",
+        ["생성(출력)은 2.3%뿐이다",
+         "그래서 '덜 쓰기'보다 '다시 안 보내기'가 크다"],
+        "비용 시나리오 (20턴)", "experiments/exp04_agent_loop_sdd.py",
+        ["고정 8,000토큰 프리픽스, 턴당 입력 2,000·출력 800의 계산이다.",
+         "이력 재전송은 캐시 프리픽스로 접을 수 있다. 실제 적중 여부는 배치에 달렸다.",
+         "출력은 단가가 비싸므로 비중이 작아도 금액 기여는 별도로 봐야 한다."])
+    prices_table = table_spec(
+        "단가 표로 다시 보기", "출력÷입력 4~8배, 캐시 읽기 0.02~0.1배",
+        ["단가는 2026-09-20 공개 리스트 스냅샷 (USD / 100만 토큰)",
+         "라이브 조회값이 아니라 저장된 표라서, 갱신은 한 곳에서 한다"],
+        "가격표 스냅샷 (2026-09-20)", "lab/pricing.py MODELS",
+        ["표 값은 모델별 공개 단가이며 계약·배치·장문 할증은 별도다.",
+         "출력÷입력과 캐시 읽기 배수는 모델마다 다르다 — 같은 배수를 일반화하지 않는다.",
+         "인트로 단가(Gemini 3.8/3.6 Flash)는 2026-12-31까지이며 이후 2배가 된다.",
+         "값을 손으로 옮겨 적지 않는다. 이 표는 생성기가 pricing에서 직접 만든다."],
+        ["모델", "입력 $/1M", "출력 $/1M", "출력÷입력", "캐시 읽기"],
+        [[pricing.MODELS[k].name,
+          f"${pricing.MODELS[k].inp:g}", f"${pricing.MODELS[k].out:g}",
+          f"{pricing.MODELS[k].ratio:.0f}배", f"{pricing.MODELS[k].cache_read:g}배"] for k in PRICE_TABLE_ROWS])
+    d_lang = divider("01", "01 · 언어 습관", "사고는 영어로, 답은 사용자 언어로",
+                     ["토큰이 어디서 새는지 먼저 본다"], "구간 표지", "README.md",
+                     ["구간을 나눠 청중이 지금 무엇을 듣는지 알게 한다.",
+                      "이 구간에서는 한국어 출력 토큰 배수와 글자 수 청킹 문제를 다룬다."])
+    d_spec = divider("02", "02 · 출력과 추론", "비싼 쪽(출력)을 줄인다",
+                     ["설명 최소화 · 추론 강도 배분 · 스펙 선주입"], "구간 표지", "README.md",
+                     ["출력 단가가 입력의 4~8배라는 사실에서 출발하는 구간이다.",
+                      "여기서 말하는 절감은 단가표와 턴 가정 위의 계산이다."])
+    d_cache = divider("03", "03 · 캐시와 컨텍스트", "반복되는 것은 한 번만 낸다",
+                      ["적중률을 올리고, 이력은 접고, 툴 출력은 줄인다"], "구간 표지", "README.md",
+                      ["캐시·압축·컴팩션·툴 출력은 서로 대체재가 아니다.",
+                       "적중률과 미스 비용을 함께 봐야 한다."])
+    d_case = divider("04", "04 · 사례와 적용", "실제 한 페이지에서 확인한다",
+                     ["같은 목표, 두 가지 과정 — 그리고 팀에 붙이는 순서"], "구간 표지", "README.md",
+                     ["사례는 표본 1쌍이며 청구 usage가 아니라 추정치다.",
+                      "마지막 구간에서 적용 순서와 측정 루프를 정리한다."])
 
     A = [
       slide("시키지도 않은 시공비 청구서", "같은 결과물, 다른 청구서",
@@ -383,21 +441,51 @@ def specifications(e):
     ]
     assert len(A) == 36
 
-    # 본편: 원칙 5개 + 핵심 차트 + 카페 사례 + 적용 절차 (심화 레버 일부는 보너스로)
-    main_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 19, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
-    token_cost_main = [A[i] for i in main_indices]
-    assert len(token_cost_main) == 27
+    def insert_before(deck, title_prefix, item):
+        index = next(i for i, sl in enumerate(deck) if sl["title"].startswith(title_prefix))
+        return deck[:index] + [item] + deck[index:]
 
-    bonus = [A[11], A[12], A[13], A[14], A[15], A[16], A[17], A[18], A[19], A[23], A[24], A[25], A[33], A[35]]
-    bonus[0] = slide("견적서의 나머지 항목", "원칙 5개로 다 못 줄인 비용은 어디 있나",
-                     ["캐싱 · 압축 · 컴팩션 · 서브에이전트 · 라우팅 · 배치",
-                      "각 레버의 조건과 함정을 한 장씩 본다",
-                      "레버는 곱해진다 — 우선순위는 뒤에서"],
-                     "심화 세션", "docs/CORRECTIONS.md",
-                     ["본편에서 다 못 다룬 레버를 심화한다. 각 레버는 '켜는 조건'과 '깨지는 조건'이 한 쌍이다.",
-                      "심화 세션이므로 숫자의 가정(모델 단가·토큰 수)을 슬라이드마다 확인한다.",
-                      "마지막에 우선순위와 보안 주의로 정리한다."])
-    assert len(bonus) == 14
+    token_cost = list(A)
+    token_cost = insert_before(token_cost, "원칙 1 ·", d_lang)
+    token_cost = insert_before(token_cost, "원칙 2 ·", d_spec)
+    token_cost = insert_before(token_cost, "캐싱 · 오늘 바로", d_cache)
+    token_cost = insert_before(token_cost, "사례 · 카페", d_case)
+    token_cost.insert(4, prices_table)                     # "청구서의 구조"→단가 그래프 다음
+    token_cost = insert_before(token_cost, "원칙 5 ·", monthly_chart)
+    token_cost = insert_before(token_cost, "캐싱 · 오늘 바로", usage_mix_chart)
+    token_cost = insert_before(token_cost, "캐시를 깨는 한 줄", cache_hit_chart)
+    token_cost = insert_before(token_cost, "안 보이는 사고 토큰", thinking_chart)
+    # A[21]("레버는 곱해진다")은 stack 차트 슬라이드와 중복이므로 뺀다(차트가 같은 주장을 더 잘 보여 준다)
+    token_cost = [sl for sl in token_cost if sl["title"] != "레버는 곱해진다"]
+    assert len(token_cost) == 44
+
+    # 본편: 심화 레버 일부를 뺀 30분 구성(표지·표·차트는 유지)
+    drop = {"압축과 캐싱은 대체재가 아니다", "긴 세션은 컴팩션으로 접는다",
+            "툴 출력과 서브에이전트는 전체 비용으로 본다",
+            "모델 라우팅 · 쉬운 요청에 비싼 모델을 쓰지 않는다",
+            "안 보이는 사고 토큰", "언어별 비용은 지표마다 다르다", "두 습관, 같은 결과물",
+            "작은 모델이 지휘한다", "캐시를 깨는 한 줄", "왜 한국어가 더 쪼개지는가"}
+    token_cost_main = [sl for sl in token_cost if sl["title"] not in drop]
+    assert len(token_cost_main) == 34
+
+    deep_intro = slide("견적서의 나머지 항목", "원칙 5개로 다 못 줄인 비용은 어디 있나",
+                       ["캐싱 · 압축 · 컴팩션 · 서브에이전트 · 라우팅 · 배치",
+                        "각 레버의 조건과 함정을 한 장씩 본다",
+                        "레버는 곱해진다 — 우선순위는 뒤에서"],
+                       "심화 세션", "docs/CORRECTIONS.md",
+                       ["본편에서 다 못 다룬 레버를 심화한다. 각 레버는 '켜는 조건'과 '깨지는 조건'이 한 쌍이다.",
+                        "심화 세션이므로 숫자의 가정(모델 단가·토큰 수)을 슬라이드마다 확인한다.",
+                        "마지막에 우선순위와 보안 주의로 정리한다."])
+    d_deep = divider("심화", "심화 · 나머지 레버", "원칙 5개로 다 못 줄인 비용은 어디 있나",
+                     ["캐시 미스 · 압축 · 컴팩션 · 툴 출력 · 라우팅 · 배치 · 사고 예산"],
+                     "구간 표지", "docs/CORRECTIONS.md",
+                     ["심화 세션이므로 각 레버의 적용 조건과 함정을 함께 말한다.",
+                      "숫자는 모두 시나리오·로그 재계산이며 실제 A/B가 아니다."])
+    bonus = [d_deep, deep_intro, A[14], A[15], A[16], usage_mix_chart, cache_hit_chart, A[17], A[18],
+             A[19], A[22], A[23], A[24], A[25], A[33], A[35]]
+    assert len(bonus) == 16
+
+    assert len(bonus) == 16
 
     agent_intro = slide("작은 모델이 지휘한다", "라우팅 · 사다리 · 상태 분리 · 예산",
                         ["모든 요청에 최상위 모델을 쓰지 않는다",
@@ -498,10 +586,11 @@ def specifications(e):
              "효과는 자기 로그에서 확인한다. 이 저장소의 값은 출발점이다.",
              "질문·재현 결과는 저장소 이슈로 남기면 다음 사람이 같은 실수를 반복하지 않는다."]),
     ]
-    agent = [agent_intro, A[2], A[3], A[16], A[17], agent_extra[0], agent_extra[1], agent_extra[2],
-             agent_extra[3], A[21], agent_extra[4], agent_extra[5], agent_extra[6], agent_extra[7],
-             A[10], A[11], A[12], A[14], A[23], agent_extra[8], agent_extra[9], agent_extra[10]]
-    assert len(agent) == 22
+    agent = [agent_intro, A[2], A[3], prices_table, A[16], A[17], agent_extra[0], agent_extra[1],
+             agent_extra[2], agent_extra[3], A[21], agent_extra[4], agent_extra[5], agent_extra[6],
+             agent_extra[7], A[10], A[11], usage_mix_chart, A[12], cache_hit_chart,
+             agent_extra[8], agent_extra[9], agent_extra[10]]
+    assert len(agent) == 23
 
     case_deck = [
       slide("같은 목표, 두 가지 과정", "카페 랜딩 한 페이지",
@@ -615,7 +704,7 @@ def specifications(e):
     ]
     assert len(case_deck) == 15
 
-    return {"token_cost": A, "token_cost_main": token_cost_main, "token_cost_bonus": bonus,
+    return {"token_cost": token_cost, "token_cost_main": token_cost_main, "token_cost_bonus": bonus,
             "token_cost_agent": agent, "case_vibe_vs_spec/vibe_vs_spec": case_deck}
 
 
@@ -626,9 +715,25 @@ def notes_text(spec):
                       f"근거: {spec['source']}", f"증거 범위: {spec['scope']}"])
 
 
+def table_spec(title, hero, lines, scope, source, script, header, rows):
+    """비교 표 슬라이드: 첫 행은 헤더. 셀 값은 호출자가 원자료에서 계산해 넘긴다."""
+    spec = slide(title, hero, lines, scope, source, script)
+    spec["table"] = {"header": list(header), "rows": [list(r) for r in rows]}
+    return spec
+
+
+def divider(number, title, hero, lines, scope, source, script):
+    """구간 표지: 큰 글씨만 두는 발표용 간지."""
+    spec = slide(title, hero, lines, scope, source, script)
+    spec["divider"] = number
+    return spec
+
+
 def expected_texts(spec, index):
+    table_cells = ([spec["table"]["header"]] + spec["table"]["rows"]) if spec.get("table") else []
     return [f"TOKEN COST LAB  /  {index:02d}", spec["scope"], spec["title"], spec["hero"],
             *spec["lines"], *[cell for row in spec["facts"] for cell in row],
+            *[cell for row in table_cells for cell in row],
             *([spec["chart"]["caption"]] if spec.get("chart") else [caption for _, caption in spec["images"]]),
             spec["source"], "2026-09-20  ·  근거와 조건을 함께 인용"]
 
@@ -673,18 +778,63 @@ def render(specs, path):
                     e = r._r.makeelement(qn(tag), {}); r._r.get_or_add_rPr().append(e)
                 e.set("typeface", "NanumGothic")
         texts = expected_texts(spec, i)
-        is_chart = bool(spec.get("chart"))
+        is_chart, is_table, is_divider = bool(spec.get("chart")), bool(spec.get("table")), bool(spec.get("divider"))
         text(texts[0], "index", .7,.3,5,.3,11,"93A4B5")
         text(texts[1], "scope", 6.3,.3,6.3,.3,11,"36D399")
-        text(texts[2], "title", .7,.62 if is_chart else .9,11.9,.9,29,bold=True)
-        narrow = bool(spec["images"] or spec["facts"])
-        hero_size = 24 if len(spec["hero"]) > 34 else 29
-        hero_y = 1.38 if is_chart else 1.95
-        text(texts[3], "hero", .7,hero_y,11.9 if not narrow else 7.2,.85,hero_size,"36D399",True)
-        for j, line in enumerate(spec["lines"]):
-            y = (2.22 + j*.56) if is_chart else (3.13 + j*.70)
-            width = 11.65 if (is_chart or not narrow) else 7.0
-            text(line, f"body-{j}", .85, y, width, .67, 17.5)
+        if is_divider:
+            bar = sl.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(.7), Inches(2.28), Inches(3.4), Inches(.07))
+            bar.fill.solid(); bar.fill.fore_color.rgb = RGBColor.from_string("36D399")
+            bar.line.fill.background()
+            text(texts[2], "title", .7,2.52,11.9,1.2,46,bold=True)
+            text(texts[3], "hero", .7,3.70,11.9,.9,25,"36D399",True)
+            for j, line in enumerate(spec["lines"]):
+                text(line, f"body-{j}", .7,4.62+j*.55,11.9,.6,17,"C7D2DE")
+        else:
+            title_y = .62 if (is_chart or is_table) else .9
+            text(texts[2], "title", .7,title_y,11.9,.9,29,bold=True)
+            narrow = bool(spec["images"] or spec["facts"])
+            hero_size = 24 if len(spec["hero"]) > 34 else 29
+            hero_y = 1.30 if (is_chart or is_table) else 1.95
+            text(texts[3], "hero", .7,hero_y,11.9 if not narrow else 7.2,.85,hero_size,"36D399",True)
+            for j, line in enumerate(spec["lines"]):
+                y = (2.10 + j*.48) if (is_chart or is_table) else (3.13 + j*.70)
+                width = 11.65 if (is_chart or is_table or not narrow) else 7.0
+                text(line, f"body-{j}", .85, y, width, .67, 17.5)
+        if is_table:
+            header, rows = spec["table"]["header"], spec["table"]["rows"]
+            all_rows = [header] + rows
+            top, row_h = 3.02, .44
+            shape = sl.shapes.add_table(len(all_rows), len(header), Inches(.85), Inches(top),
+                                        Inches(11.65), Inches(row_h * len(all_rows)))
+            table = shape.table
+            table.first_row = False
+            table.horz_banding = False
+            table.columns[0].width = Inches(3.65)
+            for c in range(1, len(header)):
+                table.columns[c].width = Inches((11.65 - 3.65) / (len(header) - 1))
+            for r, row in enumerate(all_rows):
+                for c, content in enumerate(row):
+                    cell = table.cell(r, c)
+                    cell.margin_left = cell.margin_right = Inches(.09)
+                    cell.margin_top = cell.margin_bottom = Inches(.02)
+                    cell.fill.solid()
+                    if r == 0:
+                        cell.fill.fore_color.rgb = RGBColor.from_string("1B2A38")
+                    else:
+                        cell.fill.fore_color.rgb = RGBColor.from_string("111A24" if r % 2 else "18222E")
+                    tf = cell.text_frame
+                    tf.word_wrap = True
+                    run = tf.paragraphs[0].add_run()
+                    run.text = content
+                    run.font.name = "NanumGothic"
+                    run.font.size = Pt(14 if r == 0 else 13.5)
+                    run.font.bold = bool(r == 0 or c)
+                    run.font.color.rgb = RGBColor.from_string("36D399" if r == 0 else ("ECF1F6" if c else "93A4B5"))
+                    for tag in ("a:latin", "a:ea", "a:cs"):
+                        e = run._r.get_or_add_rPr().find(qn(tag))
+                        if e is None:
+                            e = run._r.makeelement(qn(tag), {}); run._r.get_or_add_rPr().append(e)
+                        e.set("typeface", "NanumGothic")
         if spec["facts"]:
             top = 3.13 + len(spec["lines"]) * .70 + .10
             height = .46 * len(spec["facts"])
@@ -726,16 +876,19 @@ def render(specs, path):
                 text(caption, f"image-caption-{k}", 8.05, top + k * slot + slot - .30, box_w, .28,
                      9.5, "93A4B5")
         if is_chart:
-            # 그래프는 전폭. 메시지 블록 아래, 캡션은 그림 바로 밑.
+            # 그래프는 전폭·전고. 캡션과 출처는 같은 줄에 두고 푸터를 맨 아래에 붙인다.
             from PIL import Image
-            box_w, top, bottom = 11.65, 3.34, 6.68
+            box_w, top, bottom = 11.65, 2.92, 6.78
             with Image.open(ROOT / spec["chart"]["file"]) as im:
                 w, h, dx, dy = fit(box_w, bottom - top, *im.size)
             sl.shapes.add_picture(str(ROOT / spec["chart"]["file"]), Inches(.85 + dx),
                                   Inches(top + dy), Inches(w), Inches(h))
-            text(spec["chart"]["caption"], "chart-caption", .85, bottom + .03, box_w, .26, 9.5, "93A4B5")
-            text(spec["source"], "source", .85,6.98,12,.30,10,"93A4B5")
-            text(texts[-1], "footer", .85,7.20,12,.28,10,"93A4B5")
+            text(spec["chart"]["caption"], "chart-caption", .85, bottom + .02, 5.6, .24, 9.5, "93A4B5")
+            text(spec["source"], "source", 6.6, bottom + .02, 5.9, .24, 9.5, "93A4B5")
+            text(texts[-1], "footer", .85,7.24,12,.24,9.5,"93A4B5")
+        elif is_table:
+            text(spec["source"], "source", .7,6.72,12,.30,10,"93A4B5")
+            text(texts[-1], "footer", .7,7.06,12,.28,10,"93A4B5")
         else:
             text(spec["source"], "source", .7,6.65,12,.30,10,"93A4B5")
             text(texts[-1], "footer", .7,7.02,12,.28,10,"93A4B5")

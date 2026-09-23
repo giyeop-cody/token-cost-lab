@@ -13,7 +13,7 @@
     {
       "name": "token_cost: slide count",
       "ok": true,
-      "detail": "36 vs 36"
+      "detail": "44 vs 44"
     },
     {
       "name": "token_cost: slide 1 all text/figures/qualifiers",
@@ -276,11 +276,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 5 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 5 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -322,16 +317,6 @@
     },
     {
       "name": "token_cost: slide 6 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 6 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 6 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -386,7 +371,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 7 audit:chart-caption within slide",
+      "name": "token_cost: slide 7 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -496,7 +481,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 9 audit:body-2 within slide",
+      "name": "token_cost: slide 9 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -542,16 +527,6 @@
     },
     {
       "name": "token_cost: slide 10 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 10 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 10 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -661,7 +636,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 12 audit:chart-caption within slide",
+      "name": "token_cost: slide 12 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -771,7 +746,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 14 audit:body-2 within slide",
+      "name": "token_cost: slide 14 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -826,7 +801,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 15 audit:chart-caption within slide",
+      "name": "token_cost: slide 15 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -881,7 +856,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 16 audit:body-2 within slide",
+      "name": "token_cost: slide 16 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -927,16 +902,6 @@
     },
     {
       "name": "token_cost: slide 17 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 17 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 17 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -991,7 +956,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 18 audit:body-2 within slide",
+      "name": "token_cost: slide 18 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -1101,7 +1066,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 20 audit:body-2 within slide",
+      "name": "token_cost: slide 20 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -1211,7 +1176,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 22 audit:body-2 within slide",
+      "name": "token_cost: slide 22 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -1321,7 +1286,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 24 audit:chart-caption within slide",
+      "name": "token_cost: slide 24 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -1541,7 +1506,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 28 audit:chart-caption within slide",
+      "name": "token_cost: slide 28 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -1706,7 +1671,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 31 audit:body-2 within slide",
+      "name": "token_cost: slide 31 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -1866,16 +1831,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 34 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost: slide 34 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost: slide 34 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -1981,7 +1936,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost: slide 36 audit:body-2 within slide",
+      "name": "token_cost: slide 36 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -1992,6 +1947,446 @@
     },
     {
       "name": "token_cost: slide 36 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 37 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:chart-caption within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 38 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 39 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 40 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 41 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 42 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 43 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: slide 44 audit:footer within slide",
       "ok": true,
       "detail": ""
     },
@@ -2008,7 +2403,7 @@
     {
       "name": "token_cost: PDF page count",
       "ok": true,
-      "detail": "36"
+      "detail": "44"
     },
     {
       "name": "token_cost: PDF page 1 all text",
@@ -2191,6 +2586,46 @@
       "detail": ""
     },
     {
+      "name": "token_cost: PDF page 37 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: PDF page 38 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: PDF page 39 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: PDF page 40 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: PDF page 41 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: PDF page 42 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: PDF page 43 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost: PDF page 44 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_main: artifact exists",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/token_cost_main.pptx"
@@ -2198,7 +2633,7 @@
     {
       "name": "token_cost_main: slide count",
       "ok": true,
-      "detail": "27 vs 27"
+      "detail": "34 vs 34"
     },
     {
       "name": "token_cost_main: slide 1 all text/figures/qualifiers",
@@ -2461,11 +2896,6 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 5 audit:body-2 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
       "name": "token_cost_main: slide 5 audit:source within slide",
       "ok": true,
       "detail": ""
@@ -2507,16 +2937,6 @@
     },
     {
       "name": "token_cost_main: slide 6 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 6 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 6 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2571,7 +2991,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 7 audit:chart-caption within slide",
+      "name": "token_cost_main: slide 7 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2626,7 +3046,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 8 audit:body-2 within slide",
+      "name": "token_cost_main: slide 8 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -2672,16 +3092,6 @@
     },
     {
       "name": "token_cost_main: slide 9 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 9 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 9 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2846,7 +3256,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 12 audit:chart-caption within slide",
+      "name": "token_cost_main: slide 12 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -2901,7 +3311,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 13 audit:body-2 within slide",
+      "name": "token_cost_main: slide 13 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -2956,7 +3366,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 14 audit:chart-caption within slide",
+      "name": "token_cost_main: slide 14 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3011,7 +3421,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 15 audit:body-2 within slide",
+      "name": "token_cost_main: slide 15 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -3057,16 +3467,6 @@
     },
     {
       "name": "token_cost_main: slide 16 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 16 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 16 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3121,7 +3521,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 17 audit:body-2 within slide",
+      "name": "token_cost_main: slide 17 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -3286,7 +3686,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 20 audit:body-2 within slide",
+      "name": "token_cost_main: slide 20 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -3341,7 +3741,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 21 audit:chart-caption within slide",
+      "name": "token_cost_main: slide 21 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3396,7 +3796,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 22 audit:body-2 within slide",
+      "name": "token_cost_main: slide 22 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -3451,7 +3851,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 23 audit:body-2 within slide",
+      "name": "token_cost_main: slide 23 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -3497,16 +3897,6 @@
     },
     {
       "name": "token_cost_main: slide 24 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 24 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_main: slide 24 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3616,7 +4006,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_main: slide 26 audit:body-2 within slide",
+      "name": "token_cost_main: slide 26 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -3686,6 +4076,391 @@
       "detail": ""
     },
     {
+      "name": "token_cost_main: slide 28 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:chart-caption within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 28 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 29 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 30 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 31 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 32 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 33 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: slide 34 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_main: speaker script",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/script_main.md"
@@ -3698,7 +4473,7 @@
     {
       "name": "token_cost_main: PDF page count",
       "ok": true,
-      "detail": "27"
+      "detail": "34"
     },
     {
       "name": "token_cost_main: PDF page 1 all text",
@@ -3836,6 +4611,41 @@
       "detail": ""
     },
     {
+      "name": "token_cost_main: PDF page 28 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: PDF page 29 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: PDF page 30 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: PDF page 31 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: PDF page 32 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: PDF page 33 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_main: PDF page 34 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_bonus: artifact exists",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/token_cost_bonus.pptx"
@@ -3843,7 +4653,7 @@
     {
       "name": "token_cost_bonus: slide count",
       "ok": true,
-      "detail": "14 vs 14"
+      "detail": "16 vs 16"
     },
     {
       "name": "token_cost_bonus: slide 1 all text/figures/qualifiers",
@@ -3877,16 +4687,6 @@
     },
     {
       "name": "token_cost_bonus: slide 1 audit:body-0 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_bonus: slide 1 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_bonus: slide 1 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -3996,7 +4796,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 3 audit:body-2 within slide",
+      "name": "token_cost_bonus: slide 3 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -4051,7 +4851,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 4 audit:chart-caption within slide",
+      "name": "token_cost_bonus: slide 4 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -4161,7 +4961,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 6 audit:body-2 within slide",
+      "name": "token_cost_bonus: slide 6 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -4216,7 +5016,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 7 audit:body-2 within slide",
+      "name": "token_cost_bonus: slide 7 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -4381,7 +5181,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 10 audit:chart-caption within slide",
+      "name": "token_cost_bonus: slide 10 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -4491,7 +5291,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_bonus: slide 12 audit:body-2 within slide",
+      "name": "token_cost_bonus: slide 12 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -4616,6 +5416,116 @@
       "detail": ""
     },
     {
+      "name": "token_cost_bonus: slide 15 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 15 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: slide 16 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_bonus: speaker script",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/script_bonus.md"
@@ -4628,7 +5538,7 @@
     {
       "name": "token_cost_bonus: PDF page count",
       "ok": true,
-      "detail": "14"
+      "detail": "16"
     },
     {
       "name": "token_cost_bonus: PDF page 1 all text",
@@ -4701,6 +5611,16 @@
       "detail": ""
     },
     {
+      "name": "token_cost_bonus: PDF page 15 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_bonus: PDF page 16 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_agent: artifact exists",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/token_cost_agent.pptx"
@@ -4708,7 +5628,7 @@
     {
       "name": "token_cost_agent: slide count",
       "ok": true,
-      "detail": "22 vs 22"
+      "detail": "23 vs 23"
     },
     {
       "name": "token_cost_agent: slide 1 all text/figures/qualifiers",
@@ -4912,11 +5832,6 @@
     },
     {
       "name": "token_cost_agent: slide 4 audit:body-1 within slide",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "token_cost_agent: slide 4 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5576,7 +6491,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 16 audit:chart-caption within slide",
+      "name": "token_cost_agent: slide 16 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5631,7 +6546,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 17 audit:body-2 within slide",
+      "name": "token_cost_agent: slide 17 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -5741,7 +6656,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 19 audit:chart-caption within slide",
+      "name": "token_cost_agent: slide 19 audit:body-2 within slide",
       "ok": true,
       "detail": ""
     },
@@ -5796,7 +6711,7 @@
       "detail": ""
     },
     {
-      "name": "token_cost_agent: slide 20 audit:body-2 within slide",
+      "name": "token_cost_agent: slide 20 audit:chart-caption within slide",
       "ok": true,
       "detail": ""
     },
@@ -5921,6 +6836,61 @@
       "detail": ""
     },
     {
+      "name": "token_cost_agent: slide 23 all text/figures/qualifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 speaker notes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:index within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:scope within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:title within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:hero within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:body-0 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:body-1 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:body-2 within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:source within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: slide 23 audit:footer within slide",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "token_cost_agent: speaker script",
       "ok": true,
       "detail": "/home/user/token-cost-lab/presentation/script_agent.md"
@@ -5933,7 +6903,7 @@
     {
       "name": "token_cost_agent: PDF page count",
       "ok": true,
-      "detail": "22"
+      "detail": "23"
     },
     {
       "name": "token_cost_agent: PDF page 1 all text",
@@ -6042,6 +7012,11 @@
     },
     {
       "name": "token_cost_agent: PDF page 22 all text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "token_cost_agent: PDF page 23 all text",
       "ok": true,
       "detail": ""
     },

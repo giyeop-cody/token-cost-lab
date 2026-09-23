@@ -5,18 +5,30 @@
 
 ## 그래프
 
-단가·사용량 비교는 `presentation/deckgen/make_charts.py`가 그리는 8종 그래프로 보여 줍니다
+단가·사용량 비교는 `presentation/deckgen/make_charts.py`가 그리는 **11종 그래프**로 보여 줍니다
 (`presentation/charts/*.png` · 계열값과 해시는 `charts/manifest.json`). 그래프의 모든 수치는
 `lab/pricing.py` · `lab/evidence.py` · 저장 자료에서 계산하며, 막대 라벨은 슬라이드 본문이 아니라
-**이미지 안에** 있습니다. 슬라이드 본문은 같은 값을 굵은 글씨로 한 번만 말합니다. 핵심 원칙은 유지하고 실측 / 로그 재계산 / 외부 연구 / 시나리오 / 소프트웨어 테스트를
+**이미지 안에** 있습니다. 슬라이드 본문은 같은 값을 굵은 글씨로 한 번만 말합니다.
+
+| 그래프 | 내용 | 쓰는 덱 |
+|---|---|---|
+| prices · monthly | 모델별 입력·출력 단가(로그축) · 워크플로 A/B 월 청구서 | 통합·본편·에이전트 |
+| tokenizer | FLORES 1,012쌍 영어=1.00 기준 한국어 배수 · 토큰/글자 | 통합·본편 |
+| cache · cache_hit | 캐시 3분기 · 적중률별 비용 곡선(손익분기 22.0%) | 통합·본편·보너스·에이전트 |
+| turns · usage_mix | 턴 수별 세션 비용(컴팩션 포함) · 20턴 토큰 구성 | 통합·본편·보너스·에이전트 |
+| stack · thinking | 레버 적층 잔여 14.18% · 사고 예산별 호출당 비용 | 통합·본편·보너스 |
+| case_tokens · case_bases | 사례 토큰 구조 · 사례 3단가 환산 | 통합·본편·케이스 |
+
+`build_verified.py`의 **단가 표 슬라이드**는 `lab/pricing.py`에서 셀을 직접 만들고,
+**구간 표지**(01 언어 · 02 출력과 추론 · 03 캐시와 컨텍스트 · 04 사례와 적용 · 심화)로 흐름을 나눕니다. 핵심 원칙은 유지하고 실측 / 로그 재계산 / 외부 연구 / 시나리오 / 소프트웨어 테스트를
 발표자 노트에서 구분합니다. 현재 `main`에는 코드와 발표 산출물이 함께 있습니다.
 
 | 덱 | PPTX / PDF | 대본 |
 |---|---|---|
-| 통합 36장 (약 30분) | [PPTX](token_cost.pptx) · [PDF](token_cost.pdf) | [대본](script.md) |
-| 본편 27장 (약 30분) | [PPTX](token_cost_main.pptx) · [PDF](token_cost_main.pdf) | [대본](script_main.md) |
-| 보너스 14장 (약 30분) | [PPTX](token_cost_bonus.pptx) · [PDF](token_cost_bonus.pdf) | [대본](script_bonus.md) |
-| 에이전트 22장 (약 30분) | [PPTX](token_cost_agent.pptx) · [PDF](token_cost_agent.pdf) | [대본](script_agent.md) |
+| 통합 44장 (약 30분) | [PPTX](token_cost.pptx) · [PDF](token_cost.pdf) | [대본](script.md) |
+| 본편 34장 (약 30분) | [PPTX](token_cost_main.pptx) · [PDF](token_cost_main.pdf) | [대본](script_main.md) |
+| 보너스 16장 (약 30분) | [PPTX](token_cost_bonus.pptx) · [PDF](token_cost_bonus.pdf) | [대본](script_bonus.md) |
+| 에이전트 23장 (약 30분) | [PPTX](token_cost_agent.pptx) · [PDF](token_cost_agent.pdf) | [대본](script_agent.md) |
 | 카페 케이스 15장 (약 30분) | [PPTX](case_vibe_vs_spec/vibe_vs_spec.pptx) · [PDF](case_vibe_vs_spec/vibe_vs_spec.pdf) | [대본](case_vibe_vs_spec/script_case.md) |
 
 ## 수정·검증

@@ -3,7 +3,7 @@
   "figure": {
     "figsize": [
       12.6,
-      3.5
+      4.34
     ],
     "dpi": 200,
     "font": "NanumGothic",
@@ -15,7 +15,7 @@
   "charts": {
     "prices": {
       "file": "prices.png",
-      "sha256": "caa87e1bceb50d84c4f18b344a4f91c5f9ca6e6c69c5ba65384de34aca62a61a",
+      "sha256": "85a0059096123c072dcd7259332306c452093cebc10d15e5256551aad67ca3a2",
       "unit": "USD / 1M tokens",
       "caption_ko": "단가 스냅샷 (USD / 100만 토큰)",
       "labels": [
@@ -69,7 +69,7 @@
     },
     "tokenizer": {
       "file": "tokenizer.png",
-      "sha256": "009a46fcf0741077be8a35c429a63872890bb480bf7f6f0f7133b78b4b2ebf21",
+      "sha256": "5060716482b88d0dcbac05316790c019b7dd0a6a6858a2d2350821a833cf59e2",
       "unit": "tokens",
       "caption_ko": "토크나이저 실측 (토큰)",
       "flores_pairs": 1012,
@@ -85,7 +85,7 @@
     },
     "cache": {
       "file": "cache.png",
-      "sha256": "3f5cf0c287d5f354f315b73f75662eadd4dcd7df0a450826a77a607cafabe9e4",
+      "sha256": "8b33c71e83fc188de5e70802b1fb62390e24b7e9fc6c7bdeae807622ab87c282",
       "unit": "USD / 100 calls",
       "caption_ko": "100콜 비용 (USD)",
       "labels": [
@@ -101,7 +101,7 @@
     },
     "turns": {
       "file": "turns.png",
-      "sha256": "6cf58ed797d1b004fd3672d057f1ca8b78d0733887c36333d82d321514eacbc5",
+      "sha256": "8a650e2ec0a6fd19a9a2b9398049f9206a91e885d71481298f95b020a4ff6dc1",
       "unit": "USD / session",
       "caption_ko": "세션 비용 (USD)",
       "model": "Claude Sonnet 4.6",
@@ -137,7 +137,7 @@
     },
     "stack": {
       "file": "stack.png",
-      "sha256": "85f253e92413c44f26757f5dc8e3e57f5866759d9b4381b89befdf0b4ce3ce34",
+      "sha256": "a0e375659c8e840123fb31102490e3a79e0d4e3230d6104eb02a254b39f50ebb",
       "unit": "% of baseline",
       "caption_ko": "남은 비율 (%)",
       "layers": [
@@ -176,7 +176,7 @@
     },
     "thinking": {
       "file": "thinking.png",
-      "sha256": "3c025c5b4e4eb4e35d2aead9c09ccc23b0663c8761ac085989f3e62ebd47f56a",
+      "sha256": "8aa77c358279995bf3a15f80df61a5e4fb1e9ce7e926efc0af48d0ce74ff7a87",
       "unit": "USD / call (actual price basis)",
       "caption_ko": "호출당 비용 (USD)",
       "by_budget": {
@@ -189,7 +189,7 @@
     },
     "case_tokens": {
       "file": "case_tokens.png",
-      "sha256": "cde6bf71fa0c5721386c1050397f6e2c6f26874772c70fb1d8a9e7c3df293abc",
+      "sha256": "9286d2875eda89660e9eb42cf73aeff5b23aaf3eac72ae40214a21d24d9982cb",
       "unit": "tokens",
       "caption_ko": "토큰 수 (추정)",
       "modes": {
@@ -207,7 +207,7 @@
     },
     "case_bases": {
       "file": "case_bases.png",
-      "sha256": "fcfe2c394cff4cd6819bf1aabe473996f7d6f02dbd9a30806200f1b0f7a4c82d",
+      "sha256": "7eefb27824d4c0fae07b85ea402f8f8c4532fa9ddf2a6c66c182085f161ff3b4",
       "unit": "USD",
       "caption_ko": "추정 비용 (USD)",
       "bases": {
@@ -235,6 +235,77 @@
           "spec_usd": 0.065925,
           "delta_pct": -8.051187279891215
         }
+      }
+    },
+    "monthly": {
+      "file": "monthly.png",
+      "sha256": "553181949548abba8a79b19f90c9998868d2c659fde83583ca01adf2790170ea",
+      "unit": "USD / month",
+      "caption_ko": "월 청구서 (USD)",
+      "jobs_per_month": 1760,
+      "workflows": {
+        "A": "입력 2,000 · 출력 12,000",
+        "B": "입력 6,000 · 출력 3,000"
+      },
+      "by_model": {
+        "Opus": {
+          "A": 545.6,
+          "B": 184.8
+        },
+        "Sonnet": {
+          "A": 327.36,
+          "B": 110.88
+        },
+        "GPT-5": {
+          "A": 215.6,
+          "B": 66.0
+        },
+        "Gemini Pro": {
+          "A": 260.48,
+          "B": 84.48
+        },
+        "Flash-Lite": {
+          "A": 32.56,
+          "B": 10.56
+        },
+        "DeepSeek": {
+          "A": 26.4,
+          "B": 9.5
+        }
+      }
+    },
+    "cache_hit": {
+      "file": "cache_hit.png",
+      "sha256": "1092aad82da6b2ce8fe0e7cfdf33635a952579ea4af75035c8e874f200eb17ca",
+      "unit": "USD / 100 calls",
+      "caption_ko": "적중률별 비용 (USD)",
+      "no_cache_usd": 8.55,
+      "by_hit_rate": {
+        "0.00": 10.05,
+        "0.20": 8.6838,
+        "0.40": 7.3176,
+        "0.60": 5.9514,
+        "0.80": 4.5852,
+        "1.00": 3.219
+      },
+      "breakeven_hit_rate": 0.2196
+    },
+    "usage_mix": {
+      "file": "usage_mix.png",
+      "sha256": "1cf1dd6a7adfae33d60b6c816193058f5cd4478303ea525cbcec6c943baa8c34",
+      "unit": "tokens",
+      "caption_ko": "20턴 세션 토큰 구성",
+      "turns": 20,
+      "parts": {
+        "고정 프리픽스 재전송": 160000,
+        "대화 이력 재전송": 532000,
+        "출력(생성)": 16000
+      },
+      "total": 708000,
+      "shares_pct": {
+        "고정 프리픽스 재전송": 22.6,
+        "대화 이력 재전송": 75.14,
+        "출력(생성)": 2.26
       }
     }
   }

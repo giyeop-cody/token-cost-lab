@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT))
 
 BG, FG, MUTED, ACC, ACC2, GRID = "#0E141B", "#ECF1F6", "#93A4B5", "#36D399", "#6EA8FE", "#22303D"
 FONT = "NanumGothic"
-FIGSIZE = (12.6, 3.5)     # 슬라이드 차트 상자(11.65 x 3.42 in)에 전폭으로 들어가는 종횡비
+FIGSIZE = (12.6, 4.34)    # 슬라이드 상자(11.65 x 3.95 in)를 꽉 채우는 종횡비
 DPI = 200
 
 PRICE_ROWS = ("opus", "sonnet", "gpt5", "gemini-pro", "flash-lite", "deepseek")
@@ -87,7 +87,49 @@ def _load():
     tpc = {"en": round(len(enc.encode(en_text)) / len(en_text), 4),
            "ko": round(len(enc.encode(ko_text)) / len(ko_text), 4)}
 
+    # 월 청구서(모델별) — 워크플로 A/B, 월 1,760건
+    from lab.pricing import cost as price_cost
+    jobs_per_month = 1_760
+    workflows = {"A": (2_000, 12_000), "B": (6_000, 3_000)}
+    monthly = {}
+    for key in PRICE_ROWS:
+        model = pricing.MODELS[key]
+        monthly[SHORT_AXIS[key]] = {w: round(price_cost(model, *workflows[w]) * jobs_per_month, 2)
+                                    for w in workflows}
+
+    # 캐시 적중률 곡선 — 캐시 없음 / 적중률별 / 전부 미스
+    from experiments.exp03_prompt_caching import session_cost
+    m_sonnet = pricing.get("sonnet")
+    hit = {f"{h:.2f}": round(session_cost(m_sonnet, 20_000, 1_000, 1_500, 100, hit_rate=h), 4)
+           for h in (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)}
+    no_cache = round(session_cost(m_sonnet, 20_000, 1_000, 1_500, 100, cached=False), 4)
+    breakeven = round((hit["0.00"] - no_cache) / (hit["0.00"] - hit["1.00"]), 4)
+
+    # 사용량 구성 — 20턴 세션의 입력/출력 토큰 비중
+    turns_n, tokens_in = 20, turn_rows["20"]["cumulative_input_tokens"]
+    fixed_resent = base * turns_n
+    history_resent = tokens_in - fixed_resent
+    output_tokens = turn_out * turns_n
+    usage_mix = {"고정 프리픽스 재전송": fixed_resent, "대화 이력 재전송": history_resent,
+                 "출력(생성)": output_tokens}
+    usage_total = sum(usage_mix.values())
+
     return {
+        "monthly": {
+            "unit": "USD / month", "caption_ko": "월 청구서 (USD)",
+            "jobs_per_month": jobs_per_month,
+            "workflows": {"A": "입력 2,000 · 출력 12,000", "B": "입력 6,000 · 출력 3,000"},
+            "by_model": monthly,
+        },
+        "cache_hit": {
+            "unit": "USD / 100 calls", "caption_ko": "적중률별 비용 (USD)",
+            "no_cache_usd": no_cache, "by_hit_rate": hit, "breakeven_hit_rate": breakeven,
+        },
+        "usage_mix": {
+            "unit": "tokens", "caption_ko": "20턴 세션 토큰 구성", "turns": turns_n,
+            "parts": usage_mix, "total": usage_total,
+            "shares_pct": {k: round(v / usage_total * 100, 2) for k, v in usage_mix.items()},
+        },
         "prices": {
             "unit": "USD / 1M tokens", "caption_ko": "단가 스냅샷 (USD / 100만 토큰)",
             "labels": [SHORT[k] for k in PRICE_ROWS],
@@ -208,22 +250,25 @@ def draw_prices(data, path):
 
 
 def draw_tokenizer(data, path):
-    fig, (left, right) = _two()
-    keys = list(data["ko_en_ratio"])
-    values = [data["ko_en_ratio"][k] for k in keys]
-    bars = left.bar(keys, values, color=ACC, width=.46)
-    left.bar_label(bars, labels=[f"{v:.4f}배" for v in values], padding=6, color=ACC, fontsize=14, fontweight="bold")
-    left.set_ylim(0, max(values) * 1.25)
-    _clean(left, "y", f"FLORES-200 {data['flores_pairs']:,}쌍 · 한국어/영어 토큰")
-    labels = ["영어", "한국어"]
-    values = [data["tokens_per_char"]["en"], data["tokens_per_char"]["ko"]]
-    bars = right.bar(labels, values, color=[ACC2, ACC], width=.46)
-    right.bar_label(bars, labels=[f"{v:.3f}" for v in values], padding=6, color=FG, fontsize=14, fontweight="bold")
-    right.set_ylim(0, max(values) * 1.25)
-    right.annotate(f"{values[1]/values[0]:.2f}배", (0.5, max(values) * .70), ha="center",
-                   color=FG, fontsize=14, fontweight="bold")
-    _clean(right, "y", "토큰 / 글자 (o200k_base)")
-    fig.tight_layout(rect=(0, 0, 1, 1))
+    fig, ax = _axes(left=0.17)
+    ratios = data["ko_en_ratio"]
+    labels, values, colors = [], [], []
+    for key, name in (("o200k_base", "o200k_base"), ("cl100k_base", "cl100k_base")):
+        labels += [f"{name} · 영어", f"{name} · 한국어"]
+        values += [1.0, ratios[key]]           # 영어를 1.0으로 두고 한국어 배수를 보여 준다
+        colors += [ACC2, ACC]
+    y = list(range(len(labels)))
+    bars = ax.barh(y, values, color=colors, height=.52)
+    ax.bar_label(bars, labels=[("1.00 (기준)" if v == 1.0 else f"{v:.4f}배") for v in values],
+                 padding=8, color=FG, fontsize=14, fontweight="bold")
+    ax.set_yticks(y, labels, fontsize=14)
+    ax.set_xlim(0, max(values) * 1.28)
+    ax.set_ylim(len(labels) - 0.4, -0.6)
+    tpc = data["tokens_per_char"]
+    ax.annotate(f"토큰/글자 · 영어 {tpc['en']:.3f} vs 한국어 {tpc['ko']:.3f} ({tpc['ko'] / tpc['en']:.2f}배)",
+                (0.98, -0.45), xycoords=("axes fraction", "data"), ha="right", va="bottom",
+                color=MUTED, fontsize=13)
+    _clean(ax, "x", f"같은 내용(FLORES-200 {data['flores_pairs']:,}쌍)의 토큰 배수 — 영어 = 1.00")
     _close(fig, path)
 
 
@@ -345,12 +390,89 @@ def draw_case_bases(data, path):
     _close(fig, path)
 
 
+
+def draw_monthly(data, path):
+    fig, ax = _axes(left=0.09)
+    names = list(data["by_model"])
+    a = [data["by_model"][n]["A"] for n in names]
+    b = [data["by_model"][n]["B"] for n in names]
+    x = list(range(len(names)))
+    ax.bar([i - 0.19 for i in x], a, width=.36, color=MUTED, label="A · 대충 지시 (입력 2,000 / 출력 12,000)")
+    ax.bar([i + 0.19 for i in x], b, width=.36, color=ACC, label="B · 스펙 주입 (입력 6,000 / 출력 3,000)")
+    for i in x:
+        ax.annotate(f"${a[i]:,.0f}", (i - 0.19, a[i]), textcoords="offset points", xytext=(0, 5),
+                    ha="center", color=MUTED, fontsize=12)
+        ax.annotate(f"${b[i]:,.0f}", (i + 0.19, b[i]), textcoords="offset points", xytext=(0, 5),
+                    ha="center", color=ACC, fontsize=12, fontweight="bold")
+        ax.annotate(f"-{(1 - b[i] / a[i]) * 100:.0f}%", (i, max(a[i], b[i])), textcoords="offset points",
+                    xytext=(0, 24), ha="center", color=FG, fontsize=13, fontweight="bold")
+    ax.set_xticks(x, names, fontsize=13)
+    ax.legend(facecolor=BG, edgecolor=GRID, labelcolor=FG, fontsize=11.5, loc="upper right", framealpha=1)
+    ax.set_ylim(0, max(a) * 1.34)
+    _clean(ax, "y", f"모델별 월 청구서 — 같은 {data['jobs_per_month']:,}건, 두 워크플로 (USD)")
+    _close(fig, path)
+
+
+def draw_cache_hit(data, path):
+    fig, ax = _axes(left=0.09)
+    rates = [float(k) for k in data["by_hit_rate"]]
+    costs = [data["by_hit_rate"][k] for k in data["by_hit_rate"]]
+    ax.plot(rates, costs, color=ACC, linewidth=3, marker="o", markersize=9)
+    ax.hlines(data["no_cache_usd"], -0.02, 1.02, colors=MUTED, linestyles="solid", linewidth=1.6)
+    ax.annotate(f"캐시 없음 ${data['no_cache_usd']:,.3f}", (1.0, data["no_cache_usd"]), color=MUTED,
+                fontsize=13, ha="right", va="bottom", textcoords="offset points", xytext=(0, 6))
+    be = data["breakeven_hit_rate"]
+    ax.axvline(be, color="#F87171", linestyle="dashed", linewidth=1.6)
+    ax.annotate(f"손익분기 {be * 100:.1f}%", (be, max(costs)), color="#F87171", fontsize=13.5,
+                ha="center", va="bottom", textcoords="offset points", xytext=(0, 8), fontweight="bold")
+    for rate, cost in zip(rates, costs):
+        ax.annotate(f"${cost:,.3f}", (rate, cost), textcoords="offset points", xytext=(0, 14),
+                    ha="center", color=FG, fontsize=12)
+    ax.set_xticks(rates, [f"{r * 100:.0f}%" for r in rates], fontsize=13)
+    ax.set_xlim(-0.03, 1.03)
+    ax.set_ylim(min(costs) * 0.72, max(costs) * 1.30)
+    _clean(ax, "y", "프롬프트 캐시 적중률에 따른 100콜 비용 (Sonnet 4.6)")
+    _close(fig, path)
+
+
+def draw_usage_mix(data, path):
+    fig, ax = _axes(left=0.16)
+    parts = list(data["parts"])
+    shares = [data["shares_pct"][p] for p in parts]
+    colors = [ACC2, "#F0A868", ACC]
+    left = 0.0
+    for part, share, color in zip(parts, shares, colors):
+        ax.barh([0], [share], left=left, color=color, height=.42, label=f"{part}  {share:.1f}%")
+        if share >= 12:
+            ax.annotate(f"{data['parts'][part]:,}토큰", (left + share / 2, 0), ha="center", va="center",
+                        color=BG, fontsize=13, fontweight="bold")
+        elif share >= 6:
+            ax.annotate(f"{data['parts'][part]:,}토큰", (left + share / 2, 0.235), ha="center", va="bottom",
+                        color=color, fontsize=12, fontweight="bold")
+        else:
+            ax.annotate(f"{data['parts'][part]:,}토큰", (left - 0.8, 0.235), ha="right", va="bottom",
+                        color=color, fontsize=12, fontweight="bold")
+        left += share
+    ax.set_yticks([])
+    ax.set_xlim(0, 100)
+    ax.set_xticks(list(range(0, 101, 25)), [f"{v}%" for v in range(0, 101, 25)], fontsize=13)
+    ax.set_ylim(-0.42, 0.42)
+    ax.legend(facecolor=BG, edgecolor=GRID, labelcolor=FG, fontsize=12.5, loc="lower center",
+              bbox_to_anchor=(0.5, 1.0), ncol=3, framealpha=1)
+    ax.set_ylim(-0.5, 0.5)
+    _clean(ax, "x", f"{data['turns']}턴 세션에서 무엇이 토큰을 쓰는가 (총 {data['total']:,}토큰)")
+    ax.set_title(ax.get_title(), pad=52)
+    _close(fig, path)
+
+
 DRAWERS = {"prices": draw_prices, "tokenizer": draw_tokenizer, "cache": draw_cache,
            "turns": draw_turns, "stack": draw_stack, "thinking": draw_thinking,
-           "case_tokens": draw_case_tokens, "case_bases": draw_case_bases}
+           "case_tokens": draw_case_tokens, "case_bases": draw_case_bases,
+           "monthly": draw_monthly, "cache_hit": draw_cache_hit, "usage_mix": draw_usage_mix}
 FILES = {"prices": "prices.png", "tokenizer": "tokenizer.png", "cache": "cache.png",
          "turns": "turns.png", "stack": "stack.png", "thinking": "thinking.png",
-         "case_tokens": "case_tokens.png", "case_bases": "case_bases.png"}
+         "case_tokens": "case_tokens.png", "case_bases": "case_bases.png",
+         "monthly": "monthly.png", "cache_hit": "cache_hit.png", "usage_mix": "usage_mix.png"}
 
 
 def sha256(path):

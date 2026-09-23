@@ -288,6 +288,22 @@ def test_deck_chart_values_match_recomputed_series(evidence):
             usage[mode]["tokens"]["reasoning"] + usage[mode]["tokens"]["output"])
     assert manifest["turns"]["turns"]["50"]["cost_usd"] == pytest.approx(12.09, abs=5e-3)
     assert manifest["turns"]["turns"]["20"]["cost_usd"] == pytest.approx(2.32, abs=5e-3)
+    # 월 청구서: 워크플로 A/B를 같은 요청 수로 곱한 값이어야 한다(스크립트 재계산과 대조)
+    from lab.pricing import cost as price_cost
+    from experiments.exp02_output_to_input import EVIDENCE as _  # noqa: F401  (import 경로 확인)
+    for key, label in (("opus", "Opus"), ("sonnet", "Sonnet"), ("gpt5", "GPT-5")):
+        model = pricing.MODELS[key]
+        expected_a = round(price_cost(model, 2_000, 12_000) * manifest["monthly"]["jobs_per_month"], 2)
+        expected_b = round(price_cost(model, 6_000, 3_000) * manifest["monthly"]["jobs_per_month"], 2)
+        assert manifest["monthly"]["by_model"][label] == {"A": expected_a, "B": expected_b}
+    # 캐시 적중률 곡선: 캐시 없음이 0% 적중보다 싸고, 100% 적중이 가장 싸다
+    curve = manifest["cache_hit"]
+    assert curve["by_hit_rate"]["0.00"] > curve["no_cache_usd"] > curve["by_hit_rate"]["1.00"]
+    assert 0 < curve["breakeven_hit_rate"] < 1
+    # 세션 토큰 구성: 합계 = 재전송 누적 + 출력
+    mix = manifest["usage_mix"]
+    assert sum(mix["parts"].values()) == mix["total"]
+    assert mix["parts"]["대화 이력 재전송"] == manifest["turns"]["turns"]["20"]["cumulative_input_tokens"] - 8_000 * 20
 
 
 def test_deck_chart_manifest_hashes_match_files():
@@ -315,4 +331,38 @@ def test_chart_slides_still_carry_talk_and_notes(evidence):
             for token in AUDIT_ONLY_TOKENS:
                 assert token not in face, f"{name} {index}장 차트 슬라이드에 검증 서술: {token}"
             assert notes_text(spec).endswith(f"증거 범위: {spec['scope']}"), (name, index)
-    assert chart_slides >= 8, chart_slides
+    assert chart_slides >= 30, chart_slides          # 덱 5종에 걸쳐 11종 그래프를 반복 사용
+
+
+def test_every_generated_chart_is_used_in_a_deck(evidence):
+    """차트를 만들고 덱에 넣지 않으면(또는 그 반대) 잡는다."""
+    from presentation.deckgen.build_verified import chart_manifest
+    used = {spec["chart"]["file"].split("/")[-1] for deck in specifications(evidence).values()
+            for spec in deck if spec.get("chart")}
+    assert used == {entry["file"] for entry in chart_manifest().values()}, used.symmetric_difference(
+        {entry["file"] for entry in chart_manifest().values()})
+
+
+def test_deck_price_table_matches_pricing_snapshot(evidence):
+    """단가 표 슬라이드의 셀이 lab/pricing.py 스냅샷과 일치하는지 검사(수기 편집 방지)."""
+    from lab import pricing
+    from presentation.deckgen.build_verified import PRICE_TABLE_ROWS
+    tables = [spec["table"] for deck in specifications(evidence).values()
+              for spec in deck if spec.get("table")]
+    assert tables, "단가 표 슬라이드가 없음"
+    for table in tables:
+        assert len(table["rows"]) == len(PRICE_TABLE_ROWS)
+        for row, key in zip(table["rows"], PRICE_TABLE_ROWS):
+            model = pricing.MODELS[key]
+            assert row == [model.name, f"${model.inp:g}", f"${model.out:g}",
+                           f"{model.ratio:.0f}배", f"{model.cache_read:g}배"], row
+
+
+def test_divider_slides_have_talk_and_notes(evidence):
+    """구간 표지도 발표 멘트와 노트를 갖는지(빈 간지 금지)."""
+    from presentation.deckgen.build_verified import notes_text
+    dividers = [spec for deck in specifications(evidence).values() for spec in deck if spec.get("divider")]
+    assert len(dividers) >= 5, len(dividers)
+    for spec in dividers:
+        assert len(spec["lines"]) >= 1 and len(spec["script"]) >= 2
+        assert notes_text(spec).endswith(f"증거 범위: {spec['scope']}")

@@ -25,8 +25,8 @@
 | 13 | 같은 내용이면 한국어 출력 토큰이 **1.4723배**(o200k) · **2.3669배**(cl100k) | FLORES-200 1,012쌍 실측 | 로컬 토크나이저 실측 | `python tools/parallel_tokenizer_bench.py` |
 | 14 | 사고 예산을 미지정하면 같은 답에 **199.47배**(공식 단가) · **240.02배**(기존 환산) 지출 | $0.000028 → $0.00558525 | 저장 API 로그 재계산 | `python tools/thinking_sweep.py --summarize results/thinking_sweep.jsonl` |
 | 15 | 사고가 난 호출에서 사고 토큰이 출력 토큰의 **99.63%** | 사고 127–3,704토큰 범위 | 저장 API 로그 재계산 | 위와 동일 |
-| 16 | 덱 5종은 **약 30분 목표 분량**이며, 검증 범위·한계는 발표자 노트에 있다 | 통합 36 · 본편 27 · 보너스 14 · 에이전트 22 · 케이스 15장 | 재생성 대본·노트 | `python presentation/deckgen/build_verified.py` · `python tools/verify_deck.py --with-pdf` |
-| 17 | 단가와 사용량 비교를 그래프로 보여 줄 수 있다 — 그래프 8종, 계열값·해시 기록 | 예: 캐시 3분기 $8.550/$3.219/$10.050 · 레버 적층 잔여 14.18% · 사고 예산 5분기 | 생성기 + manifest | `python presentation/deckgen/make_charts.py` |
+| 16 | 덱 5종은 **약 30분 목표 분량**이며, 검증 범위·한계는 발표자 노트에 있다 | 통합 44 · 본편 34 · 보너스 16 · 에이전트 23 · 케이스 15장 | 재생성 대본·노트 | `python presentation/deckgen/build_verified.py` · `python tools/verify_deck.py --with-pdf` |
+| 17 | 단가와 사용량 비교를 그래프로 보여 줄 수 있다 — 그래프 11종, 계열값·해시 기록 | 예: 워크플로 B가 모델별 -64~-69% · 캐시 손익분기 적중률 22.0% · 20턴 토큰의 75.1%가 이력 재전송 | 생성기 + manifest | `python presentation/deckgen/make_charts.py` |
 
 1·2·3은 정책 **지출 모형**이다. 완료 작업당 절감률도, 품질 동등성도 아니다.
 4~12는 토큰·단가·턴 가정 위의 계산이다. 13~15만 이 저장소가 직접 만든 실측·로그 재계산이다.
