@@ -48,6 +48,12 @@ def boot_ci(vals, iters=20000, alpha=0.05, seed=42):
 
 def boot_ratio_ci(a, b, iters=20000, alpha=0.05, seed=42):
     """비율(mean_a / mean_b)의 percentile bootstrap 구간. Welch 검정과 별개다."""
+    if not a or not b or any(not math.isfinite(x) or x < 0 for x in (*a,*b)):
+        raise ValueError('ratio bootstrap requires nonempty finite nonnegative samples')
+    if st.mean(b) == 0:
+        raise ValueError('ratio to a zero mean is not estimable')
+    if iters < 1 or not 0 < alpha < 1:
+        raise ValueError('invalid bootstrap settings')
     rnd = random.Random(seed)
     na, nb = len(a), len(b)
     out = []
@@ -106,8 +112,18 @@ def main():
     ap.add_argument("--price-basis", choices=["actual", "legacy"], default="actual")
     args = ap.parse_args()
 
-    rows = [json.loads(l) for l in open(args.path, encoding="utf-8")]
+    rows = [json.loads(l) for l in open(args.path, encoding="utf-8") if l.strip()]
     ok = [r for r in rows if "error" not in r and r.get("finish") == "STOP"]
+    if not ok or len({r['model'] for r in ok}) != 1:
+        raise ValueError('Compare exactly one model with completed observations; do not pool model prices')
+    if len({r.get('budget') for r in ok}) != 1:
+        raise ValueError('Compare one thinking-budget condition; do not pool settings')
+    if any(r.get('lang') not in {'en','ko'} for r in ok):
+        raise ValueError('Expected en/ko observations')
+    for task in {r['task'] for r in ok}:
+        if {r['lang'] for r in ok if r['task']==task} != {'en','ko'}:
+            raise ValueError('Each task needs both en and ko observations')
+    comparisons=2*len({r['task'] for r in ok})
 
     hdr = f"통계 검정 — {args.path}"
     if args.label:
@@ -137,6 +153,7 @@ def main():
         print(f"      비율 95% CI  [{lo:.3f}, {hi:.3f}]"
               f"   {'← 1.0 포함: 유의하지 않음' if lo <= 1.0 <= hi else '← 유의함'}")
         print(f"      Welch t={t:.3f}, df={df:.3f}, p = {fmt_p(p)}   ·   Cliff's δ = {d:+.3f} ({mag})")
+        print(f"      Bonferroni ({comparisons} comparisons): p = {fmt_p(min(1.0, comparisons*p) if math.isfinite(p) else p)}")
 
         # 문자 단위 기술통계 — 의미량·품질의 정규화가 아님
         ne = [cost(r, args.price_basis) / r["chars"] * 1000 for r in en if r.get("chars")]
@@ -151,13 +168,14 @@ def main():
             print(f"      비율 95% CI  [{nlo:.2f}, {nhi:.2f}]"
                   f"   {'← 1.0 포함: 유의하지 않음' if nlo <= 1.0 <= nhi else '← 유의함'}")
             print(f"      Welch t={nt:.3f}, df={ndf:.3f}, p = {fmt_p(np_)}   ·   Cliff's δ = {nd:+.3f} ({nmag})")
+            print(f"      Bonferroni ({comparisons} comparisons): p = {fmt_p(min(1.0, comparisons*np_) if math.isfinite(np_) else np_)}")
             print(f"      실제 쓴 글자: EN {st.mean(r['chars'] for r in en):.0f}자"
                   f"  ·  KO {st.mean(r['chars'] for r in ko):.0f}자"
                   f"  (KO/EN {st.mean(r['chars'] for r in ko)/st.mean(r['chars'] for r in en):.2f}×)")
 
         th_en = st.mean(r["thoughts"] for r in en)
         th_ko = st.mean(r["thoughts"] for r in ko)
-        if th_en or th_ko:
+        if th_en > 0:
             tlo, thi = boot_ratio_ci([r["thoughts"] for r in ko],
                                      [r["thoughts"] for r in en])
             print(f"  [C] 사고 토큰  EN {th_en:.0f}  ·  KO {th_ko:.0f}"
@@ -166,6 +184,8 @@ def main():
             print(f"      출력 토큰 중 사고 비중:"
                   f"  EN {th_en/(th_en+st.mean(r['cands'] for r in en))*100:.0f}%"
                   f"  ·  KO {th_ko/(th_ko+st.mean(r['cands'] for r in ko))*100:.0f}%")
+        elif th_ko > 0:
+            print('  [C] EN 사고 평균 0: KO/EN 사고량 비율은 산출 불가')
 
     print("\n" + "=" * 84)
     print("  해석 규칙: 비율의 95% 신뢰구간이 1.0을 포함하면 '차이 없음'을 배제할 수 없다.")

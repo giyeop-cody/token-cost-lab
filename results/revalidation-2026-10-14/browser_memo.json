@@ -1,0 +1,26 @@
+{
+  "evidence_type": "browser_behavior_test",
+  "kind": "memo",
+  "checks": [
+    {
+      "name": "새로고침 후 제목·본문 유지",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "두 메모 중 목록 클릭 시 해당 내용 로드",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "삭제 후 새로고침에서도 삭제 유지",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "브라우저 JavaScript 오류 0건",
+      "ok": true,
+      "detail": "[]"
+    }
+  ]
+}

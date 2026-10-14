@@ -100,19 +100,18 @@ def main():
     print("  → '스펙을 길게 쓰면 입력이 늘어서 손해 아닌가?' 라는 반론에 대한 답이다.")
 
     report.section("E. 언어 선택이 thinking 비용에 미치는 영향")
-    print("  실험 01에서 측정한 배수를 thinking 토큰에 그대로 적용한다.")
+    print("  아래는 사고량 배수를 임의로 바꾼 비용 민감도 시나리오다.")
+    print("  실험 01의 인코딩 배수를 hidden 사고량이나 실제 언어별 비용으로 적용하지 않는다.")
     rows = []
     for ratio, label in [(1.00, "영어 사고"), (1.44, "사고량 1.44× 가정 (인코딩과 hidden 사고 동일시 금지)"),
                          (1.88, "사고량 1.88× 감도 가정 (Claude hidden 사고 측정 아님)")]:
-        for th in (4_000, 8_000, 16_000):
-            pass
         c8 = int(8_000 * ratio) * m.out / 1e6
         rows.append([label, f"{int(8_000*ratio):,}", pricing.usd(c8),
                      f"{(ratio-1)*100:+.0f}%"])
     report.table(["사고 언어", "thinking tok", "요청당 비용", "추가 비용"],
                  rows, ["l", "r", "r", "r"])
     extra = (int(8_000 * 1.44) - 8_000) * m.out / 1e6 * n * 12
-    report.kv("한국어 사고의 연간 추가 비용", pricing.usd(extra, 0),
+    report.kv("사고량 1.44배 가정의 연간 추가 비용", pricing.usd(extra, 0),
               f"(위 {n:,}건/월 기준, thinking 8K tok 가정)")
 
     report.verdict(

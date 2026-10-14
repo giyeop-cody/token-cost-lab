@@ -1,0 +1,151 @@
+{
+  "evidence_type": "browser_behavior_test",
+  "kind": "cafe",
+  "checks": [
+    {
+      "name": "렌더링 메뉴 6개 각각 이름·설명·가격·태그",
+      "ok": true,
+      "detail": "[{'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}]"
+    },
+    {
+      "name": "390px .menu-grid 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "390px .loc-in 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "390px .strip 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "390px .hero 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "390px 데스크톱 메뉴 표시 조건",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "390px 가로 스크롤 없음",
+      "ok": true,
+      "detail": "{'scroll': 390, 'client': 390}"
+    },
+    {
+      "name": "820px .menu-grid 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "820px .loc-in 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "820px .strip 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "820px .hero 그리드",
+      "ok": true,
+      "detail": "columns=1"
+    },
+    {
+      "name": "820px 데스크톱 메뉴 표시 조건",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "820px 가로 스크롤 없음",
+      "ok": true,
+      "detail": "{'scroll': 820, 'client': 820}"
+    },
+    {
+      "name": "821px .menu-grid 그리드",
+      "ok": true,
+      "detail": "columns=3"
+    },
+    {
+      "name": "821px .loc-in 그리드",
+      "ok": true,
+      "detail": "columns=2"
+    },
+    {
+      "name": "821px .strip 그리드",
+      "ok": true,
+      "detail": "columns=3"
+    },
+    {
+      "name": "821px .hero 그리드",
+      "ok": true,
+      "detail": "columns=2"
+    },
+    {
+      "name": "821px 데스크톱 메뉴 표시 조건",
+      "ok": true,
+      "detail": "flex"
+    },
+    {
+      "name": "821px 가로 스크롤 없음",
+      "ok": true,
+      "detail": "{'scroll': 821, 'client': 821}"
+    },
+    {
+      "name": "1280px .menu-grid 그리드",
+      "ok": true,
+      "detail": "columns=3"
+    },
+    {
+      "name": "1280px .loc-in 그리드",
+      "ok": true,
+      "detail": "columns=2"
+    },
+    {
+      "name": "1280px .strip 그리드",
+      "ok": true,
+      "detail": "columns=3"
+    },
+    {
+      "name": "1280px .hero 그리드",
+      "ok": true,
+      "detail": "columns=2"
+    },
+    {
+      "name": "1280px 데스크톱 메뉴 표시 조건",
+      "ok": true,
+      "detail": "flex"
+    },
+    {
+      "name": "1280px 가로 스크롤 없음",
+      "ok": true,
+      "detail": "{'scroll': 1280, 'client': 1280}"
+    },
+    {
+      "name": "앵커 #menu 실제 이동",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "앵커 #location 실제 이동",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "앵커 #hours 실제 이동",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "브라우저 JavaScript 오류 0건",
+      "ok": true,
+      "detail": "[]"
+    }
+  ]
+}

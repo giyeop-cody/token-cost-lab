@@ -1,0 +1,30 @@
+PASS 렌더링 메뉴 6개 각각 이름·설명·가격·태그 [{'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}]
+PASS 390px .menu-grid 그리드 columns=1
+PASS 390px .loc-in 그리드 columns=1
+PASS 390px .strip 그리드 columns=1
+PASS 390px .hero 그리드 columns=1
+PASS 390px 데스크톱 메뉴 표시 조건 none
+PASS 390px 가로 스크롤 없음 {'scroll': 390, 'client': 390}
+PASS 820px .menu-grid 그리드 columns=1
+PASS 820px .loc-in 그리드 columns=1
+PASS 820px .strip 그리드 columns=1
+PASS 820px .hero 그리드 columns=1
+PASS 820px 데스크톱 메뉴 표시 조건 none
+PASS 820px 가로 스크롤 없음 {'scroll': 820, 'client': 820}
+PASS 821px .menu-grid 그리드 columns=3
+PASS 821px .loc-in 그리드 columns=2
+PASS 821px .strip 그리드 columns=3
+PASS 821px .hero 그리드 columns=2
+PASS 821px 데스크톱 메뉴 표시 조건 flex
+PASS 821px 가로 스크롤 없음 {'scroll': 821, 'client': 821}
+PASS 1280px .menu-grid 그리드 columns=3
+PASS 1280px .loc-in 그리드 columns=2
+PASS 1280px .strip 그리드 columns=3
+PASS 1280px .hero 그리드 columns=2
+PASS 1280px 데스크톱 메뉴 표시 조건 flex
+PASS 1280px 가로 스크롤 없음 {'scroll': 1280, 'client': 1280}
+PASS 앵커 #menu 실제 이동
+PASS 앵커 #location 실제 이동
+PASS 앵커 #hours 실제 이동
+PASS 브라우저 JavaScript 오류 0건 []
+29/29; rendered AC coverage only
