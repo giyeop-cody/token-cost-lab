@@ -114,18 +114,20 @@ def main():
     per_call = pricing.cost(m, 3_000, 700)
     monthly = 100_000
     rows = []
-    for hr, label in [(0.0, "없음"), (0.20, "보수적 (일반 워크로드)"),
-                      (0.45, "현실 상한 (반복 많은 워크로드)"),
-                      (0.65, "논문 보고치 (GPT Semantic Cache)"),
-                      (0.86, "AWS 공개 평가 사례")]:
+    for hr, label in [(0.0, "없음"), (0.20, "20% 히트율 가정"),
+                      (0.45, "45% 히트율 가정"),
+                      (0.65, "65% 히트율 가정"),
+                      (0.86, "86% 히트율 가정 (비용 절감률과 구분)")]:
         c = per_call * monthly * (1 - hr)
         rows.append([label, f"{hr*100:.0f}%", pricing.usd(c, 2),
                      f"{hr*100:.0f}%"])
     report.table([f"히트율 시나리오 ({monthly:,}콜/월)", "히트율", "월 비용", "절감"],
                  rows, ["l", "r", "r", "r"])
-    print("  · 프로덕션 현실 히트율: 20~45%. 고반복 워크로드에서 40~70%.")
-    print("  · AWS 공개 평가(실제 챗봇 쿼리 63,796건): 비용 86%↓, 지연 88%↓, 정확도 91%+ 유지")
-    print("  · 논문(GPT Semantic Cache): API 호출 최대 68.8% 감소, 유사도 임계값 0.8이 최적")
+    print("  · 위 히트율은 민감도 가정이다. 일반 프로덕션의 실측 범위로 소개하지 않는다.")
+    print("  · AWS 평가: 63,796 쿼리와 paraphrase, threshold 0.75에서 히트율 90.3%, 비용 86.3%↓, 지연 88.3%↓.")
+    print("    91.2%는 캐시 히트 응답의 정확도다. 전체 요청의 품질 동등성이 아니다.")
+    print("    https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/semantic-caching-benchmarks.html")
+    print("  · GPT Semantic Cache의 최대 호출 감소 68.8%와 임계값은 해당 데이터·임베딩 조건의 결과다.")
     print("  ⚠️ 위험: 임계값이 느슨하면 '비슷하지만 틀린 답'을 준다.")
     print("     개인화/실시간 데이터가 섞인 응답은 캐싱 금지. 멀티턴은 키에 컨텍스트를 포함해야 한다.")
 
@@ -135,7 +137,7 @@ def main():
     ci, co = 3_000, 800
     rows = []
     for share, label in [(1.00, "전부 강 모델"), (0.50, "절반 라우팅"),
-                         (0.14, "RouteLLM 보고치 (강 모델 14%)"),
+                         (0.14, "강 모델 비중 14% 가정 (RouteLLM 재현 아님)"),
                          (0.05, "공격적 라우팅")]:
         c = (share * pricing.cost(strong, ci, co)
              + (1 - share) * pricing.cost(weak, ci, co)) * 10_000
@@ -145,9 +147,9 @@ def main():
                  rows, ["l", "r", "r", "r"])
     report.table(
         ["방식", "보고된 절감", "출처/조건"],
-        [["학습된 라우터", "45~85%", "RouteLLM: MT-Bench 85%↓, GPT-4 품질 95% 유지"],
+        [["학습된 라우터", "35~85% 이상 (과제별)", "RouteLLM: GPT-4 성능 95% 목표; 품질 완전 동등 아님"],
          ["캐스케이드", "50~98%", "FrugalGPT: 싼 모델 먼저, 실패 시 승급"],
-         ["시맨틱 라우터", "가변", "vLLM SR: 정확도 +10.2%p, 지연 -47%, 토큰 -48.5%"],
+         ["시맨틱 라우터", "가변", "vLLM SR: MMLU-Pro 보고치 +10.2%p, 지연 -47.1%, 토큰 -48.5%"],
          ["매니지드", "최대 30%", "Bedrock Intelligent Prompt Routing"]],
     )
     print("  ⚠️ 함정: 벤치마크에서 잡은 임계값을 프로덕션에 그대로 쓰면 절감이 과대 추정된다.")

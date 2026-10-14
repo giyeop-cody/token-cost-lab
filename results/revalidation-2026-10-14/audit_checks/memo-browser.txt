@@ -1,0 +1,5 @@
+PASS 새로고침 후 제목·본문 유지
+PASS 두 메모 중 목록 클릭 시 해당 내용 로드
+PASS 삭제 후 새로고침에서도 삭제 유지
+PASS 브라우저 JavaScript 오류 0건 []
+4/4; rendered AC coverage only

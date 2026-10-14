@@ -40,9 +40,10 @@ from lab import pricing, report  # noqa: E402
 EVIDENCE = "시나리오: 토큰·턴·효과 가정의 비용 계산. 실제 정책 A/B나 품질 동등 절감 실측 아님."
 
 
-def session_cost(m, static, dyn, out, calls, hit_rate=1.0, cached=True):
+def session_cost(m, static, dyn, out, calls, hit_rate=1.0, cached=True,
+                 storage_usd_per_million_hour=0.0, storage_hours=0.0):
     """캐시 사용 시 세션 총비용. 첫 콜은 write, 이후는 hit_rate 확률로 read."""
-    if calls < 1 or min(static, dyn, out) < 0 or not 0 <= hit_rate <= 1:
+    if calls < 1 or min(static, dyn, out, storage_usd_per_million_hour, storage_hours) < 0 or not 0 <= hit_rate <= 1:
         raise ValueError("invalid cache scenario parameters")
     if not cached or not pricing.cache_eligible(m, static):
         return calls * pricing.cost(m, static + dyn, out)
@@ -50,7 +51,10 @@ def session_cost(m, static, dyn, out, calls, hit_rate=1.0, cached=True):
     read = (static * m.inp * m.cache_read + dyn * m.inp + out * m.out) / 1e6
     miss = (static * m.inp * m.cache_write + dyn * m.inp + out * m.out) / 1e6
     rest = calls - 1
-    return write + rest * (hit_rate * read + (1 - hit_rate) * miss)
+    # Hours are aggregate retained lifetime across all explicit cache entries,
+    # including replacements. Implicit caching has no explicit storage charge.
+    storage=static/1e6*storage_usd_per_million_hour*storage_hours
+    return write + rest * (hit_rate * read + (1 - hit_rate) * miss) + storage
 
 
 def main():
@@ -60,7 +64,13 @@ def main():
     ap.add_argument("--dyn", type=int, default=1_000, help="콜마다 바뀌는 입력 토큰")
     ap.add_argument("--out", type=int, default=1_500, help="출력 토큰")
     ap.add_argument("--calls", type=int, default=100)
+    ap.add_argument("--storage-rate", type=float, default=0.0, help="explicit cache storage USD per million token-hours; implicit cache uses 0")
+    ap.add_argument("--storage-hours", type=float, default=0.0, help="aggregate retained hours across all explicit cache entries")
     args = ap.parse_args()
+
+    def session(*values, **options):
+        return session_cost(*values, **options, storage_usd_per_million_hour=args.storage_rate,
+                            storage_hours=args.storage_hours)
     print(EVIDENCE)
 
     m = pricing.get(args.model)
@@ -68,7 +78,7 @@ def main():
 
     report.title("실험 03 — 프롬프트 캐싱")
     report.kv("모델", m.name)
-    print(f"  시나리오: 캐시 최소 {m.cache_min_tokens}; 알려지지 않은 최소치는 할인 미적용. 저장료 제외.")
+    print(f"  시나리오: 캐시 최소 {m.cache_min_tokens}; 알려지지 않은 최소치는 할인 미적용. 저장료는 지정한 rate×hours만 반영.")
     report.kv("고정 프리픽스", f"{S:,} tok", "(시스템 프롬프트 + 툴 정의 + 레퍼런스)")
     report.kv("가변 입력 / 출력", f"{D:,} tok / {O:,} tok")
     report.kv("세션 콜 수", f"{N:,}")
@@ -84,8 +94,8 @@ def main():
     )
 
     report.section("B. 캐시 유무 세션 비용")
-    no_c = session_cost(m, S, D, O, N, cached=False)
-    yes_c = session_cost(m, S, D, O, N, hit_rate=1.0)
+    no_c = session(m, S, D, O, N, cached=False)
+    yes_c = session(m, S, D, O, N, hit_rate=1.0)
     report.kv("캐시 없음", pricing.usd(no_c, 2))
     report.kv("캐시 100% 적중", pricing.usd(yes_c, 2),
               f"절감 {(1-yes_c/no_c)*100:.0f}%")
@@ -93,7 +103,7 @@ def main():
     report.section("C. 히트율에 따른 절감률")
     rows = []
     for hr in (0.0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 1.0):
-        c = session_cost(m, S, D, O, N, hit_rate=hr)
+        c = session(m, S, D, O, N, hit_rate=hr)
         rows.append([f"{hr*100:.0f}%", pricing.usd(c, 2), f"{(1-c/no_c)*100:+.0f}%"])
     report.table(["히트율", "세션 비용", "절감"], rows, ["r", "r", "r"])
     print("  → 위 히트율은 민감도 가정이다. 실제 비율은 자기 usage 로그로 측정한다.")
@@ -101,21 +111,21 @@ def main():
     report.section("D. 손익분기 — 쓰기 프리미엄은 몇 콜 만에 회수되나")
     if not pricing.cache_eligible(m, S):
         print("  최소 길이 미달 또는 기준 미확인: 할인 가정하지 않음")
-    elif m.cache_write <= 1.0:
+    elif m.cache_write <= 1.0 and args.storage_rate * args.storage_hours == 0:
         print("  이 벤더는 쓰기 프리미엄이 없다. 첫 재사용부터 바로 이득.")
     else:
-        premium = S * m.inp * (m.cache_write - 1) / 1e6
+        premium = (S * m.inp * (m.cache_write - 1) + S * args.storage_rate * args.storage_hours) / 1e6
         per_read_save = S * m.inp * (1 - m.cache_read) / 1e6
         be = premium / per_read_save
-        report.kv("쓰기 추가 비용", pricing.usd(premium))
+        report.kv("쓰기·지정 저장 추가 비용", pricing.usd(premium))
         report.kv("읽기 1회당 절약", pricing.usd(per_read_save))
         report.kv("손익분기", f"{be:.2f} 회 재사용",
-                  "→ 사실상 두 번째 콜부터 이득")
+                  "저장료를 지정하면 재사용 손익분기도 바뀐다")
 
     report.section("E. 안티패턴 — 캐시를 깨뜨리는 한 줄")
     print("  프롬프트 맨 앞에 '현재 시각: 2026-08-14 09:31:07' 같은 값을 넣으면")
     print("  프리픽스가 매번 달라져 캐시가 전혀 매칭되지 않는다.")
-    broken = session_cost(m, S, D, O, N, hit_rate=0.0)
+    broken = session(m, S, D, O, N, hit_rate=0.0)
     report.kv("올바른 배치 (동적 값 뒤)", pricing.usd(yes_c, 2))
     report.kv("잘못된 배치 (동적 값 앞)", pricing.usd(broken, 2),
               f"→ {broken/yes_c:.1f}배, +{pricing.usd(broken-yes_c,2)}")

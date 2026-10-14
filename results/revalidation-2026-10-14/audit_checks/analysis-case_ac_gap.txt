@@ -1,0 +1,77 @@
+[증거 범위] 저장 발화/산출물의 재생 + 정책 비용 시나리오. 실제 정책 A/B의 품질·성공률·절감 실측 아님.
+==============================================================================
+케이스: 카페 온도 랜딩 (req_1786763476385 → req_1786764007807)
+PASS  AC1 메뉴 카드 정확히 6개  (cards=6)
+PASS  AC1 카드마다 태그 존재(6개)  (tags=6)
+PASS  AC2 오시는길 5개 항목  (items=5)
+PASS  AC3 820px 미디어쿼리
+PASS  AC3 데스크톱 메뉴 숨김
+PASS  AC3 overflow-x 차단
+PASS  AC4 앵커 3종 href+id 매칭
+PASS  AC4 smooth scroll
+PASS  AC5 영업시간 명시
+PASS  STACK JS 금지
+PASS  STACK 외부 리소스 금지
+PASS  STACK 시맨틱 태그
+PASS  DESIGN 팔레트 6색
+PASS  DESIGN radius/패딩 토큰
+PASS  DESIGN h1 clamp(34~52)
+PASS  DESIGN 호버 translateY(-6px)
+
+정적 문자열/구조 검사 16/16 (동작 보증 아님)
+PASS  렌더링 메뉴 6개 각각 이름·설명·가격·태그 [{'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}, {'name': True, 'description': True, 'price': True, 'tag': True}]
+PASS  390px .menu-grid 그리드 columns=1
+PASS  390px .loc-in 그리드 columns=1
+PASS  390px .strip 그리드 columns=1
+PASS  390px .hero 그리드 columns=1
+PASS  390px 데스크톱 메뉴 표시 조건 none
+PASS  390px 가로 스크롤 없음 {'scroll': 390, 'client': 390}
+PASS  820px .menu-grid 그리드 columns=1
+PASS  820px .loc-in 그리드 columns=1
+PASS  820px .strip 그리드 columns=1
+PASS  820px .hero 그리드 columns=1
+PASS  820px 데스크톱 메뉴 표시 조건 none
+PASS  820px 가로 스크롤 없음 {'scroll': 820, 'client': 820}
+PASS  821px .menu-grid 그리드 columns=3
+PASS  821px .loc-in 그리드 columns=2
+PASS  821px .strip 그리드 columns=3
+PASS  821px .hero 그리드 columns=2
+PASS  821px 데스크톱 메뉴 표시 조건 flex
+PASS  821px 가로 스크롤 없음 {'scroll': 821, 'client': 821}
+PASS  1280px .menu-grid 그리드 columns=3
+PASS  1280px .loc-in 그리드 columns=2
+PASS  1280px .strip 그리드 columns=3
+PASS  1280px .hero 그리드 columns=2
+PASS  1280px 데스크톱 메뉴 표시 조건 flex
+PASS  1280px 가로 스크롤 없음 {'scroll': 1280, 'client': 1280}
+PASS  앵커 #menu 실제 이동
+PASS  앵커 #location 실제 이동
+PASS  앵커 #hours 실제 이동
+PASS  브라우저 JavaScript 오류 0건 []
+현재 정적/브라우저 AC를 실행했다. 아래는 검증 범위 밖의 가상 반려다.
+==============================================================================
+
+그런데 사용자가 보는 화면에서 사라진 문구: 5건
+
+   ✗ 카페 온도 — 따뜻함을 내리는 곳
+   ✗ 수원 행궁동 · 매일 로스팅
+   ✗ 매일 아침 로스팅한 원두, 국산 재료로 만드는 디저트
+   ✗ 09:00 – 21:00 (L.O 20:30)
+   ✗ 10:00 – 22:00 (L.O 21:30)
+
+------------------------------------------------------------------------------
+이 항목들을 잡는 AC가 16개 중에 있는가 — 전수 대조
+------------------------------------------------------------------------------
+  카페 온도 — 따뜻함을 내리는 곳                           → 커버하는 AC: 없음
+  수원 행궁동 · 매일 로스팅                              → 커버하는 AC: 없음
+  매일 아침 로스팅한 원두, 국산 재료로 만드는 디저트                → 커버하는 AC: 없음
+  09:00 – 21:00 (L.O 20:30)                    → 커버하는 AC: ['STACK JS 금지', 'STACK 외부 리소스 금지']
+  10:00 – 22:00 (L.O 21:30)                    → 커버하는 AC: ['STACK JS 금지', 'STACK 외부 리소스 금지']
+
+==============================================================================
+사용자가 이걸 발견하고 반려한다면 — 분류기 판정
+==============================================================================
+반려 발화: "영업시간에서 라스트오더 표기가 빠졌다. 원래 있던 건데 왜 없어졌나"
+  → 숨은 전제(assumption)  근거='원래'
+  → 대응칸=widen  티어상승=불필요
+  → 처방: 전제를 AC로 승격 — 다음부터 자동 검사
